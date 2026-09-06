@@ -14,8 +14,8 @@
       --surface-3: #eef2f6;
       --text: #172033;
       --muted: #657087;
-      --line: #dce2ea;
-      --line-strong: #c6ceda;
+      --line: #cbd4e0;
+      --line-strong: #aeb9c9;
       --brand: #3152c8;
       --brand-dark: #233f9f;
       --brand-soft: #e8edff;
@@ -40,8 +40,8 @@
       --surface-3: #273141;
       --text: #ecf1f8;
       --muted: #a4afc2;
-      --line: #303b4d;
-      --line-strong: #465269;
+      --line: #3a465a;
+      --line-strong: #58667d;
       --brand: #7f9cff;
       --brand-dark: #a9bcff;
       --brand-soft: #29365d;
@@ -323,6 +323,46 @@
     .splash-line { margin: 22px auto 0; width: 210px; height: 3px; background: #2d3b5e; overflow: hidden; border-radius: 3px; }
     .splash-line::after { content: ""; display: block; height: 100%; width: 45%; background: #68dbc3; animation: loading 1s ease infinite; }
     @keyframes loading { from { transform: translateX(-100%); } to { transform: translateX(320%); } }
+
+    /* Enhanced definition and pointer feedback. */
+    .panel, .toolbar, .filter-panel, .stat, .launch-card, .lookup-results,
+    .app-picker select, .quick-search input, .field input, .field select,
+    .field textarea, .toolbar select, .pick-list-search input, .button,
+    .round-button, .lookup-button {
+      transition: border-color .14s ease, background-color .14s ease,
+        box-shadow .14s ease, color .14s ease, transform .14s ease;
+    }
+    .panel, .toolbar, .filter-panel, .stat, .launch-card {
+      border-color: var(--line-strong);
+    }
+    .panel-head, .tabs, th, td, .detail-kv, .message, .modal-head,
+    .modal-foot, .lookup-result, .sidebar-footer, .statusbar {
+      border-color: var(--line);
+    }
+    @media (hover: hover) {
+      .panel:hover, .stat:hover {
+        border-color: color-mix(in srgb, var(--brand) 42%, var(--line-strong));
+        box-shadow: 0 4px 16px rgba(28, 39, 64, .11);
+      }
+      .nav-item:hover, .tab:hover, .master-list button:hover,
+      .tree-select:hover, .pick-item:hover {
+        box-shadow: inset 0 0 0 1px var(--line-strong);
+      }
+      .tool-button:hover:not(:disabled), .icon-button:hover,
+      .user-button:hover, .button:hover:not(:disabled),
+      .round-button:hover:not(:disabled), .lookup-button:hover {
+        border-color: color-mix(in srgb, var(--brand) 48%, var(--line-strong));
+        box-shadow: 0 2px 7px color-mix(in srgb, var(--brand) 12%, transparent);
+      }
+      .field input:hover, .field select:hover, .field textarea:hover,
+      .toolbar select:hover, .app-picker select:hover, .quick-search input:hover,
+      .pick-list-search input:hover {
+        border-color: color-mix(in srgb, var(--brand) 55%, var(--line-strong));
+      }
+      tbody tr { transition: background-color .13s ease, box-shadow .13s ease; }
+      tbody tr:hover { box-shadow: inset 3px 0 0 var(--brand); }
+      .lookup-result:hover { box-shadow: inset 3px 0 0 var(--brand); }
+    }
 
     @media (max-width: 980px) {
       :root { --nav-width: 230px; }
