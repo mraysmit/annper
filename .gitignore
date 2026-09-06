@@ -1,0 +1,17 @@
+# Generated transient files
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE/user state
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Future build output
+bin/
+obj/
+artifacts/
+
