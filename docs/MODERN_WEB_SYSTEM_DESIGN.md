@@ -7,6 +7,8 @@
 **Delivery authority:** [GDFramework Migration Master Plan and Design 0.4](MIGRATION_MASTER.md)  
 **Technology status:** Product and framework selections intentionally deferred; browser and web-platform architecture selected
 
+**Interactive reference:** [Single-file working web mockup](../prototype/gdframework-web-mockup.html)
+
 ## 1. Purpose and authority
 
 This document defines the complete target design for a modern web-based
