@@ -8,13 +8,14 @@
 | Precedence | Artifact | Authority |
 |---:|---|---|
 | 1 | `GDFramework Functional Specification.md` | Normative observable behavior, functional scope, compatibility contract, and legacy defect evidence |
-| 2 | `MIGRATION_MASTER.md` | Governance, architecture boundaries, delivery sequence, decision points, risks, and quality gates |
-| 3 | Approved ADRs under `docs/adr` | One approved technical decision within the boundaries of the first two documents |
-| 4 | Supporting inventories and matrices | Controlled evidence and implementation/test status |
-| 5 | Files under `docs/archive` | Superseded historical context only; never normative |
+| 2 | `MODERN_WEB_SYSTEM_DESIGN.md` | Normative logical design and implementation boundaries for the modern web equivalent |
+| 3 | `MIGRATION_MASTER.md` | Governance, delivery sequence, decision points, risks, and quality gates |
+| 4 | Approved ADRs under `docs/adr` | One approved technical decision within the boundaries of the documents above |
+| 5 | Supporting inventories and matrices | Controlled evidence and implementation/test status |
+| 6 | Files under `docs/archive` | Superseded historical context only; never normative |
 
-An ADR or migration-plan statement may not silently override a functional
-requirement. A deliberate behavior change requires:
+A target-design, ADR, or migration-plan statement may not silently override a
+functional requirement. A deliberate behavior change requires:
 
 1. an approved `preserve`, `fix`, or `retire` disposition;
 2. the affected requirement and test rows updated in the traceability matrix;
@@ -39,6 +40,7 @@ functional specification's completeness boundary remains binding.
 | Document | Version/status | Owner role | Approval required from |
 |---|---|---|---|
 | Functional specification | 0.5 / controlled working baseline | Product/domain owner | Product, legacy technical, test/quality |
+| Modern web system design | 0.1 / controlled working design baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
 | Migration master | 0.4 / controlled working baseline | Migration technical lead | Product, security, database, operations, test/quality |
 | Requirement traceability | Generated working matrix | Test/quality owner | Owners of linked evidence and tests |
 | Non-functional requirements | 0.1 / provisional acceptance floor | Migration technical lead | Product, security, operations, UI/workflow |
@@ -83,6 +85,7 @@ developer or build agent.
 | 2026-09-06 | Functional specification 0.4 | Clarified full framework scope, portability, baseline identity, NFRs, and traceability | Controlled; approval pending |
 | 2026-09-06 | Functional specification 0.5 | Established the metadata schema as reconstructed primary evidence and narrowed outstanding metadata evidence to deployed rows and physical DDL confirmation | Controlled; approval pending |
 | 2026-09-06 | Migration master 0.4 | Aligned scope, risks, gates, and discovery terminology with the reconstructed metadata schema contract | Controlled; approval pending |
+| 2026-09-06 | Modern web system design 0.1 | Defined the complete technology-neutral browser, service, metadata, data, security, integration, operations, migration, and acceptance architecture | Controlled; approval pending |
 
 ## 7. Approval record
 

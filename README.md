@@ -11,11 +11,13 @@ and phase exit criteria have approved evidence.
 
 1. [Functional specification](docs/GDFramework%20Functional%20Specification.md)
    is normative for observable behavior, compatibility, and functional scope.
-2. [Migration master plan and design](docs/MIGRATION_MASTER.md) is normative for
+2. [Modern web system design](docs/MODERN_WEB_SYSTEM_DESIGN.md) is normative for
+   the target web architecture and implementation boundaries.
+3. [Migration master plan and design](docs/MIGRATION_MASTER.md) is normative for
    governance, architecture, sequencing, and quality gates. It may not silently
    override a functional requirement.
-3. Approved records under `docs/adr` govern individual technical decisions.
-4. [Document control](docs/DOCUMENT_CONTROL.md) defines approval, versioning,
+4. Approved records under `docs/adr` govern individual technical decisions.
+5. [Document control](docs/DOCUMENT_CONTROL.md) defines approval, versioning,
    precedence, and change history for the set.
 
 Supporting controlled artifacts:
@@ -49,8 +51,10 @@ separately approved stabilization change is required.
 
 - Functional specification: Controlled working baseline 0.5; framework and
   metadata-schema scope complete, deployed row/runtime expansion pending
+- Modern web system design: Controlled working baseline 0.1; complete logical
+  target design, concrete technology ADRs pending
 - Consolidated design and plan: Controlled working baseline 0.4
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
-- Target UI: Not decided
+- Target UI: Modern web application selected; implementation framework pending
 - Deployment topology: Not decided

@@ -6,6 +6,7 @@
 **Legacy source baseline:** `${LEGACY_SOURCE_ROOT}`; see [LEGACY_BASELINE.md](LEGACY_BASELINE.md)  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Functional baseline:** [GDFramework Functional Specification 0.5](GDFramework%20Functional%20Specification.md)  
+**Target design:** [GDFramework Modern Web System Design 0.1](MODERN_WEB_SYSTEM_DESIGN.md)  
 **Document control:** [DOCUMENT_CONTROL.md](DOCUMENT_CONTROL.md)  
 **Consolidates:** `README.md` and the superseded 0.1 design/plan under `docs/archive`
 
@@ -23,11 +24,13 @@ is authoritative until the applicable evidence, decisions, and phase exit
 criteria in this document have been reviewed and approved.
 
 The functional specification is normative for observable behavior,
-compatibility, and functional scope. This master is normative for governance,
-architecture, sequencing, and quality gates, but may not silently override a
-functional requirement. An intentional difference requires an approved defect
-disposition or ADR linked from the requirement traceability matrix. The original
-design and plan are superseded historical records under `docs/archive`.
+compatibility, and functional scope. The modern web system design is normative
+for the target logical architecture and implementation boundaries. This master
+is normative for governance, sequencing, decisions, risks, and quality gates,
+but may not silently override a functional requirement or target-design
+boundary. An intentional difference requires an approved defect disposition or
+ADR linked from the requirement traceability matrix. The original design and
+plan are superseded historical records under `docs/archive`.
 
 ### 1.1 Current status
 
@@ -38,7 +41,7 @@ design and plan are superseded historical records under `docs/archive`.
 | Requirement traceability | All functional/defect IDs inventoried; source-area and planned-test mapping generated; deployed row, physical DDL, and runtime evidence remains pending where marked |
 | Phase 0 | Started: Git repository and initial controlled artifacts established; production provenance and deployed-consumer evidence remain open |
 | Replacement code | Not started |
-| Target UI | Not decided |
+| Target UI | Modern web application selected; UI framework/design system pending ADR and accessibility/performance spike |
 | Service transport and deployment topology | Not decided |
 | Canonical production VB6 source/binary | Not yet proven |
 | Reproducible legacy environment | Not yet available |
@@ -313,9 +316,11 @@ Named individuals may fill multiple roles, but every responsibility must exist.
 
 ## 7. Proposed logical architecture
 
-The final runtime and host are open decisions, but the following separation
-shall hold whether the modern boundary uses HTTP, gRPC, a Windows service, a
-container, IIS, or an in-process compatibility component.
+The target client is a modern web application as defined in
+[MODERN_WEB_SYSTEM_DESIGN.md](MODERN_WEB_SYSTEM_DESIGN.md). The final runtime,
+web framework, and host remain open decisions, but the following separation
+shall hold whether the service boundary uses HTTP, gRPC for controlled internal
+integration, a managed process, or a container.
 
 ```mermaid
 flowchart TB
@@ -948,7 +953,7 @@ new evidence does not silently close a risk.
 
 | ID | Decision and evidence required | Owner | Required by | Status | ADR |
 |---|---|---|---|---|---|
-| D-001 | Target UI: compare browser, native desktop, and hybrid choices against workflows, Windows/Office/printing, accessibility, control, and offline constraints. | UI/workflow owner | Phase 6 entry | Open | Pending |
+| D-001 | Web target selected. Choose the browser framework and design system through an accessibility/performance spike covering generic grid, form, tree, dialog, splitter, lookup, chart, command, printing, and download workflows. | UI/workflow owner | Phase 6 entry | Direction selected; framework ADR pending | Pending |
 | D-002 | Service transport: compare HTTP/JSON, gRPC, messaging, and in-process boundaries against consumers, hosting, diagnostics, and compatibility. | Migration technical lead | Gate C | Open | Pending |
 | D-003 | Host topology: select managed service/process/container topology from operational and network constraints. | Operations owner | Gate C | Open | Pending |
 | D-004 | Supported providers: confirm production use and retirement/support intent for SQL Server, Sybase, Oracle, Access, XML, and plugins. | Database owner | Gate C for first provider; Gate E for all | Open | Pending |
