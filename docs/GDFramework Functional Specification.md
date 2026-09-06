@@ -1,6 +1,6 @@
 # GD Framework Functional Specification
 
-Document status: Controlled working baseline 0.4 (framework scope complete; deployed-application expansion pending evidence)  
+Document status: Controlled working baseline 0.5 (framework and metadata-schema scope complete; deployed configuration/runtime expansion pending evidence)  
 Prepared: 1 August 2026; reviewed and controlled: 6 September 2026  
 System lineage reviewed: GD Framework 1.0–1.2, GFDGUI, GFDClient, GFDServer, GFDGUICtls  
 Primary purpose: technology-neutral behavioral specification for re-platforming
@@ -30,18 +30,18 @@ The specification has four goals:
 
 ## 2. Completeness boundary
 
-The source code specifies the framework engine. It does not contain the complete definition of any deployed GD application. Application names, menus, screen instances, fields, SQL, stored procedures, roles, users, validation rules, value lists, report definitions, and most business actions are stored in the GD metadata database.
+The source code and metadata database schema together specify the framework engine and the configuration grammar used to construct GD applications. The schema is sufficient to infer the metadata entities, keys, relationships, option fields, and assembly rules for application groups, applications, navigation, screens, controls, DataClasses, parameters, security, reports, messages, and personalization. Section 28 records that reconstructed metadata contract.
 
-Therefore, this baseline captures the behavior and historical intent discoverable from the supplied source and documents, with uncertainty classified explicitly. A complete specification of every deployed application additionally requires:
+The schema does not, by itself, identify the populated configuration of a particular deployment. Application names, active menu and screen instances, field definitions, literal SQL or procedure names stored in DataClass rows, role assignments, user overrides, value-list contents, report instances, and configured business actions depend on the rows held in that deployment. Therefore, this baseline distinguishes the reconstructed metadata model from the still-unavailable deployed metadata population. A complete enumeration of every deployed application additionally requires:
 
-- an export of every active GD metadata table;
-- database schemas, views, stored procedures, and functions referenced by DataClasses;
+- a read-only export of the active rows from every populated GD metadata table, preserving keys and relationships;
+- schemas, views, stored procedures, and functions in application databases referenced by those rows;
 - examples of each user role and its effective permissions;
 - external helper DLLs and service-adapter implementations;
 - representative runtime data and screenshots;
 - access to a functioning legacy environment for behavioral verification.
 
-Until those sources are supplied, requirements marked `METADATA-DEPENDENT` or `RUNTIME-VERIFY` are framework contracts rather than enumerations of deployed screens.
+Until those sources are supplied, requirements marked `METADATA-DEPENDENT` describe schema-derived configuration behavior but cannot yet enumerate which application-specific instances are active in a deployment. Requirements marked `RUNTIME-VERIFY` still require observation of exact executable behavior.
 
 ## 3. Evidence and classification
 
@@ -81,7 +81,9 @@ Until those sources are supplied, requirements marked `METADATA-DEPENDENT` or `R
 | Value | Meaning |
 |---|---|
 | `VERIFIED` | Implemented behavior is directly traceable in source. |
-| `METADATA-DEPENDENT` | Engine support is verified, but actual deployed behavior depends on unavailable metadata. |
+| `SCHEMA-INFERRED` | The metadata structure or relationship is reconstructed from the database schema, metadata reference, physical-object inventory, and source usage. |
+| `METADATA-DEPENDENT` | The metadata model is known, but the exact deployed configuration depends on populated metadata rows not present in the reviewed repository. |
+| `PHYSICAL-DDL-VERIFY` | Logical behavior is known, but production DDL must confirm storage-level types, constraints, defaults, indexes, or triggers before persistence is rebuilt. |
 | `RUNTIME-VERIFY` | Source intent is clear but exact observable behavior requires execution. |
 | `DOCUMENTED-ONLY` | Historical documentation claims the feature, but implementation was not found. |
 | `DORMANT` | Compiled or retained code has no active call path. |
@@ -1118,7 +1120,9 @@ The generic builder sets `Frozen=True` while adding option-dependent commands an
 
 ## 28. Metadata dictionary
 
-This section defines the minimum logical metadata model. Physical names may change in the replacement, but the semantics and relationships must be retained or explicitly migrated.
+This section defines the reconstructed logical metadata model. It is inferred from the metadata database schema lineage, the Metadata Reference and Programmer's Guide, the archived physical-object inventory, the recordsets requested by the client/server, and the fields consumed by the generic UI. Together these sources establish the configuration grammar independently of any particular deployment's row values. Physical names may change in the replacement, but the semantics, keys, relationships, ordering, option interpretation, and null/default behavior must be retained or explicitly migrated.
+
+The schema reconstruction is complete for the repository-visible framework contract. Production DDL remains useful as confirmation of exact physical types, indexes, defaults, constraints, and later deployment-specific additions; populated rows are required only to enumerate actual configured applications and their instances.
 
 ### 28.1 `dsp_app_grp` — application group
 
@@ -1234,9 +1238,9 @@ Required semantics include application/screen/column identity, optional subkey, 
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-META-001 | The archived object workbook shall be treated as physical-schema lineage evidence, not as the authoritative migration schema. | HISTORICAL |
-| FR-META-002 | Migration discovery shall reconcile every production metadata table and column against the logical model in this specification and record added, renamed, deprecated, defaulted, and computed attributes. | METADATA-DEPENDENT / REPLACEMENT REQUIREMENT |
-| FR-META-003 | Indexes and uniqueness rules shall be recovered from the production database DDL; the workbook exposes some ordered index fields but does not establish the complete constraint, foreign-key, or cascade contract. | METADATA-DEPENDENT |
+| FR-META-001 | The archived object workbook shall be treated as physical-schema lineage evidence contributing to the reconstructed metadata contract, not as its sole authority. | HISTORICAL / SCHEMA-INFERRED |
+| FR-META-002 | The logical metadata entities, attributes, relationships, ordering, and option semantics defined in sections 28.1–28.11 shall be the schema-derived migration baseline. Production metadata DDL shall be reconciled against it to record deployment-specific additions, renames, deprecations, physical defaults, and computed attributes. | SCHEMA-INFERRED / REPLACEMENT REQUIREMENT |
+| FR-META-003 | Known keys and relationships shall be inferred from schema lineage and source joins. Production DDL shall confirm exact physical types, indexes, uniqueness, foreign-key enforcement, defaults, and cascade behavior before metadata storage is implemented. | SCHEMA-INFERRED / PHYSICAL-DDL-VERIFY |
 | FR-META-004 | The archived enhancement spreadsheet contributes no issue rows and shall not be interpreted as evidence that the legacy issue backlog was empty. | HISTORICAL |
 | FR-META-005 | The five foreign keys in `foreignkeys.sql` relate `gd_app`, `gd_table`, `gd_column`, `gd_column_datatype`, and `gd_data`. No reviewed project source refers to those objects, so they shall remain a separate historical generic-datastore/workflow lineage until production database evidence proves otherwise. | HISTORICAL / OUT-OF-SCOPE |
 
@@ -1399,8 +1403,8 @@ Tests shall exercise observable behavior with real implementations, protocol-lev
 
 | Priority | Evidence | Why it is required |
 |---:|---|---|
-| 1 | Full metadata database export with table schemas | Enumerates actual applications, screens, fields, SQL, permissions, reports, and options. |
-| 2 | Referenced database DDL/views/procedures/functions | Specifies business calculations, actions, validation, and mutation behavior. |
+| 1 | Active metadata row export, preserving keys and relationships | Instantiates the already-reconstructed schema model and enumerates actual applications, screens, fields, configured SQL/procedure references, permissions, reports, and options. |
+| 2 | Production metadata DDL and referenced application-database DDL/views/procedures/functions | Confirms physical types, indexes, defaults and constraints, then specifies referenced business calculations, actions, validation, and mutation behavior. |
 | 3 | Working legacy runtime and dependency manifest | Confirms exact UI, popup, docking, formatting, printing, error, and edge-case behavior. |
 | 4 | All deployed helper/service DLLs and registration map | Determines which extension contracts are truly required. |
 | 5 | Role/user matrix using sanitized representative users | Derives effective authorization cases. |
@@ -1409,7 +1413,7 @@ Tests shall exercise observable behavior with real implementations, protocol-lev
 
 ### 34.2 Specification expansion deliverables
 
-Once metadata is available, this document shall be expanded with:
+Once the populated deployment metadata is available, this document shall be expanded with:
 
 - a catalog entry for every application group and application;
 - every role and effective capability matrix;
@@ -1422,11 +1426,11 @@ Once metadata is available, this document shall be expanded with:
 - one system message and administrative workflow catalog;
 - field-level validation, default, formatting, lookup, and editability rules;
 - representative screenshots and acceptance scenarios;
-- completion of the generated [requirements-to-source/metadata/test traceability matrix](REQUIREMENTS_TRACEABILITY.md), replacing each pending evidence/test status as deployed metadata and executable fixtures become available.
+- completion of the generated [requirements-to-source/metadata/test traceability matrix](REQUIREMENTS_TRACEABILITY.md), replacing each pending evidence/test status as deployed metadata rows, physical DDL, and executable fixtures become available.
 
 ## 35. Current coverage statement
 
-This baseline covers the framework feature surface visible in every supplied project manifest, the project-member source, retained source-only components, interface/control/harness projects, the active and alternate GUI projects, retained binaries and embedded type libraries, zip/release snapshots, linked UI resources, configuration/SQL/developer artifacts, the primary and historical PLM document sets, the available Word backup/temp snapshots, and the archived spreadsheet/presentation evidence. It includes the complete repository-visible public contract of each custom control and an explicit map of how the active shell, generic form, retained source-only screens, historical shell, and smoke harness consume—or do not consume—those controls. “Covered” means classified and traceable; it does not mean every retained file was shipped or every historical intention was implemented. The supplied snapshot is not a reproducible clean-build baseline because manifests, source generations, compatibility settings, external dependencies, and binary identities disagree. It also does not enumerate deployed application behavior stored outside the repository. The metadata/database/runtime discovery in section 34 remains mandatory before the phrase “application in its entirety” can be satisfied without qualification.
+This baseline covers the framework feature surface visible in every supplied project manifest, the project-member source, retained source-only components, interface/control/harness projects, the active and alternate GUI projects, retained binaries and embedded type libraries, zip/release snapshots, linked UI resources, configuration/SQL/developer artifacts, the primary and historical PLM document sets, the available Word backup/temp snapshots, and the archived spreadsheet/presentation evidence. It includes the complete repository-visible public contract of each custom control, an explicit map of how the active shell and generic form consume those controls, and the reconstructed metadata schema contract that drives application generation. “Covered” means classified and traceable; it does not mean every retained file was shipped or every historical intention was implemented. The supplied snapshot is not a reproducible clean-build baseline because manifests, source generations, compatibility settings, external dependencies, and binary identities disagree. It also does not enumerate the deployment-specific metadata rows and referenced business-database behavior stored outside the repository. The row-population, referenced-database, and runtime discovery in section 34 remains mandatory before a named deployed application can be claimed as specified “in its entirety.”
 
 ## 36. Source traceability index
 

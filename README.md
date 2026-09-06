@@ -47,9 +47,9 @@ separately approved stabilization change is required.
 
 ## Current status
 
-- Functional specification: Controlled working baseline 0.4; framework scope
-  complete, deployed-application expansion pending external evidence
-- Consolidated design and plan: Controlled working baseline 0.3
+- Functional specification: Controlled working baseline 0.5; framework and
+  metadata-schema scope complete, deployed row/runtime expansion pending
+- Consolidated design and plan: Controlled working baseline 0.4
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Target UI: Not decided

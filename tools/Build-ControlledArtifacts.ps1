@@ -90,7 +90,7 @@ $sourceMap = @{
     'CTL'='Functional specification source index: Complete custom-control API and UI integration'
     'AGG'='Functional specification source index: Aggregation engine'
     'LIMIT'='Functional specification source index: Limit-processing server'
-    'META'='Functional specification §28 plus historical metadata documents; deployed rows pending'
+    'META'='Functional specification §28 reconstructed metadata schema; deployed row population and physical DDL confirmation tracked separately'
     'PROJ'='Functional specification source index: Project membership/build variants'
     'DEP'='Functional specification §38 and project references'
     'CMD'='Functional specification source index: Command parser and option constants'
@@ -130,13 +130,15 @@ foreach ($line in Get-Content -LiteralPath $SpecPath) {
         $prefix = Get-RequirementPrefix $id
         $evidence = if ($sourceMap.ContainsKey($prefix)) { $sourceMap[$prefix] } else { 'Functional specification source index §36; mapping requires refinement' }
         $runtime = if ($classification -match 'METADATA-DEPENDENT') {
-            'Required: deployed metadata/database catalogue row pending'
+            'Schema contract present; deployed configuration rows/catalogue entry pending'
+        } elseif ($classification -match 'PHYSICAL-DDL-VERIFY') {
+            'Required: production metadata physical DDL confirmation pending'
         } elseif ($classification -match 'RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') {
             'Required: runtime/provenance evidence pending'
         } else {
             'Framework source evidence present; deployed-use confirmation applies where relevant'
         }
-        $status = if ($classification -match 'METADATA-DEPENDENT|RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Discovery evidence pending; test not implemented' } else { 'Source-specified; test not implemented' }
+        $status = if ($classification -match 'METADATA-DEPENDENT|PHYSICAL-DDL-VERIFY|RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Discovery evidence pending; test not implemented' } else { 'Source-specified; test not implemented' }
         $rows += [pscustomobject]@{Id=$id;Spec=if($subsection){$subsection}else{$section};Line=$lineNumber;Classification=$classification;Source=$evidence;Runtime=$runtime;Test="AT-$id";Phase=Get-TargetPhase $prefix;Status=$status}
     } elseif ($line -match '^\|\s*(DEF-\d+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$') {
         $id = $Matches[1]

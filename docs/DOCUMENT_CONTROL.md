@@ -38,8 +38,8 @@ functional specification's completeness boundary remains binding.
 
 | Document | Version/status | Owner role | Approval required from |
 |---|---|---|---|
-| Functional specification | 0.4 / controlled working baseline | Product/domain owner | Product, legacy technical, test/quality |
-| Migration master | 0.3 / controlled working baseline | Migration technical lead | Product, security, database, operations, test/quality |
+| Functional specification | 0.5 / controlled working baseline | Product/domain owner | Product, legacy technical, test/quality |
+| Migration master | 0.4 / controlled working baseline | Migration technical lead | Product, security, database, operations, test/quality |
 | Requirement traceability | Generated working matrix | Test/quality owner | Owners of linked evidence and tests |
 | Non-functional requirements | 0.1 / provisional acceptance floor | Migration technical lead | Product, security, operations, UI/workflow |
 | Legacy baseline and inventories | 0.1 / initial repository snapshot | Legacy technical owner | Legacy technical and operations |
@@ -81,6 +81,8 @@ developer or build agent.
 | 2026-08-01 | Functional specification 0.3 | Repository, source-lineage, control, and UI-integration audit | Superseded by 0.4 |
 | 2026-09-06 | Migration master 0.3 | Corrected authority, gates, portability, technology neutrality, risks, and controlled artifacts | Controlled; approval pending |
 | 2026-09-06 | Functional specification 0.4 | Clarified full framework scope, portability, baseline identity, NFRs, and traceability | Controlled; approval pending |
+| 2026-09-06 | Functional specification 0.5 | Established the metadata schema as reconstructed primary evidence and narrowed outstanding metadata evidence to deployed rows and physical DDL confirmation | Controlled; approval pending |
+| 2026-09-06 | Migration master 0.4 | Aligned scope, risks, gates, and discovery terminology with the reconstructed metadata schema contract | Controlled; approval pending |
 
 ## 7. Approval record
 
@@ -94,4 +96,3 @@ developer or build agent.
 | Operations owner | Unassigned | Pending | — |
 | Test/quality owner | Unassigned | Pending | — |
 | UI/workflow owner | Unassigned | Pending | — |
-

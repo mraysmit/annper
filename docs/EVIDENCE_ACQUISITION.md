@@ -1,16 +1,19 @@
 # GDFramework Deployed-Application Evidence Acquisition
 
 **Status:** Active discovery register  
-**Version:** 0.1  
+**Version:** 0.2  
 **Date:** 6 September 2026
 
-The repository-visible framework specification cannot enumerate deployed
-applications without the evidence below. These are controlled Gate B inputs,
-not optional research tasks.
+The metadata database schema has been reconstructed in functional specification
+section 28 and is sufficient to define how metadata drives the generic
+application. The evidence below is needed to instantiate that known model for
+named deployments and to verify physical database and runtime details. These
+are controlled gate inputs, not optional research tasks.
 
 | ID | Evidence package | Owner | Priority/gate | Secure collection and completion criterion | Status |
 |---|---|---|---|---|---|
-| EV-001 | Full active GD metadata database | Database owner | Critical / Gate B | Export schema plus sanitized rows for every table; preserve IDs/relationships/options; secrets redacted and separately referenced | Pending |
+| EV-001 | Active GD metadata row population | Database owner | Critical / Gate B | Read-only export of sanitized rows for every populated metadata table; preserve IDs, relationships, ordering, option values, and inactive records needed for interpretation; secrets redacted and separately referenced | Schema model complete; deployed rows pending |
+| EV-001A | Production metadata physical DDL | Database owner | High / before replacement metadata persistence | DDL confirms exact physical types, nullability, defaults, indexes, uniqueness, foreign-key enforcement, cascades, triggers, and deployment-specific additions against functional specification section 28 | Logical schema inferred; physical confirmation pending |
 | EV-002 | Referenced application database objects | Database owner | Critical / Gate B per slice | DDL for tables/views/procedures/functions, result schemas, permissions, dependencies, and side effects for every active DataClass/action | Pending |
 | EV-003 | Reproducible legacy runtime | Legacy technical owner | Critical / Gate B | Controlled VM/image, OS/runtime/OCX registration, installers, configuration template, build/run instructions, and repeatable selected scenarios | Pending |
 | EV-004 | Deployed EXE/DLL/OCX/type libraries | Operations owner | Critical / Gate A | File hashes, versions, LIBIDs/CLSIDs/ProgIDs, bitness, registered locations, machine/application consumers, and deployment manifest | Pending |
@@ -34,6 +37,12 @@ not optional research tasks.
 - A package is complete only when another authorized team member can reproduce
   or inspect it from the recorded instructions.
 
+The absence of EV-001 rows does not reopen the metadata schema model. It limits
+only the enumeration of actual deployed applications, screens, DataClasses,
+permissions, reports, and user-specific configuration. EV-001A may refine
+physical storage details but may not silently change the functional semantics
+already reconstructed from schema and source evidence.
+
 ## Application-completeness rule
 
 A deployed application may be marked fully specified only when it has:
@@ -45,4 +54,3 @@ A deployed application may be marked fully specified only when it has:
 5. representative role-based runtime evidence;
 6. acceptance scenarios and test IDs; and
 7. no unresolved critical metadata, runtime, or defect-disposition gap.
-

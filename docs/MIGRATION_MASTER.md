@@ -1,11 +1,11 @@
 # GDFramework Migration Master Plan and Design
 
 **Status:** Controlled working baseline  
-**Version:** 0.3  
+**Version:** 0.4  
 **Date:** 6 September 2026  
 **Legacy source baseline:** `${LEGACY_SOURCE_ROOT}`; see [LEGACY_BASELINE.md](LEGACY_BASELINE.md)  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
-**Functional baseline:** [GDFramework Functional Specification 0.4](GDFramework%20Functional%20Specification.md)  
+**Functional baseline:** [GDFramework Functional Specification 0.5](GDFramework%20Functional%20Specification.md)  
 **Document control:** [DOCUMENT_CONTROL.md](DOCUMENT_CONTROL.md)  
 **Consolidates:** `README.md` and the superseded 0.1 design/plan under `docs/archive`
 
@@ -33,9 +33,9 @@ design and plan are superseded historical records under `docs/archive`.
 
 | Area | Status |
 |---|---|
-| Consolidated design and plan | Controlled working baseline 0.3 |
-| Functional reverse-engineering baseline | Version 0.4; repository-visible framework, generic UI, and custom-control behavior documented; deployed metadata/runtime discovery remains open |
-| Requirement traceability | All functional/defect IDs inventoried; source-area and planned-test mapping generated; runtime/metadata evidence remains pending where marked |
+| Consolidated design and plan | Controlled working baseline 0.4 |
+| Functional reverse-engineering baseline | Version 0.5; framework, generic UI, custom controls, and metadata schema contract documented; deployment-specific row and runtime discovery remains open |
+| Requirement traceability | All functional/defect IDs inventoried; source-area and planned-test mapping generated; deployed row, physical DDL, and runtime evidence remains pending where marked |
 | Phase 0 | Started: Git repository and initial controlled artifacts established; production provenance and deployed-consumer evidence remain open |
 | Replacement code | Not started |
 | Target UI | Not decided |
@@ -49,12 +49,15 @@ The legacy source is the behavioral reference during discovery and
 characterization. It must not be modified merely to make replacement easier
 unless a separately approved stabilization change is required.
 
-Repository source alone is not a complete definition of deployed applications.
-The metadata database, application databases, helper components, deployed
-binaries, user roles, runtime configuration, screenshots, and a functioning
-legacy environment remain necessary evidence. Calendar commitments should not
-be inferred until that scope is known. Collection ownership and completion
-criteria are controlled in [EVIDENCE_ACQUISITION.md](EVIDENCE_ACQUISITION.md).
+Repository source plus the reconstructed metadata database schema defines how
+applications are generated. The remaining application-specific evidence is the
+populated metadata row set, production physical DDL, referenced application
+database objects, helper components, deployed binaries, effective role
+assignments, runtime configuration, screenshots, and a functioning legacy
+environment. Calendar commitments should not be inferred until the active
+deployment population and consumers are known. Collection ownership and
+completion criteria are controlled in
+[EVIDENCE_ACQUISITION.md](EVIDENCE_ACQUISITION.md).
 
 ## 2. Executive direction
 
@@ -912,7 +915,7 @@ flowchart LR
     Coverage --> Retire
 ```
 
-The critical path begins with provenance, deployed metadata/consumer discovery,
+The critical path begins with provenance, deployed metadata-row/consumer discovery,
 behavior fixtures, and architecture decisions. UI implementation is
 intentionally not on the early critical path, but UI/control reverse engineering
 is an early evidence activity.
@@ -933,7 +936,7 @@ is an early evidence activity.
 | R-010 | Compatibility becomes permanent | High | Product/domain owner | Open | 2026-09-30 | Approve duration/owner, time-box support, and measure every legacy call. |
 | R-011 | No production-like test data creates false parity confidence | High | Test/quality owner | Open | 2026-09-30 | Obtain curated anonymized data or a controlled integration environment. |
 | R-012 | Unmanaged SDK/toolchain creates workstation-specific builds | High | Operations owner | Open | 2026-09-30 | Approve D-008 and pin toolchain/dependencies/CI image before scaffolding. |
-| R-013 | Missing deployed metadata leaves application behavior unspecified | Critical | Database owner | Open | 2026-09-30 | Export all active metadata and make it Gate B evidence; see [dataset catalogue](DATASET_CATALOG.md). |
+| R-013 | Missing deployed metadata rows prevent enumeration of which schema-defined application behavior is active | Critical | Database owner | Open | 2026-09-30 | Export all active metadata rows and populate the schema-derived catalogue as Gate B evidence; see [dataset catalogue](DATASET_CATALOG.md). |
 | R-014 | Historical features are mistaken for active scope | Medium | Product/domain owner | Controlled | 2026-09-30 | Require a consumer/runtime record or explicit product decision before inclusion. |
 | R-015 | Control behavior is simplified prematurely and generic UI parity fails | High | UI/workflow owner | Controlled | 2026-09-30 | Use functional sections 15 and 26 plus requirement-level acceptance mappings. |
 
@@ -973,7 +976,7 @@ Accepted decisions are recorded as ADRs under `docs/adr`.
 
 - Representative dataset, control, and workflow fixtures are repeatable.
 - Provider/data-type/security/event/persistence edge cases are covered.
-- Deployed metadata required for the slice is exported.
+- Deployed metadata rows required for the slice are exported and validated against the reconstructed schema contract.
 - Defect dispositions are approved.
 
 ### Gate C — Architecture approved
@@ -1056,7 +1059,7 @@ This master design is ready to govern implementation when:
 
 - Current-system inventory has named owners and evidence.
 - Canonical source and deployed binary lineage are approved for the first slice.
-- Deployed metadata and database objects required by the slice are available.
+- Deployed metadata rows and referenced database objects required by the slice are available.
 - Decisions D-002 through D-009 and D-011 applicable to the first slice are
   resolved or safely deferred. D-001 is required only for Phase 6, D-012 for
   Phase 5, and D-010 before any schema change.
