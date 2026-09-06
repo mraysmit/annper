@@ -79,7 +79,8 @@
       display: flex; align-items: center; gap: 16px; padding: 0 18px;
       background: var(--surface); border-bottom: 1px solid var(--line); z-index: 20;
     }
-    .brand { display: flex; align-items: center; gap: 11px; min-width: 224px; }
+    .brand { display: flex; align-items: center; gap: 11px; min-width: 224px; border: 1px solid transparent; background: transparent; color: var(--text); padding: 4px 6px; margin-left: -6px; border-radius: 10px; text-align: left; cursor: pointer; transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease; }
+    .brand:hover { background: var(--surface-2); border-color: var(--line-strong); box-shadow: 0 2px 7px color-mix(in srgb, var(--brand) 10%, transparent); }
     .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; color: #fff; background: linear-gradient(145deg, #385ad4, #0aa388); box-shadow: var(--shadow-soft); font-weight: 700; letter-spacing: -.04em; }
     .brand-copy { line-height: 1.1; }
     .brand-copy strong { display: block; font-size: 14px; font-weight: 650; }
@@ -421,10 +422,10 @@
   <div id="app">
     <header class="topbar">
       <button class="icon-button hidden" id="mobileNavButton" aria-label="Open navigation">☰</button>
-      <div class="brand" aria-label="GD Workspace">
+      <button class="brand" id="homeButton" type="button" aria-label="Return to GD Workspace home" title="Workspace home">
         <div class="brand-mark" aria-hidden="true">GD</div>
         <div class="brand-copy"><strong>GD Workspace</strong><span>Metadata application platform</span></div>
-      </div>
+      </button>
       <div class="app-picker"><label class="sr-only" for="appSelect">Application</label><select id="appSelect"></select></div>
       <div class="topbar-spacer"></div>
       <div class="quick-search"><label class="sr-only" for="quickSearch">Find a screen</label><input id="quickSearch" type="search" placeholder="Find a screen…" autocomplete="off"></div>
@@ -798,6 +799,17 @@
       renderAll();
     }
 
+    function goHome() {
+      const hasUnsaved = state.tabs.some(t => screenState(t.screenId).dirty);
+      if (hasUnsaved && !confirm('One or more screens have unsaved changes. Discard them and return to Workspace home?')) return;
+      state.tabs = [];
+      state.activeTab = null;
+      renderAll();
+      hostEl.focus({preventScroll:true});
+      setStatus('Workspace home ready');
+      sidebar.classList.remove('mobile-open');
+    }
+
     function renderTabs() {
       tabsEl.innerHTML = state.tabs.length ? state.tabs.map(t => {
         const dirty = screenState(t.screenId).dirty;
@@ -1062,6 +1074,7 @@
     });
 
     appEl.addEventListener('change',()=>{});
+    document.getElementById('homeButton').addEventListener('click',goHome);
     document.getElementById('messageButton').addEventListener('click',openDrawer);
     document.getElementById('themeButton').addEventListener('click',()=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('gd-theme',next);toast(`${titleCase(next)} theme enabled`);});
     document.getElementById('helpButton').addEventListener('click',()=>showModal('About this interactive mockup',`<p>This single-file prototype demonstrates the modern metadata-driven GDFramework design.</p><ul><li>Use the application selector to switch between Operations and Risk.</li><li>Open screens from the left navigation; each becomes a closable tab.</li><li>Try grid filtering, sorting, selection, add/edit/delete, grouping, columns, export and print.</li><li>The customer form includes validation and a working account-manager lookup.</li><li>Inventory demonstrates master-detail behavior; Regional hierarchy demonstrates tree-detail.</li><li>Customer products demonstrates a junction editor; Sales demonstrates charts.</li><li>Actions run a simulated server workflow with progress and structured results.</li></ul><p>All data and metadata is embedded as JSON and remains local to this browser page.</p>`,[{label:'Close',primary:true,action:closeModal}]));
