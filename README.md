@@ -33,14 +33,20 @@ Supporting controlled artifacts:
 - [Legacy defect dispositions](docs/DEFECT_DISPOSITION.md)
 - [Deployed-application evidence acquisition](docs/EVIDENCE_ACQUISITION.md)
 
-## Interactive prototype
+## Interactive prototypes
 
-[Open the single-file GDFramework web mockup](prototype/gdframework-web-mockup.html).
-It runs locally without a server or external assets and embeds its metadata and
-mock data sources as JSON. The prototype demonstrates the shell, navigation,
-tabs, all seven screen families, generic controls, CRUD, filtering, lookup,
-master-detail, actions, tree/detail, junction editing, charts, messages,
-personalization, export, print, responsive layout, and light/dark themes.
+- [Open the single-file GDFramework runtime mockup](prototype/gdframework-web-mockup.html).
+  It demonstrates the end-user shell, navigation, tabs, all seven screen
+  families, generic controls, CRUD, filtering, lookup, master-detail, actions,
+  tree/detail, junction editing, charts, messages, personalization, export,
+  print, responsive layout, and light/dark themes.
+- [Open the single-file GD Studio administration mockup](prototype/gdframework-admin-mockup.html).
+  It demonstrates metadata-driven application, navigation, screen, field,
+  command, DataClass, connection, value-list, report, security, validation,
+  version, publication, rollback, and audit configuration workflows.
+
+Both prototypes run locally without a server or external assets and embed their
+metadata and representative data sources as JSON.
 
 The original 0.1 drafts are retained under `docs/archive` for historical
 traceability only.
