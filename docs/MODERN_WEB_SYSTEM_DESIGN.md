@@ -1,13 +1,22 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.1  
-**Date:** 6 September 2026  
+**Status:** Controlled working design baseline 0.3  
+**Date:** 10 September 2026  
+**Owner:** Migration technical lead  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
-**Functional authority:** [GD Framework Functional Specification 0.5](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Migration Master Plan and Design 0.4](MIGRATION_MASTER.md)  
-**Technology status:** Product and framework selections intentionally deferred; browser and web-platform architecture selected
+**Functional authority:** [GD Framework Functional Specification 0.7](GDFramework%20Functional%20Specification.md)  
+**Delivery authority:** [GDFramework Migration Master Plan and Design 0.6](MIGRATION_MASTER.md)  
+**Technology status:** Web direction is selected (D-001, MIGRATION_MASTER.md section 17); framework and product selections remain deferred to ADRs
 
-**Interactive references:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html)
+**Interactive references (non-normative illustrations):** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). The mockups illustrate this design; where they and this document differ, this document governs.
+
+## Change history
+
+| Version | Date | Summary |
+|---|---|---|
+| 0.1 | 2026-09-06 | Initial complete design baseline |
+| 0.2 | 2026-09-09 | Requirement/NFR citations per section, candidate labelling for open decisions (D-002, D-003, D-005, D-007), unified component vocabulary, session-model reconciliation, metadata compatibility-range definition, printing default, online-only clarification, document-reference updates, change history |
+| 0.3 | 2026-09-10 | Version citations corrected; screen-lifecycle diagram completed (refreshing, forbidden, data-error exits); compatibility major version defined; unsaved-change protocol defined; Preference/Message/Report services added to the controlled vocabulary; section 34 decisions mapped to register IDs D-013..D-016; testing rule stated normatively |
 
 ## 1. Purpose and authority
 
@@ -27,7 +36,7 @@ This document governs target-system structure. The functional specification
 remains normative for observable behavior and compatibility. If this design and
 a functional requirement conflict, the functional requirement prevails until
 an approved decision changes it. Legacy defects are not automatically preserved;
-their outcomes are controlled in [DEFECT_DISPOSITION.md](DEFECT_DISPOSITION.md).
+their outcomes are controlled by the defect disposition table (DEF-001..DEF-037) in [functional specification section 31](GDFramework%20Functional%20Specification.md#31-legacy-defects-and-compatibility-decisions) under policy decision D-011.
 
 ## 2. Design scope
 
@@ -168,11 +177,11 @@ flowchart LR
 | Container | Responsibility | Scaling/state model |
 |---|---|---|
 | Web client | Shell, renderer, interaction state, accessibility, local presentation preferences, and API orchestration | Static assets; per-tab transient state; no trusted business state |
-| Web/API edge | TLS termination, authentication integration, security headers, routing, request limits, and static asset delivery | Horizontally scalable and stateless |
-| Application API | Session context, metadata delivery, query/change/action orchestration, authorization, validation, transactions, preferences, and messages | Horizontally scalable; durable state externalized |
+| Web/API edge | TLS termination, authentication integration, security headers, routing, request limits, and static asset delivery | Stateless; scaled to the NFR-SCALE-001 concurrency profile |
+| Application API | Hosts the Session service, Definition service, Query service, Change service, Action service, Administration service, Policy engine, and Metadata runtime, plus preference, message, and report/export services | Scaled to NFR-SCALE-001; durable state externalized |
 | Metadata compiler | Imports legacy rows, validates references and options, produces immutable runtime bundles, and calculates compatibility diagnostics | On demand and during publication; deterministic output |
-| Job worker | Exports, reports, large queries, scheduled work, external calls, and retryable processing | Horizontally scalable with durable queue and leases |
-| Provider adapters | Typed query/change execution and dialect translation for each approved data source | Hosted with API or workers; bounded connection pools |
+| Job worker | Exports, reports, large queries, scheduled work, external calls, and retryable processing | Scaled to NFR-SCALE-001 and NFR-PERF-004 with durable queue and leases |
+| Provider adapter | Typed query/change execution and dialect translation for each approved data source (one adapter per provider) | Hosted with API or workers; bounded connection pools |
 | Metadata store | Versioned definitions, role mappings, personalization, messages, jobs, audit pointers, and publication state | Transactional database with backup and migration controls |
 | Distributed cache | Optional immutable metadata and query result caches, invalidation, and short-lived coordination | Non-authoritative; safe to discard and rebuild |
 | Object storage | Generated report/export files and large immutable artifacts | Encrypted, lifecycle-controlled, access by short-lived authorization |
@@ -188,31 +197,51 @@ flowchart TB
     Components[Accessible component library]
     ClientState[Client state and command bus]
     API[Application API]
+    Session[Session service]
+    Definition[Definition service]
     Auth[Policy engine]
     MetaRuntime[Metadata runtime]
+    Compiler[Metadata compiler]
     Query[Query service]
     Change[Change service]
     Action[Action service]
+    Admin[Administration service]
     Report[Report and export service]
     Message[Message service]
-    Adapter[Provider and extension adapters]
+    Preference[Preference service]
+    Adapter[Provider adapter]
+    Extension[Registered extension adapter]
 
     Shell --> Renderer
     Renderer --> Components
     Renderer --> ClientState
     ClientState --> API
+    API --> Session
+    API --> Definition
     API --> Auth
     API --> MetaRuntime
     API --> Query
     API --> Change
     API --> Action
+    API --> Admin
     API --> Report
     API --> Message
+    API --> Preference
+    Definition --> MetaRuntime
+    Admin --> Compiler
+    Compiler --> MetaRuntime
     Query --> Adapter
     Change --> Adapter
     Action --> Adapter
+    Action --> Extension
     Report --> Adapter
 ```
+
+Component names in this diagram, section 6.2, section 12, and section 14 are
+the controlled vocabulary for this document: Metadata compiler, Metadata
+runtime, Policy engine, Query service, Change service, Action service, Session
+service, Definition service, Administration service, Preference service,
+Message service, Report and export service, and Provider adapter.
 
 The renderer depends only on a published web view model. It does not interpret
 raw database rows, connection details, SQL, provider-specific types, or legacy
@@ -220,6 +249,8 @@ bit masks. The metadata compiler translates those concerns into a normalized
 runtime bundle.
 
 ## 7. Web application shell
+
+**Satisfies:** FR-START-*, FR-SPLASH-*, FR-SHUT-*, FR-APP-*, FR-SHELL-*, FR-NAV-*, FR-WIN-* (spec §§7, 9–11); NFR-PERF-002, NFR-UI-001, NFR-ACC-001, NFR-SEC-001.
 
 ### 7.1 Page structure
 
@@ -289,6 +320,25 @@ and are excluded from the published navigation bundle.
 - Split positions and last active tab may be stored as user preferences but
   shall be clamped to a usable layout when viewport or zoom changes.
 
+**Unsaved-change protocol.** Whenever an action would discard a dirty screen
+(closing a tab, switching application, signing out, following a forced
+refresh or incompatible metadata publication, or a security/session
+revocation), the shell:
+
+1. blocks the action and presents Save, Discard, and Cancel, offering Save
+   only when the screen is saveable and the user is authorized to save;
+2. on Save, runs the Appendix A.2 sequence and continues the action only if
+   the change set commits; a validation failure, conflict, or unknown outcome
+   returns to the screen with the action cancelled;
+3. on Discard, releases the draft and continues; on Cancel, leaves the screen
+   and draft untouched;
+4. for a revocation or expiry, where waiting for the user is not permitted,
+   gives the safest notice available and discards the draft (section 19); and
+5. never persists the draft durably on the client as a side effect.
+
+Every other section that invokes the "unsaved-change protocol" refers to this
+definition.
+
 ### 7.5 Global command bar
 
 The global command bar exposes semantic commands such as application switch,
@@ -310,12 +360,20 @@ Startup proceeds as follows:
 7. connect the message channel; and
 8. render the first usable state with loading placeholders and retryable errors.
 
-Sign-out and session expiry clear tokens, user-specific caches, in-memory rows,
-draft edits, message channels, and sensitive diagnostics. Browser unload is not
+Sign-out and session expiry clear the session credential (whatever carrier
+the D-005 security ADR selects; see section 10.1), user-specific caches,
+in-memory rows, draft edits, message channels, and sensitive diagnostics. Browser unload is not
 trusted to persist changes. Dirty work must be explicitly saved; a best-effort
 navigation warning is a usability aid, not a transaction mechanism.
 
+The client is online-only (section 34). Loss of connectivity or an unreachable
+API places the shell and affected screens in a blocked-with-retry state that
+preserves in-memory drafts; it is not an offline mode and never queues writes
+for later replay.
+
 ## 8. Generic screen engine
+
+**Satisfies:** FR-SCREEN-*, FR-GRID-*, FR-FIELD-*, FR-MD-*, FR-ACTION-*, FR-TREE-*, FR-JUNCTION-*, FR-CHART-*, FR-ELEM-*, FR-LOOKUP-*, FR-TOOL-*, FR-CUSTOM-* (spec §§12–15, 20); NFR-PERF-002, NFR-UI-001, NFR-ACC-001, NFR-I18N-001.
 
 ### 8.1 Compiled screen definition
 
@@ -346,12 +404,16 @@ inside one screen instance.
 stateDiagram-v2
     [*] --> Resolving
     Resolving --> LoadingDefinition
+    Resolving --> Forbidden: not authorized
     LoadingDefinition --> LoadingData
     LoadingDefinition --> ConfigurationError
+    LoadingDefinition --> Forbidden: definition denied
     LoadingData --> Ready
     LoadingData --> DataError
     Ready --> Editing
     Ready --> Refreshing
+    Refreshing --> Ready: refreshed
+    Refreshing --> DataError: refresh failed
     Editing --> Validating
     Validating --> Editing: invalid
     Validating --> Saving: valid
@@ -360,17 +422,25 @@ stateDiagram-v2
     Saving --> Editing: validation/provider failure
     Conflict --> LoadingData: reload
     Conflict --> Editing: permitted resolution
+    Conflict --> Closing: discard
     Ready --> Closing
     Editing --> Closing: discard or saved
     ConfigurationError --> Closing
+    Forbidden --> Closing
     DataError --> LoadingData: retry
+    DataError --> Closing
     Closing --> [*]
 ```
 
 The renderer shall expose explicit loading, empty, ready, editing, validating,
 saving, refreshing, conflict, forbidden, configuration-error, data-error, and
-offline/unreachable states. Controls are enabled from capability and state, not
-ad hoc event order.
+unreachable (blocked-with-retry, section 7.6) states. In the diagram, *empty*
+is the Ready state with zero rows, and *unreachable* is an overlay that any
+state entering a request (LoadingDefinition, LoadingData, Refreshing,
+Validating with server rules, Saving) can enter and leave without changing the
+underlying state. A dirty Editing or Conflict state leaves through the
+unsaved-change protocol (section 7.4). Controls are enabled from capability and
+state, not ad hoc event order.
 
 ### 8.3 Screen type mapping
 
@@ -503,7 +573,7 @@ equivalent.
 | State | Owner | Persistence |
 |---|---|---|
 | Published definitions and capability hints | Server; cached by client by version | Browser cache with version/ETag; never authoritative for access |
-| Authentication/session | Identity and API edge | Secure, short-lived mechanism selected by security ADR |
+| Authentication/session | Identity and API edge | Session credential carrier (cookie or bearer token) is decided by the D-005 security ADR; the client shall treat the credential as opaque, short-lived, and rotated, and shall never parse, store beyond the ADR-defined scope, or forward it. This row is the authority for sections 7.6 and 15.3 |
 | Current route/application/tab | Web client | URL plus optional session restoration |
 | Query criteria, sort, page, selection | Screen instance | URL only when safe; otherwise memory/session state |
 | Draft row edits | Screen instance | Memory by default; no silent durable storage of sensitive data |
@@ -521,12 +591,15 @@ equivalent.
 - Navigation and metadata publication changes do not silently destroy drafts.
 - Retry is automatic only for safe idempotent reads or operations with an
   explicit idempotency key and known outcome.
-- The browser distinguishes offline, API unreachable, dependency unavailable,
-  timeout, cancellation, and application errors.
+- The browser distinguishes connectivity loss, API unreachable, dependency
+  unavailable, timeout, cancellation, and application errors. Connectivity
+  loss and API unreachable are blocked-with-retry states under the online-only
+  model (sections 7.6 and 34), not an offline mode.
 
 ### 10.3 Browser support
 
-The product shall support the organization-approved evergreen browser set. The
+The product shall support the browser set defined in the support matrix, and
+every supported combination shall meet NFR-UI-001 and NFR-ACC-001. The
 support matrix must define minimum versions, operating systems, assistive
 technology combinations, cookie/storage constraints, download behavior, and
 enterprise security policies. Unsupported browsers receive a clear blocking
@@ -537,6 +610,8 @@ shall not require extensions, ActiveX, Java applets, installed Office, local
 administrator rights, mapped drives, or direct access to internal databases.
 
 ## 11. Metadata platform
+
+**Satisfies:** FR-META-*, FR-STATE-*, FR-SEC-* (spec §§8, 28, 41); NFR-REL-001 (atomic publication), NFR-BUILD-001 (reproducible compilation), NFR-COMP-001.
 
 ### 11.1 Metadata domains
 
@@ -552,7 +627,7 @@ The normalized target model preserves the semantics of these legacy families:
 | Element | Field/column identity, position/order, data binding, type, format, default, key, visibility, editability, lookup, validation, grouping, sizing, master-detail role |
 | Parameter | Parameter, set, ordered membership, type, source, default/current binding, substitution marker, dynamic context |
 | Report/tree | Report, report column/operation, tree relation/key override, chart definition, output policy |
-| Security | Role, subject mapping, application access, screen/command/field policy, active/default state |
+| Security | Role, subject mapping, application access, screen/command/field policy, row scope (data-scope predicates over trusted context), active/default state |
 | Personalization | Layout, visible columns, order, width, sort, group, filter, format, menu/shortcut, application preference |
 | System | Named settings, messages, message store/delivery state, error/audit records, ID allocation lineage |
 
@@ -581,7 +656,8 @@ stateDiagram-v2
 - Publication is atomic for an application scope. Users see either the previous
   or new complete version.
 - Active sessions receive a version-change notification. New screens use the
-  new version; existing dirty screens are not force-reloaded.
+  new version; existing dirty screens are not force-reloaded while the new
+  version is within their metadata compatibility range (section 11.5).
 - Rollback republishes a known-good immutable version; it does not edit history.
 - Every API result records the metadata version that governed it.
 
@@ -623,6 +699,35 @@ use the same APIs and validation pipeline as automated imports and support:
   integration changes;
 - scheduled publication and one-action rollback; and
 - complete audit history with reasons.
+
+### 11.5 Metadata compatibility range
+
+Every published definition has two version attributes:
+
+- the *definition version*: the immutable compiler digest that identifies the
+  exact published bundle (sections 8.1 and 13.3) and is recorded on every API
+  result; and
+- the *compatibility major version*: an integer per screen, assigned by the
+  compiler, that is incremented only when the DataClass identifiers referenced
+  by the screen, the key field set, or the identifier or type of any field
+  change; any other change republishes under the same major version.
+
+A published definition is *compatible* with a client-held state (dirty screen,
+draft change set, or saved preference) when, for that screen:
+
+- the compatibility major version is unchanged; and
+- the identifier/type of every field the client state binds to are unchanged
+  (a field removed or retyped in the new version breaks only states that bind
+  to it).
+
+Captions, help text, icons, ordering, widths, localization, and added optional
+fields do not change the major version and do not break compatibility. When a new version is outside the range, the
+client shall either discard the held state through the unsaved-change protocol
+or re-validate it against the new version before any save; the server rejects
+a change set whose declared metadata version is outside the current compatible
+range. The compiler computes and publishes the range with each version so
+sections 12.6, 13.1, 16, and Appendix A.3 can evaluate it without client-side
+inference.
 
 ## 12. Application services
 
@@ -666,7 +771,7 @@ procedure names or helper identifiers from browser requests are rejected.
 Stores validated personal menus, layouts, visible columns, widths, order,
 grouping, sorting, filters, formats, split positions, and application defaults.
 Each preference is scoped to subject, application, screen, metadata compatibility
-range, and type. Invalid or obsolete fields are ignored with diagnostics and
+range (section 11.5), and type. Invalid or obsolete fields are ignored with diagnostics and
 can be reset to published defaults.
 
 ### 12.7 Message service
@@ -693,13 +798,21 @@ access and is never enabled by a client-side flag.
 
 ## 13. Service contracts
 
+**Satisfies:** FR-DC-*, FR-PARAM-*, FR-DML-*, FR-LOG-* (spec §§16, 18, 22, 29); NFR-PERF-001, NFR-REL-001, NFR-SEC-003, NFR-OBS-001, NFR-I18N-001, NFR-COMP-001.
+
+> **Candidate contract.** The transport, encoding, live-update channel, and
+> dataset wire shape in this section are the recommended candidate pending
+> decisions D-002 and D-007 in MIGRATION_MASTER.md section 17; they do not
+> pre-empt those decisions and become binding only through an approved ADR.
+
 ### 13.1 Protocol baseline
 
 The browser/API boundary shall use TLS-protected, versioned HTTP APIs with a
 documented machine-readable contract. JSON is the default structured format;
-streaming downloads use appropriate file media types. A live message channel
-uses Server-Sent Events or WebSocket after a technology ADR confirms proxy,
-scale, and security requirements. Polling remains the compatibility fallback.
+streaming downloads use appropriate file media types. The candidate live message
+channel is Server-Sent Events or WebSocket, to be confirmed by the D-002
+transport ADR against proxy, scale, and security requirements; neither is
+selected here. Polling remains the compatibility fallback in every case.
 
 Every request carries or receives:
 
@@ -707,13 +820,16 @@ Every request carries or receives:
 - correlation ID;
 - authenticated session context at the host;
 - application context where required;
-- metadata version or compatibility range where state depends on it;
+- metadata version or compatibility range (section 11.5) where state depends on it;
 - idempotency key for retryable commands/changes where applicable; and
 - conditional version token for cache/concurrency operations.
 
 ### 13.2 Logical endpoints
 
 The paths below define responsibilities, not a mandatory framework syntax.
+In these paths `datasetId` is the DataClass identifier (section 14.1); the
+path segment keeps the wire-level noun while the metadata entity is the
+DataClass.
 
 | Method and path | Purpose |
 |---|---|
@@ -746,7 +862,7 @@ A dataset response contains metadata separately from values:
 ```json
 {
   "datasetId": "orders",
-  "definitionVersion": "sha256:...",
+  "definitionVersion": "digest:...",
   "columns": [
     {
       "id": "orderId",
@@ -823,9 +939,13 @@ to a normal client.
 
 ## 14. DataClass and provider execution
 
+**Satisfies:** FR-DC-*, FR-PARAM-*, FR-JOIN-*, FR-INSERT-*, FR-UPDATE-*, FR-DELETE-*, FR-DML-*, FR-REFRESH-*, FR-CONN-* (spec §§16, 18, 19, 25); NFR-PERF-001, NFR-PERF-003, NFR-REL-001, NFR-REL-002, NFR-SEC-003.
+
 ### 14.1 DataClass model
 
-A target `DatasetDefinition` preserves:
+A `DatasetDefinition` is the compiled, published form of a DataClass produced
+by the Metadata compiler for the Metadata runtime; DataClass remains the name
+of the metadata entity. A target `DatasetDefinition` preserves:
 
 - stable ID/name and source type;
 - read connection and optional write connection;
@@ -853,10 +973,11 @@ tested against real supported provider versions for null, decimal, Unicode,
 date/time, Boolean, binary, identity, affected rows, concurrency, transaction,
 timeout, cancellation, and connection-loss behavior.
 
-Initial candidates identified by legacy evidence are SQL Server, Sybase,
-Oracle, Access, XML datasets, and registered service/helper adapters. A provider
-is not production-supported until a named deployment requires it and its matrix
-passes. Access or local-file sources should normally be migrated or isolated in
+Legacy evidence (MIGRATION_MASTER.md sections 23 and 29) cites SQL Server,
+Sybase, Oracle, Access, XML datasets, and registered service/helper adapters;
+this is evidence of past use pending decision D-004, not a target provider
+list. A provider is not production-supported until D-004 confirms it, a named
+deployment requires it, and its matrix passes. Access or local-file sources should normally be migrated or isolated in
 a controlled worker rather than mounted into the web tier.
 
 ### 14.3 Connection management
@@ -873,7 +994,7 @@ a controlled worker rather than mounted into the web tier.
 ### 14.4 Query execution
 
 1. Resolve session, application, metadata version, and DataClass.
-2. Authorize dataset and field access.
+2. Authorize DataClass and field access.
 3. Bind dynamic and supplied parameters with trusted values overriding
    authority-sensitive inputs.
 4. Validate filter, sort, page, and maximum-cost policy.
@@ -907,7 +1028,7 @@ an asynchronous job rather than interactive in-memory execution.
 sequenceDiagram
     participant B as Browser
     participant A as Application API
-    participant P as Policy/metadata
+    participant P as Policy engine and Metadata runtime
     participant D as Provider adapter
     participant M as Message/cache service
 
@@ -951,6 +1072,8 @@ under an explicit screen policy. Overlapping refresh requests coalesce.
 
 ## 15. Security design
 
+**Satisfies:** FR-SEC-* (spec §8); NFR-SEC-001, NFR-SEC-002, NFR-SEC-003, NFR-SCALE-001 (no cross-user/application leakage).
+
 ### 15.1 Trust model
 
 The browser and all request data are untrusted. Identity is established by the
@@ -965,23 +1088,29 @@ Authorization combines:
 - authenticated subject and service identity;
 - application/group entitlement;
 - role or claim membership;
-- screen, dataset, operation, action, report, administrative, and command policy;
+- screen, DataClass, operation, action, report, administrative, and command policy;
 - field read/write policy;
 - row/data-scope predicates derived from trusted context; and
 - active dates/status and emergency revocation.
 
 The default is deny. Definition delivery is filtered to avoid unnecessary
 disclosure, and every data/action endpoint independently authorizes execution.
-Role changes invalidate sessions/capability caches within the approved revocation
-window.
+Role changes invalidate sessions/capability caches; revocation takes effect
+within a window defined by the D-005 ADR, and NFR-SEC-001 governs. Row/data-scope
+predicates are defined in the metadata Security domain (section 11.1, row
+scope), compiled into the policy bundle, and evaluated only by the Policy
+engine against trusted session context; the section 29 security tests cover
+row scope alongside field and command policy.
 
 ### 15.3 Web protections
 
 The selected implementation shall provide:
 
 - TLS for all traffic and encryption for managed storage;
-- secure authentication token/cookie handling with short lifetime and rotation;
-- CSRF protection where browser credentials are ambient;
+- secure handling of the session credential carrier selected by the D-005 ADR
+  (section 10.1), with short lifetime and rotation;
+- CSRF protection if the D-005 carrier is ambient (cookie-based); origin and
+  referrer controls in either case;
 - restrictive Content Security Policy and no unsafe metadata-injected markup;
 - output encoding and safe URL allow-lists;
 - clickjacking protection and deliberate embedding policy;
@@ -1010,6 +1139,8 @@ to policy.
 
 ## 16. Personalization
 
+**Satisfies:** FR-SEC-* personalization rows, FR-NAV-*, FR-CUSTOM-* (spec §§8, 10, 20); NFR-SEC-002, NFR-UI-001.
+
 The system supports saved column visibility/order/width, grouping, sorting,
 filters, formats, split position, last/default application, navigation expansion,
 and personal shortcuts where enabled. Preferences are data, not executable
@@ -1018,13 +1149,16 @@ metadata.
 - Published defaults are immutable for a version.
 - User preferences overlay only fields marked personalizable.
 - The overlay is validated against stable IDs and bounded values.
-- Application and screen versions declare preference compatibility.
+- Application and screen versions declare preference compatibility through the
+  metadata compatibility range (section 11.5).
 - Removed fields/options are ignored and reported, not allowed to break a page.
 - Reset deletes the overlay and immediately restores published defaults.
 - Preferences follow the authenticated subject and approved profile scope, not
   a specific workstation registry.
 
 ## 17. Filtering, search, sort, and grouping
+
+**Satisfies:** FR-CRIT-*, FR-FILTER-*, FR-SEARCH-*, FR-CUSTOM-* (spec §§17, 20); NFR-SEC-003, NFR-I18N-001, NFR-PERF-001.
 
 The web UI builds typed expressions from allowed fields and operators. It
 supports screen criteria, local result filtering for bounded loaded data,
@@ -1048,9 +1182,11 @@ approved server adapter and are never evaluated in the browser.
 
 ## 18. Reporting, charts, printing, and export
 
+**Satisfies:** FR-REPORT-*, FR-EXCEL-*, FR-CHART-*, FR-PRINT-* (spec §21); NFR-PERF-004, NFR-ACC-001, NFR-I18N-001.
+
 ### 18.1 Reports
 
-Report definitions identify source dataset/version, authorized fields,
+Report definitions identify source DataClass/version, authorized fields,
 parameters, grouping, aggregates, cross-tab axes, formats, titles, locale,
 output types, limits, and retention. Reports use the same query authorization
 and provider boundaries as screens.
@@ -1067,7 +1203,8 @@ markers meet contrast and color-independence rules.
 
 - Export current respects current authorized fields, filters, sort, and scope.
 - Export all reproduces the legacy workbook-style multi-screen/application
-  workflow only for approved datasets and within workload limits.
+  workflow only for approved DataClasses and within the NFR-PERF-004 export
+  profile.
 - Files are generated server-side in supported open or workbook-compatible
   formats without Office automation.
 - Formula-injection protection is applied to spreadsheet-compatible output.
@@ -1078,12 +1215,16 @@ markers meet contrast and color-independence rules.
 
 ### 18.4 Printing
 
-Print preview becomes a server-generated print-ready document or an accessible
-browser print layout. It preserves captions, columns, formats, page headers,
+The default is a server-rendered print document generated by the report and
+export service under the same authorization as reports. An accessible browser
+print layout is an ADR-approved alternative for specific screens only. Either
+form preserves captions, columns, formats, page headers,
 grouping, and orientation where defined. Browser screen layout is not assumed
 to be a printable contract.
 
 ## 19. Messages and real-time behavior
+
+**Satisfies:** FR-SYSMSG-*, FR-MSG-*, FR-REFRESH-* (spec §§19, 22–23); NFR-SEC-001, NFR-ACC-001, NFR-OBS-001.
 
 System messages support stable type, audience, application scope, priority,
 effective/expiry times, display mode, payload, acknowledgement, and status.
@@ -1098,6 +1239,8 @@ session revocation overrides local edits after providing the safest permitted
 user notice.
 
 ## 20. External extensions and specialist services
+
+**Satisfies:** FR-EXT-*, FR-AGG-*, FR-LIMIT-*, FR-PLM-* (spec §§24, 27, 43); NFR-SEC-003, NFR-REL-002, NFR-COMP-001.
 
 ### 20.1 Extension model
 
@@ -1147,6 +1290,8 @@ approval.
 
 ## 21. Jobs and background processing
 
+**Satisfies:** FR-REPORT-*, FR-EXCEL-*, FR-AGG-*, FR-LIMIT-* (spec §§21, 27); NFR-PERF-004, NFR-REL-001, NFR-REL-002, NFR-OBS-001.
+
 Long-running exports, reports, bulk actions, scheduled refresh, external calls,
 aggregation, and limit checks use durable jobs.
 
@@ -1162,6 +1307,8 @@ expired leases are reclaimed only when duplicate execution is safe or guarded
 by idempotency. Job output access is reauthorized at read/download time.
 
 ## 22. Error handling and user feedback
+
+**Satisfies:** FR-MSG-*, FR-DIALOG-*, FR-LOG-*, FR-SYSINFO-* (spec §22); NFR-OBS-002, NFR-ACC-001, NFR-PERF-003 (timeout produces a diagnosable error).
 
 The web client presents:
 
@@ -1180,6 +1327,8 @@ screen does not crash the shell. Global failure pages preserve sign-out and
 support correlation access.
 
 ## 23. Observability and support
+
+**Satisfies:** FR-LOG-*, FR-SYSINFO-* (spec §22); NFR-OBS-001, NFR-OBS-002.
 
 ### 23.1 Telemetry
 
@@ -1213,19 +1362,22 @@ and cannot impersonate users without a separately audited approved mechanism.
 
 ## 24. Performance, scalability, and resilience
 
-The initial measurable floors are defined in
-[NON_FUNCTIONAL_REQUIREMENTS.md](NON_FUNCTIONAL_REQUIREMENTS.md): interactive
-read p95 ≤2 seconds and p99 ≤5 seconds for the defined profile, first usable UI
-≤3 seconds after a successful response, interactive change p95 ≤2 seconds,
-large export ≤60 seconds, 50 active sessions, 99.9% monthly service objective,
-5-minute host recovery, RTO 4 hours, and RPO 15 minutes for migration-owned
-state. Production evidence may strengthen these through controlled change.
+**Satisfies:** NFR-PERF-001, NFR-PERF-002, NFR-PERF-003, NFR-PERF-004, NFR-SCALE-001, NFR-REL-001, NFR-REL-002, NFR-REL-003 (spec §§33, 44).
+
+The measurable floors are defined in
+[functional specification section 44](GDFramework%20Functional%20Specification.md#44-non-functional-requirements)
+and are not restated here: interactive read (NFR-PERF-001), first usable UI
+(NFR-PERF-002), interactive change (NFR-PERF-003), large export (NFR-PERF-004),
+concurrency profile (NFR-SCALE-001), atomicity (NFR-REL-001), resource cleanup
+(NFR-REL-002), host recovery (NFR-REL-003), service objective (NFR-AVAIL-001),
+and recovery objectives (NFR-DR-001). Production evidence may strengthen these
+through controlled change to the specification.
 
 ### 24.1 Scale strategy
 
 - Static client assets are content-hashed and cacheable.
-- APIs and workers are horizontally scalable and hold no required local session
-  state.
+- APIs and workers hold no required local session state so instances can be
+  added to meet NFR-SCALE-001 and NFR-AVAIL-001.
 - Metadata bundles are immutable and cache efficiently by digest.
 - Queries use server paging/continuation and result limits.
 - Grids virtualize rendering but do not claim all rows are loaded.
@@ -1250,10 +1402,13 @@ state. Production evidence may strengthen these through controlled change.
 
 ## 25. Availability, backup, and disaster recovery
 
-The runtime shall support multiple service instances without session affinity
-unless an approved live-channel implementation temporarily requires it. The
-metadata/platform database uses managed high-availability capabilities
-appropriate to the selected infrastructure. Object storage and queues use
+**Satisfies:** NFR-AVAIL-001, NFR-DR-001, NFR-REL-003 (spec §44).
+
+The following are constraints on decision D-003 (host topology), not topology
+choices: the runtime shall support multiple service instances without session
+affinity unless the D-002 live-channel ADR temporarily requires it; the
+metadata/platform database shall have high-availability capability sufficient
+for NFR-AVAIL-001 and NFR-DR-001; and object storage and queues shall use
 durability policies aligned to job/output retention.
 
 Backups cover metadata versions, publication state, role mappings managed by
@@ -1264,6 +1419,8 @@ verification. Application-database recovery remains governed by each owning
 system but its objectives and dependencies are recorded.
 
 ## 26. Accessibility, responsive design, and localization
+
+**Satisfies:** FR-CTL-* accessibility/scaling rows (spec §26); NFR-ACC-001, NFR-UI-001, NFR-I18N-001 (spec §44).
 
 All supported workflows shall meet the WCAG 2.2 AA-equivalent acceptance floor
 in the NFR baseline. Required behaviors include semantic landmarks/headings,
@@ -1280,6 +1437,8 @@ driven within an allow-listed formatting model. Sorting/filter semantics that
 differ by locale or database are documented and tested.
 
 ## 27. Deployment and environment design
+
+**Satisfies:** FR-PROJ-*, FR-DEP-*, FR-CMD-*, FR-BUILD-* (spec §§37–39, 42); NFR-BUILD-001, NFR-DR-001, NFR-SEC-003.
 
 ### 27.1 Environments
 
@@ -1312,13 +1471,18 @@ developer registry state are prohibited.
 
 ### 27.4 Deployment topology
 
-The design supports managed processes, containers, or equivalent isolated
-services behind an approved web edge. The selected topology must support
-horizontal scale, health checks, zero/low-downtime rollout, secret injection,
-network policy, telemetry, controlled egress, backups, and rollback. Technology
-selection is recorded by ADR without changing the logical boundaries here.
+This section states constraints on decision D-003, not a topology choice.
+Managed processes, containers, or equivalent isolated services behind an
+approved web edge are all admissible. Whatever D-003 selects must support the
+NFR-SCALE-001 concurrency profile, NFR-AVAIL-001, NFR-REL-003 restart
+recovery, health checks, zero/low-downtime rollout, secret injection, network
+policy, telemetry, controlled egress, backups, and rollback. The selection is
+recorded by ADR (MIGRATION_MASTER.md section 30) without changing the logical
+boundaries here.
 
 ## 28. Migration and coexistence
+
+**Satisfies:** DEF-001..DEF-037 dispositions (spec §31), spec §§30, 32, 34; NFR-COMP-001, NFR-SEC-001, NFR-REL-001.
 
 ### 28.1 Migration units
 
@@ -1376,10 +1540,14 @@ deployment dependencies from the supported estate.
 
 ## 29. Testing and quality strategy
 
-Testing shall follow the repository rule: Mockito and substitute mocking
-frameworks are prohibited. Observable behavior is tested with real
-implementations, protocol fixtures, lightweight purpose-built fakes, and real
-provider/integration environments appropriate to the boundary.
+**Satisfies:** spec §§31, 33 (acceptance suite) and every NFR-* ID in spec §44 through the layers below; NFR-REL-002, NFR-SEC-002, NFR-ACC-001, NFR-BUILD-001 are cited directly.
+
+Observable behavior shall be tested with real implementations, protocol
+fixtures, lightweight purpose-built fakes at protocol boundaries, and real
+provider/integration environments appropriate to the boundary. Mocking
+frameworks that substitute generated doubles for real boundaries are
+prohibited. This rule is normative here and in MIGRATION_MASTER.md section
+11; CONTRIBUTING.md restates it for contributors.
 
 | Test layer | Required coverage |
 |---|---|
@@ -1388,17 +1556,19 @@ provider/integration environments appropriate to the boundary.
 | Screen renderer | All seven screen types, every field type, command/state lifecycle, dirty/close, empty/loading/error/forbidden/conflict states |
 | Contract | API schemas, versions, typed values, nulls, errors, pagination, idempotency, conditional versions, backward compatibility |
 | Provider integration | Real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider |
-| Security | Authentication, cross-user/application isolation, field/row/command policies, injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation |
+| Security | Authentication, cross-user/application isolation, field/row-scope/command policies (section 15.2), injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation |
 | Differential | Same imported metadata/input against legacy and modern normalized output or approved intentional difference |
 | Workflow | Startup, application switch, navigation, query, criteria/filter, CRUD, master-detail, action, refresh, preferences, report/export/print, messages, shutdown |
 | Accessibility | Automated checks plus manual keyboard, screen reader, zoom/reflow, contrast, dialogs, grids, trees, charts, and error handling |
 | Performance | NFR profiles, cold/warm cache, concurrency, large exports, long jobs, browser responsiveness, provider pool limits |
-| Reliability | Failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, 1,000-operation soak |
+| Reliability | Failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, and the NFR-REL-002 repeated cancellation/timeout/failure soak |
 | Deployment | Clean build, package promotion, configuration validation, migration, health, rolling update, rollback, backup/restore |
 
-Every functional requirement and approved defect disposition maps to one or
-more acceptance tests in [REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md).
-The modern design adds design verification IDs in section 33.
+Every functional requirement, NFR, and approved defect disposition maps to one
+or more acceptance tests in the traceability matrix generated into
+[DOCUMENT_CONTROL.md section 8](DOCUMENT_CONTROL.md#8-requirement-traceability-matrix)
+from the FR-*/NFR-*/DEF-* rows of the functional specification and the
+`WDES-*` rows of section 33 of this document.
 
 ## 30. Operational model
 
@@ -1427,7 +1597,7 @@ maintenance but do not hide dependency-caused user failure.
 
 ## 31. Privacy and data lifecycle
 
-Data classification is recorded for datasets, fields, exports, reports,
+Data classification is recorded for DataClasses, fields, exports, reports,
 messages, logs, and adapter payloads. The platform minimizes collection and
 exposure, applies masking where required, restricts lower-environment use,
 records purpose/owner, and enforces retention/deletion policies.
@@ -1439,8 +1609,9 @@ telemetry access is role-controlled and audited.
 
 ## 32. Technology selection constraints
 
-Later technology selection must demonstrate, through a scored ADR and working
-spike, support for:
+Later technology selection (decision D-008 for the service runtime and the
+D-001 framework ADR for the client) must demonstrate, through a scored ADR and
+working spike, support for:
 
 - accessible virtualized grids, trees, dialogs, splitters, command bars, forms,
   charts, and responsive layouts;
@@ -1485,21 +1656,22 @@ security, and data boundaries is not sufficient evidence.
 
 ## 34. Decisions required before implementation
 
-The web architecture is selected; these concrete choices remain ADRs rather
-than hidden assumptions:
+The web direction is selected (D-001); framework and product selections remain
+deferred. These concrete choices remain ADRs (MIGRATION_MASTER.md sections 17
+and 30) rather than hidden assumptions:
 
-| Decision | Required evidence |
-|---|---|
-| Browser UI framework and design system | Accessibility and performance spike across grid/form/tree/dialog/splitter/chart workflows |
-| API language/runtime and hosting model | Team support, lifecycle, async/streaming, identity, provider drivers, telemetry, scale, and cost |
-| Contract style and live channel | HTTP/JSON baseline, schema generation, event proxy behavior, reconnect, security, and compatibility |
-| Metadata/platform database | Transaction/version/query needs, migrations, backup/restore, HA, operations, and licensing |
-| Queue, cache, and object storage | Delivery/lease semantics, durability, encryption, expiry, scale, portability, and support |
-| Authentication and authorization implementation | Organization identity, service identity, role/data-scope model, revocation, audit, and admin separation |
-| Provider scope and migration order | Active deployed rows/consumers, real driver tests, database ownership, and retirement strategy |
-| Deployment topology and cloud/on-premises placement | Network/database reachability, identity, data residency, operations, resilience, recovery, and cost |
-| Metadata authoring scope | Import-only first release versus governed web authoring, approval model, and ownership |
-| Offline behavior | Default online-only design; any offline editing requires explicit encrypted storage, conflict, expiry, and support design |
+| Decision | Register ID | Required evidence |
+|---|---|---|
+| Browser UI framework and design system | D-001 (framework ADR) | Accessibility and performance spike across grid/form/tree/dialog/splitter/chart workflows |
+| API language/runtime and hosting model | D-008 | Team support, lifecycle, async/streaming, identity, provider drivers, telemetry, scale, and cost |
+| Contract style and live channel | D-002, D-007 | HTTP/JSON baseline, schema generation, event proxy behavior, reconnect, security, and compatibility |
+| Metadata/platform database | D-013 | Transaction/version/query needs, migrations, backup/restore, HA, operations, and licensing |
+| Queue, cache, and object storage | D-014 | Delivery/lease semantics, durability, encryption, expiry, scale, portability, and support |
+| Authentication and authorization implementation | D-005 | Organization identity, service identity, role/data-scope model, revocation, audit, and admin separation |
+| Provider scope and migration order | D-004 | Active deployed rows/consumers, real driver tests, database ownership, and retirement strategy |
+| Deployment topology and cloud/on-premises placement | D-003 | Network/database reachability, identity, data residency, operations, resilience, recovery, and cost |
+| Metadata authoring scope | D-015 | Import-only first release versus governed web authoring, approval model, and ownership |
+| Offline behavior | D-016 (default adopted: online-only, section 7.6) | Any offline editing requires an ADR with explicit encrypted storage, conflict, expiry, and support design |
 
 None of these decisions may weaken the logical boundaries, functional
 requirements, or acceptance floors without controlled approval.
@@ -1519,8 +1691,8 @@ Implementation may begin with a vertical slice when:
 5. accessibility and security threat models identify acceptance cases;
 6. environments, secrets, real provider fixtures, CI, artifact promotion,
    monitoring, backup, and rollback are available;
-7. requirement-to-test mappings include the slice's functional IDs and
-   `WDES-*` design requirements; and
+7. the traceability matrix generated into DOCUMENT_CONTROL.md section 8
+   includes the slice's functional IDs and `WDES-*` design requirements; and
 8. product, security, database, UI/workflow, operations, and test owners accept
    the slice plan.
 
@@ -1600,7 +1772,9 @@ sequenceDiagram
    retained.
 6. Caches key by the new version; a system event notifies active clients.
 7. New screen instances use the new version. Dirty existing screens remain on
-   their compatible version until saved/closed or safely migrated.
+   their version while it is within the metadata compatibility range (section
+   11.5) until saved/closed or safely migrated; outside the range they must
+   discard or re-validate.
 8. Failure triggers controlled rollback to the previous immutable version and
    correlated incident evidence.
 
@@ -1683,8 +1857,15 @@ metadata contract documented in functional specification section 28.
 | Metadata dictionary and physical-schema lineage (§28) | §§11.1–11.4, 14.1, Appendix C |
 | End-to-end interaction sequences (§29) | Appendix A |
 | Dormant, unfinished, and historical components (§30) | §§2.2, 20.3–20.4, 28.6 |
-| Legacy defects and compatibility decisions (§31) | §§1, 28.5, 29 and controlled defect register |
+| Legacy defects and compatibility decisions (§31, DEF-001..DEF-037) | §§1, 28.5, 29 |
 | Re-platforming invariants (§32) | §§3–4, 33, 36 |
 | Minimum replacement acceptance suite (§33) | §§24, 26, 29, 33, 35–36 |
 | Discovery backlog and coverage boundary (§§34–35) | §§28, 34–36, Appendix C |
 | Source, projects, dependencies, startup grammar, components, internal state, lineage, and PLM boundary (§§36–43) | §§6, 10–11, 14, 20, 27–29, Appendix B–C |
+| Non-functional requirements (§44): performance NFR-PERF-001, NFR-PERF-002, NFR-PERF-003, NFR-PERF-004 | §§8, 13–14, 18, 21, 24 |
+| Non-functional requirements (§44): scale and reliability NFR-SCALE-001, NFR-REL-001, NFR-REL-002, NFR-REL-003 | §§6.2, 11.2, 14.6, 15, 20.2, 21, 24, 27.4, 29 |
+| Non-functional requirements (§44): availability and recovery NFR-AVAIL-001, NFR-DR-001 | §§24–25, 27 |
+| Non-functional requirements (§44): security NFR-SEC-001, NFR-SEC-002, NFR-SEC-003 | §§10.1, 12.1, 13–15, 17, 20, 28.5 |
+| Non-functional requirements (§44): observability NFR-OBS-001, NFR-OBS-002 | §§13.6, 22–23, 30.3 |
+| Non-functional requirements (§44): accessibility, layout, and locale NFR-ACC-001, NFR-UI-001, NFR-I18N-001 | §§7–9, 10.3, 18.2, 22, 26 |
+| Non-functional requirements (§44): compatibility and build NFR-COMP-001, NFR-BUILD-001 | §§11.3, 13.1, 27.2, 28.5, 29 |

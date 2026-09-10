@@ -3,119 +3,230 @@ param(
     [string]$LegacySourceRoot = $env:LEGACY_SOURCE_ROOT
 )
 
+# Validates the controlled document set. Repository-local checks always run.
+# Legacy source-path checks run only when LEGACY_SOURCE_ROOT resolves; otherwise
+# they are reported as skipped rather than failing the run.
+
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
-if ([string]::IsNullOrWhiteSpace($LegacySourceRoot)) {
-    $LegacySourceRoot = '\\ds423\shared\Documents\Workfiles\Visual Studio Projects\VB6\GDFramework'
-}
-$LegacySourceRoot = (Resolve-Path -LiteralPath $LegacySourceRoot).ProviderPath
-$LegacyDocsRoot = Join-Path $LegacySourceRoot 'Docs'
 $DocsRoot = Join-Path $ProjectRoot 'docs'
 $SpecPath = Join-Path $DocsRoot 'GDFramework Functional Specification.md'
-$TracePath = Join-Path $DocsRoot 'REQUIREMENTS_TRACEABILITY.md'
+$DesignPath = Join-Path $DocsRoot 'MODERN_WEB_SYSTEM_DESIGN.md'
+$MasterPath = Join-Path $DocsRoot 'MIGRATION_MASTER.md'
+$ControlPath = Join-Path $DocsRoot 'DOCUMENT_CONTROL.md'
 $errors = @()
 
-$markdownFiles = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Filter '*.md'
+# ---- the controlled set is exactly four documents
+$expectedDocs = @('DOCUMENT_CONTROL.md', 'GDFramework Functional Specification.md', 'MIGRATION_MASTER.md', 'MODERN_WEB_SYSTEM_DESIGN.md')
+$actualDocs = Get-ChildItem -LiteralPath $DocsRoot -Recurse -File | ForEach-Object { $_.Name } | Sort-Object
+$diff = Compare-Object -ReferenceObject $expectedDocs -DifferenceObject @($actualDocs)
+foreach ($d in $diff) { $errors += "docs folder must contain exactly the four controlled documents; unexpected/missing: $($d.InputObject)" }
+
+# ---- tables, links, machine paths
+$markdownFiles = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Filter '*.md' | Where-Object { $_.FullName -notlike '*\.git\*' }
+$pipeRegex = [regex]'(?<!\\)\|'
 foreach ($file in $markdownFiles) {
     $lines = Get-Content -LiteralPath $file.FullName
-    $inTable = $false
-    $expectedPipes = 0
+    $inTable = $false; $expectedPipes = 0
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match '^\|') {
-            $pipeCount = ([regex]::Matches($lines[$i], '(?<!\\)\|')).Count
+            $pipeCount = $pipeRegex.Matches($lines[$i]).Count
             if (-not $inTable) { $inTable = $true; $expectedPipes = $pipeCount }
-            if ($pipeCount -ne $expectedPipes) {
-                $errors += "$($file.FullName):$($i + 1) table has $pipeCount pipes; expected $expectedPipes"
-            }
-        } else {
-            $inTable = $false
-            $expectedPipes = 0
-        }
+            if ($pipeCount -ne $expectedPipes) { $errors += "$($file.Name):$($i + 1) table has $pipeCount pipes; expected $expectedPipes" }
+        } else { $inTable = $false; $expectedPipes = 0 }
     }
-
     $raw = Get-Content -LiteralPath $file.FullName -Raw
     foreach ($match in [regex]::Matches($raw, '\[[^\]]+\]\(([^)]+)\)')) {
         $link = $match.Groups[1].Value
-        if ($link -notmatch '^(https?://|mailto:|#)') {
-            $pathPart = [uri]::UnescapeDataString(($link -replace '#.*$', ''))
-            if ($pathPart) {
-                $target = Join-Path $file.DirectoryName $pathPart
-                if (-not (Test-Path -LiteralPath $target)) {
-                    $errors += "$($file.FullName) has missing local link: $link"
-                }
+        if ($link -match '^(https?://|mailto:)') { continue }
+        $pathPart = [uri]::UnescapeDataString(($link -replace '#.*$', ''))
+        # A bare "#anchor" link resolves against the current document.
+        $target = if ($pathPart) { Join-Path $file.DirectoryName $pathPart } else { $file.FullName }
+        if (-not (Test-Path -LiteralPath $target)) { $errors += "$($file.Name) has missing local link: $link"; continue }
+        if ($link -match '#(.+)$' -and $target -like '*.md') {
+            $anchor = $Matches[1]
+            $headings = [regex]::Matches((Get-Content -LiteralPath $target -Raw), '(?m)^#{1,6}\s+(.+?)\s*$') | ForEach-Object {
+                (($_.Groups[1].Value.ToLowerInvariant() -replace '[^\p{L}\p{N}\s_-]', '') -replace '\s', '-')
             }
+            if ($anchor -notin $headings) { $errors += "$($file.Name) links to missing anchor: $link" }
+        }
+    }
+}
+$machinePaths = Select-String -Path $markdownFiles.FullName -Pattern 'C:\\Users\\|(?<![A-Za-z])[A-Z]:\\Documents' -AllMatches
+foreach ($match in $machinePaths) { $errors += "$($match.Filename):$($match.LineNumber) contains a machine-specific path" }
+$toolFiles = Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'tools') -Filter '*.ps1'
+$uncPattern = [regex]('\\' + '\\' + '[A-Za-z0-9_-]+' + '\\')
+foreach ($tool in $toolFiles) {
+    $toolLines = Get-Content -LiteralPath $tool.FullName
+    for ($i = 0; $i -lt $toolLines.Count; $i++) {
+        if ($toolLines[$i] -match 'uncPattern|-Pattern ') { continue }   # regex definitions, not paths
+        if ($uncPattern.IsMatch($toolLines[$i])) { $errors += "$($tool.Name):$($i + 1) embeds a UNC path in build logic" }
+    }
+}
+# Documents may not carry share paths either. The one exemption is the reviewed-location
+# record in MIGRATION_MASTER.md section 23.1 (the ${LEGACY_SOURCE_ROOT} evidence-root row),
+# which CONTRIBUTING.md names explicitly.
+$uncExemptRow = '^\|\s*`\$\{LEGACY_SOURCE_ROOT\}`\s*\|'
+foreach ($file in $markdownFiles) {
+    $docLines = Get-Content -LiteralPath $file.FullName
+    for ($i = 0; $i -lt $docLines.Count; $i++) {
+        if ($file.Name -eq 'MIGRATION_MASTER.md' -and $docLines[$i] -match $uncExemptRow) { continue }
+        if ($uncPattern.IsMatch($docLines[$i])) { $errors += "$($file.Name):$($i + 1) embeds a share path; only MIGRATION_MASTER.md section 23.1 may record the reviewed location" }
+    }
+}
+
+# ---- controlled IDs
+$specRaw = Get-Content -LiteralPath $SpecPath -Raw
+$designRaw = Get-Content -LiteralPath $DesignPath -Raw
+$masterRaw = Get-Content -LiteralPath $MasterPath -Raw
+$controlRaw = Get-Content -LiteralPath $ControlPath -Raw
+
+# ---- document versions: header, register (control section 3), and cross-document citations agree
+function Get-HeaderVersion {
+    param([string]$Raw)
+    if ($Raw -match '(?m)^\*\*Version:\*\*\s*(\d+\.\d+)') { return $Matches[1] }
+    if ($Raw -match '(?m)^(?:\*\*Status:\*\*|Document status:)[^\r\n]*?baseline (\d+\.\d+)') { return $Matches[1] }
+    return $null
+}
+$headerVersions = @{
+    'GDFramework Functional Specification.md' = Get-HeaderVersion $specRaw
+    'MODERN_WEB_SYSTEM_DESIGN.md' = Get-HeaderVersion $designRaw
+    'MIGRATION_MASTER.md' = Get-HeaderVersion $masterRaw
+    'DOCUMENT_CONTROL.md' = Get-HeaderVersion $controlRaw
+}
+foreach ($name in $headerVersions.Keys) { if (-not $headerVersions[$name]) { $errors += "$name header does not state a version" } }
+$registerBlock = if ($controlRaw -match '(?s)## 3\. Document register(.*?)## 4\.') { $Matches[1] } else { '' }
+$registerMap = @{
+    'GDFramework Functional Specification.md' = '^\|\s*Functional specification'
+    'MODERN_WEB_SYSTEM_DESIGN.md' = '^\|\s*Modern web system design'
+    'MIGRATION_MASTER.md' = '^\|\s*Migration master'
+    'DOCUMENT_CONTROL.md' = '^\|\s*Document control'
+}
+foreach ($name in $registerMap.Keys) {
+    $rowMatch = [regex]::Match($registerBlock, '(?m)' + $registerMap[$name] + '[^|]*\|\s*(\d+\.\d+)\s*/')
+    if (-not $rowMatch.Success) { $errors += "DOCUMENT_CONTROL.md section 3 has no register row for $name"; continue }
+    if ($headerVersions[$name] -and $rowMatch.Groups[1].Value -ne $headerVersions[$name]) { $errors += "DOCUMENT_CONTROL.md section 3 lists $name as $($rowMatch.Groups[1].Value) but its header says $($headerVersions[$name])" }
+}
+foreach ($file in $markdownFiles) {
+    $raw = Get-Content -LiteralPath $file.FullName -Raw
+    foreach ($cite in [regex]::Matches($raw, '\[[^\]]*?\b(\d+\.\d+)\]\(([^)#]+\.md)(?:#[^)]*)?\)')) {
+        $targetName = [IO.Path]::GetFileName([uri]::UnescapeDataString($cite.Groups[2].Value))
+        if ($headerVersions.ContainsKey($targetName) -and $headerVersions[$targetName] -and $cite.Groups[1].Value -ne $headerVersions[$targetName]) {
+            $errors += "$($file.Name) cites $targetName as version $($cite.Groups[1].Value); its header says $($headerVersions[$targetName])"
         }
     }
 }
 
-$controlledFiles = $markdownFiles | Where-Object { $_.FullName -notlike '*\docs\archive\*' }
-$machinePaths = Select-String -Path $controlledFiles.FullName -Pattern 'C:\\Users\\|(?<![A-Za-z])W:\\' -AllMatches
-foreach ($match in $machinePaths) {
-    $errors += "$($match.Path):$($match.LineNumber) contains a machine-specific path"
-}
-
-$specRaw = Get-Content -LiteralPath $SpecPath -Raw
 $requirementIds = [regex]::Matches($specRaw, '(?m)^\|\s*(FR-[A-Z0-9-]+)\s*\|') | ForEach-Object { $_.Groups[1].Value }
+$nfrIds = [regex]::Matches($specRaw, '(?m)^\|\s*(NFR-[A-Z0-9-]+)\s*\|') | ForEach-Object { $_.Groups[1].Value }
 $defectIds = [regex]::Matches($specRaw, '(?m)^\|\s*(DEF-\d+)\s*\|') | ForEach-Object { $_.Groups[1].Value }
-$allSpecIds = @($requirementIds) + @($defectIds)
-foreach ($duplicate in $allSpecIds | Group-Object | Where-Object Count -gt 1) {
-    $errors += "Duplicate specification ID: $($duplicate.Name)"
+$designIds = [regex]::Matches($designRaw, '(?m)^\|\s*(WDES-\d+)\s*\|') | ForEach-Object { $_.Groups[1].Value }
+$allIds = @($requirementIds) + @($nfrIds) + @($defectIds) + @($designIds)
+foreach ($duplicate in $allIds | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate controlled ID: $($duplicate.Name)" }
+
+foreach ($family in @(@{Name='D';Pattern='(?m)^\|\s*(D-\d{3})\s*\|'}, @{Name='R';Pattern='(?m)^\|\s*(R-\d{3})\s*\|'}, @{Name='EV';Pattern='(?m)^\|\s*(EV-\d{3}A?)\s*\|'}, @{Name='CMP';Pattern='(?m)^\|\s*(CMP-\d{3})\s*\|'}, @{Name='DEP';Pattern='(?m)^\|\s*(DEP-\d{3})\s*\|'})) {
+    $ids = [regex]::Matches($masterRaw, $family.Pattern) | ForEach-Object { $_.Groups[1].Value }
+    foreach ($duplicate in $ids | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate $($family.Name) register ID: $($duplicate.Name)" }
 }
 
-$traceRaw = Get-Content -LiteralPath $TracePath -Raw
-$traceIds = [regex]::Matches($traceRaw, '(?m)^\|\s*((?:FR-[A-Z0-9-]+)|(?:DEF-\d+))\s*\|') | ForEach-Object { $_.Groups[1].Value }
-$missingTrace = $allSpecIds | Where-Object { $_ -notin $traceIds }
-$extraTrace = $traceIds | Where-Object { $_ -notin $allSpecIds }
-foreach ($id in $missingTrace) { $errors += "Specification ID missing from traceability: $id" }
-foreach ($id in $extraTrace) { $errors += "Traceability ID absent from specification: $id" }
-foreach ($duplicate in $traceIds | Group-Object | Where-Object Count -gt 1) {
-    $errors += "Duplicate traceability ID: $($duplicate.Name)"
+# ---- the defect register holds durable dispositions
+foreach ($m in [regex]::Matches($specRaw, '(?m)^\|\s*(DEF-\d+)\s*\|(.*)$')) {
+    $cells = ($m.Groups[2].Value -split '(?<!\\)\|')
+    if ($cells.Count -lt 6) { $errors += "$($m.Groups[1].Value) row lacks Decision/Approvers/Approval-date columns" ; continue }
+    $decision = $cells[2].Trim()
+    if ($decision -notin @('Pending','Preserve','Fix','Retire')) { $errors += "$($m.Groups[1].Value) has an invalid decision '$decision' (Pending, Preserve, Fix, or Retire)" }
 }
 
+# ---- traceability section is present, generated, and current
+if ($controlRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') {
+    $errors += 'DOCUMENT_CONTROL.md lacks the generated traceability section'
+    $traceIds = @()
+} else {
+    $traceBlock = $Matches[1]
+    $traceIds = [regex]::Matches($traceBlock, '(?m)^\|\s*((?:FR|NFR|DEF|WDES)-[A-Z0-9-]+)\s*\|') | ForEach-Object { $_.Groups[1].Value }
+    foreach ($id in ($allIds | Where-Object { $_ -notin $traceIds })) { $errors += "Controlled ID missing from traceability: $id" }
+    foreach ($id in ($traceIds | Where-Object { $_ -notin $allIds })) { $errors += "Traceability ID absent from its source document: $id" }
+    foreach ($duplicate in $traceIds | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate traceability ID: $($duplicate.Name)" }
+    if ($traceBlock -match 'UNMAPPED PREFIX') { $errors += 'Traceability contains unmapped requirement prefixes; update Build-ControlledArtifacts.ps1' }
+
+    # Freshness: regenerate section 8 into a scratch copy of the project and require a byte-identical block.
+    $scratch = Join-Path ([IO.Path]::GetTempPath()) ('gdf-trace-' + [guid]::NewGuid().ToString('N'))
+    try {
+        foreach ($sub in @('docs', 'baseline', 'tools')) { Copy-Item -LiteralPath (Join-Path $ProjectRoot $sub) -Destination (Join-Path $scratch $sub) -Recurse -Force }
+        & (Join-Path $scratch 'tools\Build-ControlledArtifacts.ps1') -ProjectRoot $scratch -SkipBaseline 3>$null | Out-Null
+        $regenerated = (Get-Content -LiteralPath (Join-Path $scratch 'docs\DOCUMENT_CONTROL.md') -Raw) -replace "`r`n", "`n"
+        $regeneratedBlock = if ($regenerated -match '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') { $Matches[1] } else { '' }
+        if (($traceBlock -replace "`r`n", "`n") -ne $regeneratedBlock) { $errors += 'DOCUMENT_CONTROL.md section 8 is stale; run tools/Build-ControlledArtifacts.ps1' }
+    } finally {
+        if (Test-Path -LiteralPath $scratch) { Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+# ---- cross-document linkage rules
+foreach ($id in $nfrIds) {
+    if ($designRaw -notmatch [regex]::Escape($id)) { $errors += "Design does not cite $id" }
+    if ($masterRaw -notmatch [regex]::Escape($id)) { $errors += "Migration master does not cite $id" }
+}
+$evIds = [regex]::Matches($masterRaw, '(?m)^\|\s*(EV-\d{3}A?)\s*\|') | ForEach-Object { $_.Groups[1].Value }
+$gateBlock = if ($masterRaw -match '(?s)## \d+\. Quality gates(.*?)## \d+\.') { $Matches[1] } else { '' }
+foreach ($id in $evIds) { if ($gateBlock -notmatch [regex]::Escape($id)) { $errors += "Quality gates do not reference evidence package $id" } }
+# Decisions the design is not required to cite, with the reason. Every other D-* row must appear in the design.
+$designCitationExempt = @{
+    'D-006' = 'compatibility duration is a programme/consumer decision; the design only requires the adapter to be time-bounded (WDES-015)'
+    'D-009' = 'canonical legacy source is a Phase 0 provenance decision with no design content'
+    'D-010' = 'database schema policy governs legacy databases the design accesses unchanged (design section 28.3)'
+    'D-011' = 'defect disposition policy is exercised in the functional specification section 31, not the design'
+    'D-012' = 'routing unit selection is an operations decision; the design fixes only the routing rules (section 28.4)'
+}
+foreach ($id in ([regex]::Matches($masterRaw, '(?m)^\|\s*(D-\d{3})\s*\|') | ForEach-Object { $_.Groups[1].Value })) {
+    if ($designCitationExempt.ContainsKey($id)) { continue }
+    if ($designRaw -notmatch [regex]::Escape($id)) { $errors += "Design does not reference open decision $id" }
+}
+
+# ---- checksum manifest identity
 $checksumPath = Join-Path $ProjectRoot 'baseline\legacy-source.sha256'
 $identityPath = Join-Path $ProjectRoot 'baseline\legacy-source-manifest.sha256'
 $expectedIdentity = ((Get-Content -LiteralPath $identityPath -Raw).Trim() -split '\s+')[0]
 $actualIdentity = (Get-FileHash -LiteralPath $checksumPath -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($actualIdentity -ne $expectedIdentity) {
-    $errors += "Checksum manifest identity mismatch: expected $expectedIdentity; actual $actualIdentity"
+if ($actualIdentity -ne $expectedIdentity) { $errors += "Checksum manifest identity mismatch: expected $expectedIdentity; actual $actualIdentity" }
+foreach ($doc in @($SpecPath, $MasterPath, $ControlPath)) {
+    if ((Get-Content -LiteralPath $doc -Raw) -notmatch [regex]::Escape($actualIdentity)) { $errors += "$([IO.Path]::GetFileName($doc)) does not record the current manifest identity $actualIdentity" }
 }
 
-$exactReferenceCount = 0
-$invalidReferenceCount = 0
+# ---- legacy source references (only when the evidence tree is reachable)
+$exactReferenceCount = 0; $invalidReferenceCount = 0; $sourceCheck = 'skipped (LEGACY_SOURCE_ROOT unset or unreachable)'
 $sourceMatches = [regex]::Matches($specRaw, '(?<path>\.\./(?:\.\./)?[^`,;]+?\.(?:frm|bas|cls|ctl|pag|vbp|ini|sql|doc|xls|ppt))(?::(?<start>\d+)(?:-(?<end>\d+))?)?')
-foreach ($match in $sourceMatches) {
-    $relative = $match.Groups['path'].Value
-    if ($relative -match '[*?]') { continue }
-    $exactReferenceCount++
-    $fullPath = [IO.Path]::GetFullPath((Join-Path $LegacyDocsRoot $relative))
-    if (-not (Test-Path -LiteralPath $fullPath)) {
-        $errors += "Missing exact source reference: $relative"
-        $invalidReferenceCount++
-        continue
-    }
-    if ($match.Groups['start'].Success) {
-        $lineCount = (Get-Content -LiteralPath $fullPath).Count
-        $end = if ($match.Groups['end'].Success) { [int]$match.Groups['end'].Value } else { [int]$match.Groups['start'].Value }
-        if ($end -gt $lineCount) {
-            $errors += "Out-of-range source reference: $($match.Value); file has $lineCount lines"
-            $invalidReferenceCount++
+if (-not [string]::IsNullOrWhiteSpace($LegacySourceRoot) -and (Test-Path -LiteralPath $LegacySourceRoot)) {
+    $LegacyDocsRoot = Join-Path (Resolve-Path -LiteralPath $LegacySourceRoot).ProviderPath 'Docs'
+    $sourceCheck = 'run'
+    foreach ($match in $sourceMatches) {
+        $relative = $match.Groups['path'].Value
+        if ($relative -match '[*?]') { continue }
+        $exactReferenceCount++
+        $fullPath = [IO.Path]::GetFullPath((Join-Path $LegacyDocsRoot $relative))
+        if (-not (Test-Path -LiteralPath $fullPath)) { $errors += "Missing exact source reference: $relative"; $invalidReferenceCount++; continue }
+        if ($match.Groups['start'].Success) {
+            $lineCount = (Get-Content -LiteralPath $fullPath).Count
+            $end = if ($match.Groups['end'].Success) { [int]$match.Groups['end'].Value } else { [int]$match.Groups['start'].Value }
+            if ($end -gt $lineCount) { $errors += "Out-of-range source reference: $($match.Value); file has $lineCount lines"; $invalidReferenceCount++ }
         }
     }
 }
 
-$result = [pscustomobject]@{
+[pscustomobject]@{
     MarkdownFiles = $markdownFiles.Count
     FunctionalRequirements = $requirementIds.Count
+    NonFunctionalRequirements = $nfrIds.Count
     LegacyDefects = $defectIds.Count
+    DesignVerifications = $designIds.Count
     TraceabilityRows = $traceIds.Count
+    SourceReferenceCheck = $sourceCheck
     ExactSourceReferences = $exactReferenceCount
     InvalidSourceReferences = $invalidReferenceCount
     Errors = $errors.Count
     ManifestSHA256 = $actualIdentity
 }
-
-$result
 if ($errors.Count -gt 0) {
-    $errors | ForEach-Object { Write-Error $_ }
+    $errors | ForEach-Object { Write-Output "ERROR: $_" }
     exit 1
 }
