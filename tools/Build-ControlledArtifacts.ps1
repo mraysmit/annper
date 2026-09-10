@@ -125,14 +125,12 @@ $sourceMap = @{
     'ACC'='Functional specification §33 acceptance scenario'
 }
 $phaseMap = @{
-    'Phase 0' = @('PROJ','DEP','BUILD')
-    'Phase 1 characterization; Phase 6 implementation' = @('CTL','TOOL','NAV','WIN','ELEM','FIELD','SHELL','SCREEN','GRID','CHART','PRINT','EXCEL','CUSTOM','LOOKUP','DIALOG','SPLASH','SHUT','MD','TREE','JUNCTION','ACTION')
-    'Phase 1 characterization; Phase 3/4 implementation' = @('AGG','LIMIT','EXT','CONN','DC','PARAM','JOIN','DML','INSERT','UPDATE','DELETE','REFRESH','MSG','SYSMSG','LOG','SYSINFO','REPORT','FILTER','SEARCH','CRIT','SEC','APP','START','STATE')
-    'Phase 1 metadata discovery' = @('META')
-    'Phase 1 characterization; Phase 2/4 implementation' = @('CMD')
-    'All implementation phases; verified at each gate' = @('INV')
-    'Gate D onward; executed per slice' = @('ACC')
-    'Phase 1 characterization; implementation phase assigned with first consumer' = @('PLM')
+    'Phase 0 baseline' = @('PROJ','DEP','BUILD')
+    'Phase 3 first slice; Phase 4 expansion' = @('CTL','TOOL','NAV','WIN','ELEM','FIELD','SHELL','SCREEN','GRID','CHART','PRINT','EXCEL','CUSTOM','LOOKUP','DIALOG','SPLASH','SHUT','MD','TREE','JUNCTION','ACTION','EXT','CONN','DC','PARAM','JOIN','DML','INSERT','UPDATE','DELETE','REFRESH','MSG','SYSMSG','LOG','SYSINFO','REPORT','FILTER','SEARCH','CRIT','SEC','APP','START','STATE')
+    'Phase 2 foundation' = @('META','CMD')
+    'All phases; verified at each gate' = @('INV','ARCH')
+    'Phase 4 expansion, only under D-020' = @('AGG','LIMIT','PLM')
+    'Phase 5 release readiness' = @('ACC')
 }
 function Get-RequirementPrefix { param([string]$Id) if ($Id -match '^FR-([A-Z0-9]+)-') { return $Matches[1] }; return '' }
 function Get-TargetPhase { param([string]$Prefix) foreach ($k in $phaseMap.Keys) { if ($Prefix -in $phaseMap[$k]) { return $k } }; return 'Unassigned' }
@@ -154,20 +152,25 @@ foreach ($line in Get-Content -LiteralPath $SpecPath) {
         if (-not $sourceMap.ContainsKey($prefix)) { $unmappedPrefixes += $prefix; $evidence = 'UNMAPPED PREFIX: add to sourceMap in Build-ControlledArtifacts.ps1' }
         elseif ($sourceMap[$prefix] -like 'Functional specification*') { $evidence = $sourceMap[$prefix] }
         else { $evidence = 'Functional specification §36: ' + $sourceMap[$prefix] }
-        $runtime = if ($classification -match 'METADATA-DEPENDENT') { 'Schema contract present; deployed rows (EV-001) and catalogue entry pending' }
-                   elseif ($classification -match 'PHYSICAL-DDL-VERIFY') { 'Physical metadata DDL confirmation (EV-001A) pending' }
-                   elseif ($classification -match 'RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Runtime/provenance evidence (EV-003, EV-004) pending' }
-                   else { 'Framework source evidence present; deployed-use confirmation applies where relevant' }
-        $status = if ($classification -match 'METADATA-DEPENDENT|PHYSICAL-DDL-VERIFY|RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Discovery evidence pending; test not implemented' } else { 'Source-specified; test not implemented' }
+        $runtime = if ($classification -match 'NOT APPLICABLE') { 'Assumed a deployed legacy instance; none exists' }
+                   elseif ($classification -match 'METADATA-DEPENDENT') { 'Schema contract present; configured instances are authored in the rebuild (D-015)' }
+                   elseif ($classification -match 'PHYSICAL-DDL-VERIFY') { 'Physical schema decided by the metadata-store design (D-013)' }
+                   elseif ($classification -match 'RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Source-only evidence; resolved by reading or a recorded decision (Gate B)' }
+                   else { 'Source evidence only; no deployed instance exists' }
+        $decisionRef = if ($classification -match '\((D-\d{3})\)') { $Matches[1] } else { '' }
+        $status = if ($classification -match 'NOT APPLICABLE') { 'Not applicable; no deployed legacy instance' }
+                  elseif ($classification -match 'REPLATFORM DECISION') { if ($decisionRef) { "Decision $decisionRef pending; test not implemented" } else { 'Replatform decision pending; test not implemented' } }
+                  elseif ($classification -match 'METADATA-DEPENDENT|PHYSICAL-DDL-VERIFY|RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Resolution by decision pending; test not implemented' }
+                  else { 'Source-specified; test not implemented' }
         $rows += [pscustomobject]@{Id=$id;Spec=$location;Line=$lineNumber;Classification=$classification;Source=$evidence;Runtime=$runtime;Test="AT-$id";Phase=(Get-TargetPhase $prefix);Status=$status}
     }
     elseif ($line -match '^\|\s*(NFR-[A-Z0-9-]+)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*$') {
-        $rows += [pscustomobject]@{Id=$Matches[1];Spec=$location;Line=$lineNumber;Classification='Non-functional acceptance floor: ' + $Matches[2].Trim();Source='Functional specification §44; verification: ' + $Matches[4].Trim();Runtime='Production calibration evidence (EV-007) pending';Test="AT-$($Matches[1])";Phase='Phase 1 calibration; verified at Gate E';Status='Provisional floor; test not implemented'}
+        $rows += [pscustomobject]@{Id=$Matches[1];Spec=$location;Line=$lineNumber;Classification='Non-functional acceptance floor: ' + $Matches[2].Trim();Source='Functional specification §44; verification: ' + $Matches[4].Trim();Runtime='No production calibration exists; provisional floor stands until a recorded decision';Test="AT-$($Matches[1])";Phase='Phase 4 load tests; verified at Gate E';Status=$(if ($Matches[2] -like '*NOT APPLICABLE*') { 'Not applicable; no legacy consumer exists' } else { 'Provisional floor; test not implemented' })}
     }
     elseif ($line -match '^\|\s*(DEF-\d+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$') {
         $id = $Matches[1]; $decision = $Matches[4].Trim(); $approvers = $Matches[5].Trim(); $date = $Matches[6].Trim()
         $status = if ($decision -eq '' -or $decision -eq 'Pending') { 'Product disposition and test pending' } else { "Disposition $decision approved $date by $approvers; test pending" }
-        $rows += [pscustomobject]@{Id=$id;Spec=$location;Line=$lineNumber;Classification="Legacy defect; disposition: $decision";Source='Functional specification §31 plus the relevant §36 source area';Runtime='Production reliance/behavior evidence (EV-010) pending where identified';Test="AT-$id";Phase='Phase 1 disposition under D-011; affected implementation phase';Status=$status}
+        $rows += [pscustomobject]@{Id=$id;Spec=$location;Line=$lineNumber;Classification="Legacy defect; disposition: $decision";Source='Functional specification §31 plus the relevant §36 source area';Runtime='No deployed reliance exists; disposition is a product decision under D-011';Test="AT-$id";Phase='Phase 1 disposition under D-011; affected build phase';Status=$status}
     }
 }
 
@@ -193,7 +196,7 @@ $trace = @(
     '|---|---|---|---|---|---|---|---|'
 )
 foreach ($row in $rows) {
-    $location = '{0} (line {1})' -f $row.Spec, $row.Line
+    $location = $row.Spec
     $trace += '| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} |' -f (Escape-MarkdownCell $row.Id),(Escape-MarkdownCell $location),(Escape-MarkdownCell $row.Classification),(Escape-MarkdownCell $row.Source),(Escape-MarkdownCell $row.Runtime),(Escape-MarkdownCell $row.Test),(Escape-MarkdownCell $row.Phase),(Escape-MarkdownCell $row.Status)
 }
 $trace += '<!-- END GENERATED TRACEABILITY -->'

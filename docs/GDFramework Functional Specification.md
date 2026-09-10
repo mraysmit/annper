@@ -1,9 +1,9 @@
 # GD Framework Functional Specification
 
-Document status: Controlled working baseline 0.7 (framework scope covered; metadata schema reconstructed; deployed configuration/runtime expansion pending evidence)  
+Document status: Controlled working baseline 0.9 (framework scope covered from source; metadata schema reconstructed; no deployed configuration exists, so applications are authored in the rebuild)  
 Prepared: 1 August 2026; reviewed and controlled: 6 September 2026; consolidated: 9 September 2026; corrected: 10 September 2026  
 System lineage reviewed: GD Framework 1.0–1.2, GFDGUI, GFDClient, GFDServer, GFDGUICtls  
-Primary purpose: technology-neutral behavioral specification for re-platforming
+Primary purpose: technology-neutral behavioral reference for rebuilding the framework as a web platform
 
 Document home: `docs/GDFramework Functional Specification.md`  
 Document control: [DOCUMENT_CONTROL.md](DOCUMENT_CONTROL.md)  
@@ -18,6 +18,8 @@ Change history: see DOCUMENT_CONTROL.md section 6
 | 0.5 | 2026-09-06 | Metadata schema adopted as primary evidence |
 | 0.6 | 2026-09-09 | Consolidation: non-functional requirements and defect dispositions merged in; technology-neutral rewording; invariant and acceptance IDs; glossary |
 | 0.7 | 2026-09-10 | Section 31 subordinated to decision D-011 with the disposition vocabulary defined; FR-DEP-003 closed as a replacement requirement consistent with NFR-PERF-004; FR-ACC-019 extended to NFR-AVAIL-001 and NFR-DR-001 with operational-evidence verification stated; section 15 reserved positions 13–15 and FR-TOOL-008 security rule for positions 16–20; section 33 classification column; section 44 measurable wording for the read fixture, concurrency mix, export memory, scan severity, and compatibility verification |
+| 0.8 | 2026-09-10 | Section 32.1 register of desktop-bound behaviors requiring web reinterpretation under decision D-017, with the affected rows reclassified `REPLATFORM DECISION` and FR-INV-012 added; FR-ACC-004 accepts the approved web equivalent; DEF-038 records the auto-refresh loss of uncommitted edits; DEF-003 proposed disposition notes change-time persistence |
+| 0.9 | 2026-09-10 | Premise corrected: no deployed instance, metadata rows, users, or consumers exist. Section 2 rewritten as the evidence boundary; `NOT APPLICABLE` classification added and applied to coexistence and deployment rows; discovery-evidence conditions replaced by product-decision conditions (D-017, D-019, D-020); physical-DDL and production-calibration wording removed; section 34 restated as configuration to be authored; NFR-COMP-001 marked not applicable; decision pointers added to every `REPLATFORM DECISION` row |
 
 Relative source paths in this specification are intentionally preserved from
 the legacy review. Resolve paths such as `../AppControls` and
@@ -41,16 +43,15 @@ The specification has four goals:
 
 The source code and metadata database schema together specify the framework engine and the configuration grammar used to construct GD applications. The schema is sufficient to infer the metadata entities, keys, relationships, option fields, and assembly rules for application groups, applications, navigation, screens, controls, DataClasses, parameters, security, reports, messages, and personalization. Section 28 records that reconstructed metadata contract.
 
-The schema does not, by itself, identify the populated configuration of a particular deployment. Application names, active menu and screen instances, field definitions, literal SQL or procedure names stored in DataClass rows, role assignments, user overrides, value-list contents, report instances, and configured business actions depend on the rows held in that deployment. Therefore, this baseline distinguishes the reconstructed metadata model from the still-unavailable deployed metadata population. A complete enumeration of every deployed application additionally requires:
+Nothing beyond the reviewed source tree and its documents exists. The legacy system is not deployed anywhere: there is no populated metadata database, no application database, no helper binary, no user population, and no dependent consumer, and none of these will be obtained. Consequently:
 
-- a read-only export of the active rows from every populated GD metadata table, preserving keys and relationships;
-- schemas, views, stored procedures, and functions in application databases referenced by those rows;
-- examples of each user role and its effective permissions;
-- external helper DLLs and service-adapter implementations;
-- representative runtime data and screenshots;
-- access to a functioning legacy environment for behavioral verification.
+- application names, menus, screens, fields, DataClass operations, roles, value lists, reports, and business actions are not recoverable from any deployment; they are authored anew in the rebuilt platform using the section 28 grammar;
+- requirements marked `METADATA-DEPENDENT` describe schema-derived configuration behavior whose instances the rebuild defines through authoring;
+- requirements marked `RUNTIME-VERIFY` or `DOCUMENT CONFLICT` cannot be observed in a running build and are resolved by reading or by a recorded product decision (MIGRATION_MASTER.md section 17), which is then the tested behavior;
+- requirements marked `NOT APPLICABLE` assumed a deployed instance or a coexisting legacy consumer and are retained only so their identifiers stay stable; and
+- the measurement profiles in section 44 are provisional acceptance profiles, not calibrations from production.
 
-Until those sources are supplied, requirements marked `METADATA-DEPENDENT` describe schema-derived configuration behavior but cannot yet enumerate which application-specific instances are active in a deployment. Requirements marked `RUNTIME-VERIFY` still require observation of exact executable behavior.
+The legacy system is therefore a behavioral reference, not a system to be migrated. Preserving a legacy defect requires a recorded product reason (section 31, D-011); the expected default is Fix or Retire.
 
 ## 3. Evidence and classification
 
@@ -82,7 +83,7 @@ Until those sources are supplied, requirements marked `METADATA-DEPENDENT` descr
 | E-DOC-PLM | `old/PLM Components Overview.doc`, `old/PLM Server System Specification.doc`, `old/PLM Components Outstanding Work.doc` | Historical PLM architecture, limit processing, scheduling, pooling, and unfinished-work context |
 | E-DOC-ARCHIVE | `old/GenFormDataNotesold.doc`, `*.wbk`, `~WRL0005.tmp` | Older document snapshots used only to detect superseded wording or otherwise-lost requirements; the enhancement backup is wholly contained in the current document, while the metadata backups add only older/deprecated wording |
 | E-DOC-SCHEMA | `old/GDFramework Objects.xls` | Older physical metadata-object inventory containing 29 field/index definition blocks |
-| E-META-MODEL | E-DOC-META, E-DOC-PROGRAMMER, and E-DOC-SCHEMA combined with the recordsets and fields consumed in E-CLIENT, E-SERVER, and E-GUI-GENERIC | Reconstructed metadata-schema evidence set relied on by section 28; `SCHEMA-INFERRED`, not DDL-verified (physical DDL confirmation EV-001A and deployed rows EV-001 remain outstanding) |
+| E-META-MODEL | E-DOC-META, E-DOC-PROGRAMMER, and E-DOC-SCHEMA combined with the recordsets and fields consumed in E-CLIENT, E-SERVER, and E-GUI-GENERIC | Reconstructed metadata-schema evidence set relied on by section 28; `SCHEMA-INFERRED`; no physical DDL or populated rows exist, so the rebuild defines its own physical schema from this logical model |
 | E-DOC-ENH-XLS | `old/GD Framework Enhancements.xls` | Empty enhancement-tracker template (column headings only); no independent issues or requirements |
 | E-DOC-OFFSITE | `old/Global Control Room Offsite - Mark.ppt` | Historical PLM/GD component architecture, marketing claims, and three legacy runtime screenshots |
 
@@ -92,8 +93,8 @@ Until those sources are supplied, requirements marked `METADATA-DEPENDENT` descr
 |---|---|
 | `VERIFIED` | Implemented behavior is directly traceable in source. |
 | `SCHEMA-INFERRED` | The metadata structure or relationship is reconstructed from the database schema, metadata reference, physical-object inventory, and source usage. |
-| `METADATA-DEPENDENT` | The metadata model is known, but the exact deployed configuration depends on populated metadata rows not present in the reviewed repository. |
-| `PHYSICAL-DDL-VERIFY` | Logical behavior is known, but production DDL must confirm storage-level types, constraints, defaults, indexes, or triggers before persistence is rebuilt. |
+| `METADATA-DEPENDENT` | The metadata model is known; the configured instances are authored in the rebuild, because no populated metadata rows exist. |
+| `PHYSICAL-DDL-VERIFY` | Logical behavior is known; storage-level types, constraints, defaults, indexes, and triggers are decided by the rebuild's metadata-store design (D-013), because no production DDL exists. |
 | `RUNTIME-VERIFY` | Source intent is clear but exact observable behavior requires execution. |
 | `DOCUMENTED-ONLY` | Historical documentation claims the feature, but implementation was not found. |
 | `DORMANT` | Compiled or retained code has no active call path. |
@@ -116,6 +117,7 @@ Until those sources are supplied, requirements marked `METADATA-DEPENDENT` descr
 | `DOCUMENT CONFLICT` | Two evidence sources disagree and must be resolved through runtime or stakeholder evidence. |
 | `DESIGN-TIME` | Development-tool behavior that is not part of end-user runtime behavior. |
 | `VERIFIED INTENT` | Executable control flow expresses the intended behavior, but a defect or unavailable dependency prevents it from being treated as reliably shipped. |
+| `NOT APPLICABLE` | The requirement assumed a deployed legacy instance, deployed binaries, or a coexisting legacy consumer. None exists, so the row is retained only for identifier stability and lineage and is not a replacement requirement. |
 
 Multiple values separated by `/` indicate that a requirement has more than one evidence/status characteristic.
 
@@ -179,8 +181,8 @@ flowchart LR
 | FR-START-005 | An absent, empty, or invalid redirected configuration file shall prevent successful startup and display a critical error. | VERIFIED |
 | FR-START-006 | Startup shall support application-group selection, database-type override, database-connection override, debug mode, SQL debugging, no-file-log, no-mail, no-initial-data-load, display-definition refresh, user impersonation, message-polling interval, and custom splash image options where implemented. | VERIFIED / METADATA-DEPENDENT |
 | FR-START-007 | Connection credentials shall be supplied through a secure secret mechanism in the replacement; plaintext tracked configuration is explicitly prohibited. | REPLACEMENT REQUIREMENT |
-| FR-START-008 | Initialization shall create a client log and an application-specific temporary folder. | VERIFIED |
-| FR-START-009 | Initialization shall collect workstation and user identity, with optional debug impersonation. | VERIFIED |
+| FR-START-008 | Initialization shall create a client log and an application-specific temporary folder. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-START-009 | Initialization shall collect workstation and user identity, with optional debug impersonation. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-START-010 | Initialization shall create and initialize the application server, establish a client session, load system configuration, and load initialization DataClasses unless suppressed. | VERIFIED |
 | FR-START-011 | Startup failure at any required stage shall abort display of the main application. | VERIFIED |
 
@@ -208,7 +210,7 @@ flowchart LR
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-SEC-001 | A framework-controlled application shall identify the current user from workstation identity unless an authorized debug override is supplied. | VERIFIED |
+| FR-SEC-001 | A framework-controlled application shall identify the current user from workstation identity unless an authorized debug override is supplied. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-SEC-002 | The user must exist in metadata and be active. Otherwise initialization shall fail with a security message. | VERIFIED |
 | FR-SEC-003 | The user must have at least one active application assignment in the selected application group. | VERIFIED |
 | FR-SEC-004 | The default application shall be the first assigned application marked as default; if none is marked, the first authorized application shall be used. | VERIFIED |
@@ -217,7 +219,7 @@ flowchart LR
 | FR-SEC-007 | For secured screen options, a capability shall be enabled only when it is enabled by the screen and allowed by effective security. | VERIFIED |
 | FR-SEC-008 | A user-specific display-option row shall override the cumulative role result for that screen. | VERIFIED |
 | FR-SEC-009 | The system shall track last login and last logout timestamps per user/application assignment. | VERIFIED |
-| FR-SEC-010 | Personal application-group settings shall include main-window width, height, and splitter position. | VERIFIED |
+| FR-SEC-010 | Personal application-group settings shall include main-window width, height, and splitter position. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-SEC-011 | Personal screen settings may include visible columns, column order, width, sorting, grouping, filters, format, frozen columns, and flash-change configuration. | VERIFIED |
 
 ## 9. Main application shell
@@ -230,12 +232,12 @@ The shell contains a global toolbar, left navigation area, resizable splitter, t
 |---|---|---|
 | FR-SHELL-001 | The shell title shall display the configured application-group caption. | VERIFIED |
 | FR-SHELL-002 | When configured, the active application description shall be appended to the shell title. | VERIFIED |
-| FR-SHELL-003 | The shell shall restore user-specific dimensions and splitter position, falling back to application-group defaults. | VERIFIED |
-| FR-SHELL-004 | The shell shall start maximized when application-group option 20 is enabled. | VERIFIED |
+| FR-SHELL-003 | The shell shall restore user-specific dimensions and splitter position, falling back to application-group defaults. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-SHELL-004 | The shell shall start maximized when application-group option 20 is enabled. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-SHELL-005 | Resizing the shell or moving the splitter shall resize the tab region, child container, and every docked child screen. | VERIFIED |
 | FR-SHELL-006 | The navigation pane and child pane shall remain independently resizable within configured splitter limits. | VERIFIED |
 | FR-SHELL-007 | The status bar shall expose general information, database/server status, date, and time panels. | VERIFIED |
-| FR-SHELL-008 | Double-clicking the status bar shall open the system explorer. | VERIFIED |
+| FR-SHELL-008 | Double-clicking the status bar shall open the system explorer. | VERIFIED / REPLATFORM DECISION (D-017) |
 
 ### 9.2 Global toolbar
 
@@ -270,7 +272,7 @@ The shell contains a global toolbar, left navigation area, resizable splitter, t
 | FR-NAV-005 | Submenu records shall be associated by menu ID and ordered by submenu sequence. | VERIFIED |
 | FR-NAV-006 | Selecting a terminal submenu with a nonzero display-definition control ID shall open that screen. | VERIFIED |
 | FR-NAV-007 | Menu captions, descriptions, keys, icons, and tooltips shall be supplied by metadata. | VERIFIED / METADATA-DEPENDENT |
-| FR-NAV-008 | The replacement shall not implement a standard-Windows-menu navigation mode or an arbitrary-depth submenu hierarchy unless discovery evidence (EV-001 menu/submenu rows, EV-008 workflows) proves an active consumer; their absence from the active main-shell implementation shall be recorded as a disposition (section 30). | DOCUMENTED-ONLY |
+| FR-NAV-008 | The replacement shall not implement a standard-Windows-menu navigation mode or an arbitrary-depth submenu hierarchy unless a recorded product decision (D-017) requires it; their absence from the active main-shell implementation is recorded in section 30. | DOCUMENTED-ONLY / REPLATFORM DECISION (D-017) |
 
 ### 10.2 Outlook navigation
 
@@ -304,14 +306,14 @@ The shell contains a global toolbar, left navigation area, resizable splitter, t
 | FR-WIN-002 | A docked screen shall have a tab whose key uniquely maps to the hosted screen instance and whose caption follows the screen caption. | VERIFIED |
 | FR-WIN-003 | Selecting a tab shall bring its associated form to the front and send other contained forms behind it. | VERIFIED |
 | FR-WIN-004 | Closing a docked screen shall remove its tab and hosted-form reference. | VERIFIED |
-| FR-WIN-005 | Dragging a docked screen header beyond the movement threshold shall undock it to a floating, resizable top-level window. | VERIFIED / RUNTIME-VERIFY |
-| FR-WIN-006 | The undocking gesture shall draw a desktop focus rectangle indicating the destination and eventual window size. | VERIFIED |
-| FR-WIN-007 | A floating screen shall expose a Dock command that returns it to the shell. | VERIFIED |
+| FR-WIN-005 | Dragging a docked screen header beyond the movement threshold shall undock it to a floating, resizable top-level window. | VERIFIED / RUNTIME-VERIFY / REPLATFORM DECISION (D-017) |
+| FR-WIN-006 | The undocking gesture shall draw a desktop focus rectangle indicating the destination and eventual window size. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-WIN-007 | A floating screen shall expose a Dock command that returns it to the shell. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-WIN-008 | Modal popup screens shall not be added to the shell tabs and shall return an explicit OK/CANCEL result. | VERIFIED |
 | FR-WIN-009 | Popup selection screens shall return configured key and display-field values through form-parameter objects. | VERIFIED |
 | FR-WIN-010 | Optional popup multi-selection shall join returned values using the configured one-character delimiter. | VERIFIED / RUNTIME-VERIFY |
 | FR-WIN-011 | Optional popup text editing shall be controlled by screen-element options. | VERIFIED / METADATA-DEPENDENT |
-| FR-WIN-012 | The replacement shall not assume per-screen window-position persistence for loaded/floating screens unless discovery evidence (EV-008 workflows, EV-010 interviews) proves users rely on it; its absence from the reviewed active code shall be recorded as a disposition. | DOCUMENTED-ONLY |
+| FR-WIN-012 | The replacement shall not assume per-screen window-position persistence for loaded/floating screens unless a recorded product decision (D-017) requires it; its absence from the reviewed active code shall be recorded as a disposition. | DOCUMENTED-ONLY |
 
 ## 12. Generic screen creation lifecycle
 
@@ -401,7 +403,7 @@ The shell contains a global toolbar, left navigation area, resizable splitter, t
 | FR-CHART-002 | Screen/report column metadata shall identify category/X-axis and data-series values. | VERIFIED / METADATA-DEPENDENT |
 | FR-CHART-003 | Selecting a chart point shall show its value as a tooltip. | VERIFIED |
 | FR-CHART-004 | The chart shall resize with the screen. | VERIFIED |
-| FR-CHART-005 | The replacement shall not implement additional chart types or a chart-view editor unless discovery evidence (EV-001 report/chart metadata rows, EV-010 interviews) proves an active consumer; their absence from the reviewed code shall be recorded as a disposition. | UNFINISHED |
+| FR-CHART-005 | The replacement shall not implement additional chart types or a chart-view editor unless a recorded product decision requires it; their absence from the reviewed code is recorded in section 30. | UNFINISHED |
 
 ## 14. Screen elements and dynamic controls
 
@@ -418,7 +420,7 @@ Every screen element is identified by application ID, screen-definition ID, and 
 | FR-ELEM-005 | Datafield shall identify the corresponding DataClass recordset field. | VERIFIED |
 | FR-ELEM-006 | Default values shall initialize criteria controls and may populate hidden values on insert. | VERIFIED |
 | FR-ELEM-007 | Visibility shall be independent of whether an element participates in criteria or insert/update processing. | VERIFIED |
-| FR-ELEM-008 | Display/output format shall use VBA-compatible formatting semantics in the legacy system; the replacement shall define equivalent technology-neutral format tokens or a compatibility mapping. | VERIFIED / REPLATFORM DECISION |
+| FR-ELEM-008 | Display/output format shall use VBA-compatible formatting semantics in the legacy system; the replacement shall define equivalent technology-neutral format tokens or a compatibility mapping. | VERIFIED / REPLATFORM DECISION (D-018) |
 | FR-ELEM-009 | A mandatory editable element shall reject empty input and identify the field to the user. | VERIFIED |
 | FR-ELEM-010 | Text input longer than the underlying recordset field size shall be rejected before grid update. | VERIFIED |
 | FR-ELEM-011 | Numeric, string, database-object, and date/time criteria datatypes shall be preserved when constructing server criteria. | VERIFIED |
@@ -495,7 +497,7 @@ Extended options:
 | FR-TOOL-001 | Only configured and authorized commands shall be created. | VERIFIED |
 | FR-TOOL-002 | Save, Add, Delete, and Refresh captions may be overridden per display definition. | VERIFIED |
 | FR-TOOL-003 | Toolbar images shall be produced by overlaying the screen icon with a command icon when both exist. | VERIFIED |
-| FR-TOOL-004 | Dock and Close shall be available according to hosted/popup state. | VERIFIED |
+| FR-TOOL-004 | Dock and Close shall be available according to hosted/popup state. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-TOOL-005 | Unknown toolbar keys shall result in a critical diagnostic rather than silent execution. | VERIFIED |
 | FR-TOOL-006 | A non-updateable/non-insertable DataClass shall disable incompatible mutation commands even if metadata requests them. | HISTORICAL DEFECT / REPLACEMENT REQUIREMENT |
 | FR-TOOL-007 | Customize View / Group By option mapping: the toolbar builder (section 26.9.1) creates one command with key `GroupBy` and caption `Customise View`, gated by the single symbolic display option `GROUPBY`, which opens the customization dialog for grid, master/detail, and grid-junction views; the option table above lists Customize View at position 7 and the Group By panel (FR-GRID-009) at position 9. Which positional option corresponds to `GROUPBY`, and whether the other position is consumed independently, shall be confirmed against the option constants and a running build before either position is bound in the replacement. | RUNTIME-VERIFY |
@@ -586,7 +588,7 @@ A DataClass is a named, configured data operation that resolves to a tabular dat
 | FR-FILTER-007 | Server filtering shall re-query the DataClass using constructed criteria. | VERIFIED |
 | FR-FILTER-008 | The screen caption shall append `[Filtered]` while one or more filters are active. | VERIFIED |
 | FR-FILTER-009 | Persisted user filters shall be loaded on screen initialization and may be reset through customization. | VERIFIED |
-| FR-FILTER-010 | The replacement shall not implement filter modes 3 and 4 (grid-filter UI) unless discovery evidence (EV-001 `dsp_scrn_filter_type` rows, EV-003 runtime observation) proves an active consumer; the partial scaffolding shall be recorded as a disposition. | UNFINISHED |
+| FR-FILTER-010 | The replacement shall not implement filter modes 3 and 4 (grid-filter UI) unless a recorded product decision requires it; the partial scaffolding is recorded in section 30. | UNFINISHED |
 
 ### 17.3 Search and sorting
 
@@ -700,9 +702,9 @@ Chart presentation (`dsp_type=7`) is specified in section 13.7; this section cov
 | FR-EXCEL-002 | Field, grid, master-detail, tree/detail, and transformed-report data shall select the appropriate active recordset for export. | VERIFIED / RUNTIME-VERIFY |
 | FR-EXCEL-003 | Export shall exclude internal or explicitly omitted columns. | VERIFIED |
 | FR-EXCEL-004 | Export shall supply a valid sheet name and screen/report caption. | VERIFIED |
-| FR-EXCEL-005 | Individual-screen export shall create a new workbook. | VERIFIED |
-| FR-EXCEL-006 | Export All shall append subsequent screen exports to the workbook opened by the first screen. | VERIFIED |
-| FR-EXCEL-007 | Excel startup or copy failure shall produce a critical diagnostic. | VERIFIED |
+| FR-EXCEL-005 | Individual-screen export shall create a new workbook. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-EXCEL-006 | Export All shall append subsequent screen exports to the workbook opened by the first screen. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-EXCEL-007 | Excel startup or copy failure shall produce a critical diagnostic. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-EXCEL-008 | Text fields that look numeric, whitespace, formats, and large datasets shall be covered by replacement acceptance tests because historical defects were recorded. | HISTORICAL DEFECT |
 
 ### 21.3 Print preview
@@ -711,7 +713,7 @@ Chart presentation (`dsp_type=7`) is specified in section 13.7; this section cov
 |---|---|---|
 | FR-PRINT-001 | Print Preview shall render the current grid, including its visible columns, grouping, and formatting, as paginated printable output (legacy: GridEX preview engine). | VERIFIED |
 | FR-PRINT-002 | Preview shall support pagination status, zoom, page navigation, print, and close. | VERIFIED |
-| FR-PRINT-003 | The preview window shall open at the invoking screen’s bounds and resize its preview surface. | VERIFIED |
+| FR-PRINT-003 | The preview window shall open at the invoking screen’s bounds and resize its preview surface. | VERIFIED / REPLATFORM DECISION (D-017) |
 
 ## 22. Messages, status, logging, and diagnostics
 
@@ -742,12 +744,12 @@ The framework differentiates normal trace messages, function headers, warnings, 
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-LOG-001 | Each client session shall create a timestamped local log in the system temporary directory unless no-file-log is active. | VERIFIED |
-| FR-LOG-002 | Debug mode shall display log output in the debug window. | VERIFIED |
+| FR-LOG-001 | Each client session shall create a timestamped local log in the system temporary directory unless no-file-log is active. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-LOG-002 | Debug mode shall display log output in the debug window. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-LOG-003 | SQL debugging shall expose executed SQL through diagnostics. | VERIFIED |
 | FR-LOG-004 | Serious errors shall be inserted into the configured system error-log DataClass where available. | VERIFIED |
-| FR-LOG-005 | Serious errors may be emailed to configured system administrators unless mail is disabled. | VERIFIED |
-| FR-LOG-006 | Error mail shall contain diagnostic context and collected system information. | VERIFIED |
+| FR-LOG-005 | Serious errors may be emailed to configured system administrators unless mail is disabled. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-LOG-006 | Error mail shall contain diagnostic context and collected system information. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-LOG-007 | Failure of database logging shall fall back to the local log without recursively failing. | VERIFIED INTENT / RUNTIME-VERIFY |
 | FR-LOG-008 | The replacement shall not depend on legacy MAPI/CDO; notification transport shall be replaceable and securely configured. | REPLACEMENT REQUIREMENT |
 
@@ -755,8 +757,8 @@ The framework differentiates normal trace messages, function headers, warnings, 
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-SYSINFO-001 | About shall display application, component, client, server, database, user, workstation, and environment information available through `CSystemInfo`. | VERIFIED |
-| FR-SYSINFO-002 | System Explorer shall display system information hierarchically and expose selected-node detail. | VERIFIED |
+| FR-SYSINFO-001 | About shall display application, component, client, server, database, user, workstation, and environment information available through `CSystemInfo`. | VERIFIED / REPLATFORM DECISION (D-017) |
+| FR-SYSINFO-002 | System Explorer shall display system information hierarchically and expose selected-node detail. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-SYSINFO-003 | System information shall be refreshable on demand. | VERIFIED |
 
 ## 23. Asynchronous system messages
@@ -773,7 +775,7 @@ The framework differentiates normal trace messages, function headers, warnings, 
 | ID | Requirement | Classification |
 |---|---|---|
 | FR-SYSMSG-001 | The client shall poll messages at the configured interval, defaulting to ten seconds in current code when the configured value is zero. Historical documentation says ten minutes; runtime behavior takes precedence pending product decision. | VERIFIED / DOCUMENT CONFLICT |
-| FR-SYSMSG-002 | Messages shall be selected for the current user ID or workstation name. | VERIFIED |
+| FR-SYSMSG-002 | Messages shall be selected for the current user ID or workstation name. | VERIFIED / REPLATFORM DECISION (D-017) |
 | FR-SYSMSG-003 | Only ready messages whose valid time has arrived shall be processed. | VERIFIED |
 | FR-SYSMSG-004 | A message shall be marked processed and persisted before or during delivery so it is not repeatedly delivered. | VERIFIED |
 | FR-SYSMSG-005 | Delivery failures shall be logged as critical diagnostics. | VERIFIED |
@@ -794,7 +796,7 @@ The framework differentiates normal trace messages, function headers, warnings, 
 | FR-EXT-VAL-001 | A display definition may name a helper component to provide application-specific validation. | VERIFIED |
 | FR-EXT-VAL-002 | The component shall implement the validation interface before the screen is accepted. | VERIFIED |
 | FR-EXT-VAL-003 | Screen-element `external_validation` and helper-event options shall determine when validation is requested. | DOCUMENTED INTENT |
-| FR-EXT-VAL-004 | The replacement shall not assume save-time or grid pre-update helper validation is active behavior unless discovery evidence (EV-005 deployed helpers, EV-001 `dsp_helper_events` rows) proves an active consumer; the commented-out invocation and placeholder comments shall be recorded as a disposition (DEF-011). | UNFINISHED |
+| FR-EXT-VAL-004 | The replacement shall not treat save-time or grid pre-update helper validation as active behavior unless decision D-019 admits the validation-helper contract; the commented-out invocation and placeholder comments are recorded as DEF-011. | UNFINISHED / REPLATFORM DECISION (D-019) |
 
 ### 24.2 Function/derived-value helper
 
@@ -807,7 +809,7 @@ The framework differentiates normal trace messages, function headers, warnings, 
 |---|---|---|
 | FR-EXT-FUNC-001 | A screen element marked `external_process` may derive its displayed value from other row fields through the helper interface. | DOCUMENTED INTENT / PARTIAL CODE |
 | FR-EXT-FUNC-002 | The helper shall declare required fields, receive corresponding row values, and return a derived value and diagnostic message. | DOCUMENTED INTENT |
-| FR-EXT-FUNC-003 | The replacement shall not implement function-helper derived values as compatibility behavior unless discovery evidence (EV-005 deployed helpers, EV-001 `external_process` rows) proves an active consumer; the never-assigned interface and suppressed error shall be recorded as a disposition (DEF-010). | UNFINISHED / LEGACY-DEFECT |
+| FR-EXT-FUNC-003 | The replacement shall not implement function-helper derived values unless decision D-019 admits the function-helper contract; the never-assigned interface and suppressed error are recorded as DEF-010. | UNFINISHED / LEGACY-DEFECT / REPLATFORM DECISION (D-019) |
 
 ### 24.3 Simple service helper
 
@@ -815,9 +817,9 @@ The framework differentiates normal trace messages, function headers, warnings, 
 
 | Member | Signature | Purpose |
 |---|---|---|
-| `Connect` | signature to be extracted from the deployed type library (EV-005) | Establish the adapter session for a connection of type Simple Service (FR-EXT-SVC-001). |
-| `Query` | `Query(request, columnNames, valueList, returnRecordset, returnMessage)` — parameter order as described in prose; exact types to be extracted from the deployed type library (EV-005) | Execute one request built from the ordered parameter set and return a recordset-shaped result plus diagnostic message (FR-EXT-SVC-002, FR-EXT-SVC-003). |
-| `Disconnect` | signature to be extracted from the deployed type library (EV-005) | Release the adapter session on connection close/shutdown (FR-EXT-SVC-004). |
+| `Connect` | only the member name is recorded in the reviewed source; the rebuild defines its own typed adapter contract under D-019 | Establish the adapter session for a connection of type Simple Service (FR-EXT-SVC-001). |
+| `Query` | `Query(request, columnNames, valueList, returnRecordset, returnMessage)` — parameter order as described in prose; exact types are not recorded in the reviewed source, and the rebuild defines its own typed adapter contract under D-019 | Execute one request built from the ordered parameter set and return a recordset-shaped result plus diagnostic message (FR-EXT-SVC-002, FR-EXT-SVC-003). |
+| `Disconnect` | only the member name is recorded in the reviewed source; the rebuild defines its own typed adapter contract under D-019 | Release the adapter session on connection close/shutdown (FR-EXT-SVC-004). |
 
 | ID | Requirement | Classification |
 |---|---|---|
@@ -833,11 +835,11 @@ The framework differentiates normal trace messages, function headers, warnings, 
 
 | Member | Signature | Purpose |
 |---|---|---|
-| `RequestGDDataClassRecordset` | `RequestGDDataClassRecordset(name)` — return type and parameter type to be extracted from the deployed type library (EV-005) | Return the dataset of the named framework DataClass to an extension component. |
+| `RequestGDDataClassRecordset` | `RequestGDDataClassRecordset(name)` — return and parameter types are not recorded in the reviewed source; the rebuild defines its own typed contract under D-019 | Return the dataset of the named framework DataClass to an extension component. |
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-EXT-DB-001 | The replacement shall preserve the named-DataClass request use case through a stable service interface if discovery evidence (EV-005) shows that deployed helpers depend on `IGDDbHelper`; otherwise the contract shall be recorded as a disposition. | DOCUMENTED INTENT / REPLATFORM DECISION |
+| FR-EXT-DB-001 | The replacement shall offer a stable service interface for extension access to a named DataClass only if decision D-019 admits the database-helper contract; otherwise the contract is retired. | DOCUMENTED INTENT / REPLATFORM DECISION (D-019) |
 
 ## 25. Data sources and connection management
 
@@ -910,7 +912,7 @@ The framework differentiates normal trace messages, function headers, warnings, 
 | FR-CTL-LU-003 | It shall maintain separate display text and code value plus validation status/last validated text. | VERIFIED |
 | FR-CTL-LU-004 | It shall support automatic selection, mandatory state, selection APIs, maximum length, space padding, and Return-as-Tab. | VERIFIED |
 | FR-CTL-LU-005 | It shall coordinate status/clearing of associated form fields. | VERIFIED |
-| FR-CTL-LU-006 | The replacement shall not migrate `CSFPTextLookup` as a generic-screen dependency unless discovery evidence (EV-009 consumer inventory, EV-004 deployed binaries) proves an active consumer; the absence of an active consumer shall be recorded as a disposition (DEF-030, FR-CTL-USE-005). | DORMANT |
+| FR-CTL-LU-006 | The replacement shall not carry `CSFPTextLookup` into the generic screen unless a recorded product decision (D-017) requires it; no active generic-form consumer exists in the supplied standard project (DEF-030, FR-CTL-USE-005). | DORMANT / REPLATFORM DECISION (D-017) |
 
 ### 26.6 Custom OutlookBar
 
@@ -918,7 +920,7 @@ The framework differentiates normal trace messages, function headers, warnings, 
 |---|---|---|
 | FR-CTL-OUT-001 | The control shall manage keyed groups and keyed buttons with large/small icon modes. | VERIFIED |
 | FR-CTL-OUT-002 | It shall expose button/header/mouse events, hit testing, group expansion, scrolling, add/remove/clear, tooltips, and drag icons. | VERIFIED |
-| FR-CTL-OUT-003 | The replacement shall not migrate the custom Outlook controls unless discovery evidence (EV-009 consumer inventory, EV-004 deployed binaries) proves an active consumer other than the active shell, which uses the third-party JS Button Bar; the absence of such a consumer shall be recorded as a disposition (FR-CTL-USE-006). | DORMANT |
+| FR-CTL-OUT-003 | The replacement shall not migrate the custom Outlook controls unless a recorded product decision (D-017) requires them; the active shell used the third-party JS Button Bar, not these controls; the absence of such a consumer shall be recorded as a disposition (FR-CTL-USE-006). | DORMANT |
 
 ### 26.7 Complete public control contract
 
@@ -1111,18 +1113,18 @@ The generic builder sets `Frozen=True` while adding option-dependent commands an
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-CTL-API-001 | A compatibility inventory shall retain every public property, method, collection operation, enumeration value, event name, parameter order/type, read/write restriction, default, and persisted property name listed in sections 26.7–26.8 for every active custom control plus any dormant control accepted under FR-CTL-USE-006/007. | REPLACEMENT REQUIREMENT |
-| FR-CTL-API-002 | A modern native UI may rename misspelled APIs, but any coexistence adapter shall continue to recognize binary names such as `Orentation` and `AjustItemRect`. | REPLACEMENT REQUIREMENT |
+| FR-CTL-API-001 | A compatibility inventory shall retain every public property, method, collection operation, enumeration value, event name, parameter order/type, read/write restriction, default, and persisted property name listed in sections 26.7–26.8 for every active custom control plus any dormant control accepted under FR-CTL-USE-006/007. | NOT APPLICABLE |
+| FR-CTL-API-002 | A modern native UI may rename misspelled APIs, but any coexistence adapter shall continue to recognize binary names such as `Orentation` and `AjustItemRect`. | NOT APPLICABLE |
 | FR-CTL-API-003 | Event acceptance tests shall verify event order and payload for toolbar buttons, splitter completion, dropdown selection, text lookup/edit/focus, panel mouse input, and Outlook header/button/mouse interactions. | REPLACEMENT REQUIREMENT |
-| FR-CTL-API-004 | Property persistence tests shall instantiate controls with no saved properties and with a legacy property bag, then verify defaults, enum values, fonts/colors, sizing, status behavior, and round-trip persistence. | REPLACEMENT REQUIREMENT |
-| FR-CTL-API-005 | Design-time-only property-page behavior shall be separated from runtime requirements; runtime setters that historically reject changes shall either remain guarded in a compatibility layer or become explicitly supported modern behavior. | REPLATFORM DECISION |
+| FR-CTL-API-004 | Property persistence tests shall instantiate controls with no saved properties and with a legacy property bag, then verify defaults, enum values, fonts/colors, sizing, status behavior, and round-trip persistence. | NOT APPLICABLE |
+| FR-CTL-API-005 | Design-time-only property-page behavior shall be separated from runtime requirements; runtime setters that historically reject changes shall either remain guarded in a compatibility layer or become explicitly supported modern behavior. | REPLATFORM DECISION (D-017) |
 | FR-CTL-USE-001 | The replacement shell shall preserve the observable toolbar and splitter behavior consumed by `MainWindow` without requiring the legacy OCX. | REPLACEMENT REQUIREMENT |
 | FR-CTL-USE-002 | The replacement generic screen shall build toolbar commands only after metadata and security resolution and shall route commands by stable semantic key rather than button position. | VERIFIED / REPLACEMENT REQUIREMENT |
 | FR-CTL-USE-003 | Popup and docked generic screens shall receive different base toolbar commands exactly as specified in section 26.9. | VERIFIED |
 | FR-CTL-USE-004 | The generic title panel shall retain title/icon, secondary record-state caption, filtered indicator, optional suppression, and undocking gesture responsibilities even if implemented with separate modern components. | VERIFIED / REPLACEMENT REQUIREMENT |
-| FR-CTL-USE-005 | The replacement shall not substitute `CSFPDropDown` or `CSFPTextLookup` for the active generic screen’s standard criteria controls unless a separate product decision deliberately changes that behavior. | REPLATFORM DECISION |
-| FR-CTL-USE-006 | The custom Outlook controls shall be migrated only for an identified external consumer or an explicit decision to reproduce the historical shell; they are not dependencies of the active shell. | DORMANT / REPLATFORM DECISION |
-| FR-CTL-USE-007 | The `CToolTip` helper and design/test/template consumers shall remain outside production scope unless an identified deployed binary or application requires them. | SOURCE-ONLY / REPLATFORM DECISION |
+| FR-CTL-USE-005 | The replacement shall not substitute `CSFPDropDown` or `CSFPTextLookup` for the active generic screen’s standard criteria controls unless a separate product decision deliberately changes that behavior. | REPLATFORM DECISION (D-017) |
+| FR-CTL-USE-006 | The custom Outlook controls shall be carried into the rebuild only by an explicit product decision (D-017) to reproduce the historical shell; they are not dependencies of the active shell. | DORMANT / REPLATFORM DECISION (D-017) |
+| FR-CTL-USE-007 | The `CToolTip` helper and design/test/template consumers shall remain outside production scope unless a recorded product decision (D-017) requires them. | SOURCE-ONLY / REPLATFORM DECISION (D-017) |
 
 ## 27. Aggregation and specialist server components
 
@@ -1144,7 +1146,7 @@ The generic builder sets `Frozen=True` while adding option-dependent commands an
 | FR-LIMIT-002 | The retained source defines a control contract with parameters for COB date, previous COB date, jurisdiction, and command line, plus start-processing, process-status, and parameter get/set operations. | SOURCE-ONLY |
 | FR-LIMIT-003 | Processing iterates active limit types in evaluation sequence, creates the configured plugin class, requires its limit-processing interface, processes limit definitions, and persists violations, alerts, history, and violated-rule rows. | SOURCE-ONLY / PARTIAL CODE |
 | FR-LIMIT-004 | Limit alert retrieval may resolve the limit control, its detail-definition DataClass, the analysis DataClass/table and GUID column/value, then return the underlying analysis rows associated with the violation. | SOURCE-ONLY / METADATA-DEPENDENT |
-| FR-LIMIT-005 | The replacement shall not implement limit processing as a shipped GD Framework feature unless discovery evidence (EV-004 deployed binaries containing `CLimitServer`, EV-005 `IPLMLimit` plugins) proves an active consumer; the supplied project set does not compile `CLimitServer`, and that absence shall be recorded as a disposition. | DORMANT / BUILD-UNVERIFIED |
+| FR-LIMIT-005 | The replacement shall not implement limit processing as a shipped framework feature unless decision D-020 brings it into scope; the supplied project set does not compile `CLimitServer`, and that absence is recorded in section 30. | DORMANT / BUILD-UNVERIFIED / REPLATFORM DECISION (D-020) |
 | FR-LIMIT-006 | Exact rule truth tables, AND/OR sequencing, thresholds, jurisdiction/COB behavior, alert recipients/content, acknowledgement, and database mutations require deployed metadata, plugins, and stored procedures. | METADATA-DEPENDENT |
 | FR-LIMIT-007 | Historical PLM documents describe graphical rule editing, graphical execution paths, email/workflow alerts, automated scheduling, pooling, and client notification. These are broader PLM product intentions and shall not be included in GD Framework parity unless corroborated by deployed components. | DOCUMENTED-ONLY |
 
@@ -1152,7 +1154,7 @@ The generic builder sets `Frozen=True` while adding option-dependent commands an
 
 This section defines the reconstructed logical metadata model (evidence set E-META-MODEL). It is inferred from the metadata database schema lineage, the Metadata Reference and Programmer's Guide, the archived physical-object inventory, the recordsets requested by the client/server, and the fields consumed by the generic UI. Together these sources establish the configuration grammar independently of any particular deployment's row values. FR-META-006 (section 28.12) governs how physical names, semantics, keys, and defaults are carried into the replacement.
 
-The metadata schema is reconstructed from schema documents, the archived physical-object workbook, and source usage; physical DDL confirmation (EV-001A) and deployed rows (EV-001) remain outstanding. Production DDL is required to confirm exact physical types, indexes, defaults, constraints, and later deployment-specific additions, and populated rows are required to enumerate actual configured applications and their instances as set out in sections 2 and 34.1.
+The metadata schema is reconstructed from schema documents, the archived physical-object workbook, and source usage. No production DDL or populated rows exist (section 2): physical types, indexes, defaults, and constraints are decided by the rebuild's metadata-store design (D-013), and configured applications are authored as set out in section 34.
 
 ### 28.1 `dsp_app_grp` — application group
 
@@ -1231,31 +1233,31 @@ The active Outlook implementation treats menus as exactly two levels. User menu/
 
 ### 28.7 `dsp_scrn_defn` — screen element
 
-Physical column names are shown only where this document already cites them; the remaining names are pending EV-001A.
+Physical column names are shown only where the reviewed evidence records them; the remaining names are not recorded and are assigned by the rebuild's metadata-store design (D-013).
 
 | Column | Meaning | Consumer/behavior |
 |---|---|---|
-| `app_id`, `dsp_scrn_defn_id`, column ID (physical name pending EV-001A) | Application, screen-definition, and column identity. | Section 14.1 element identity; FR-SCREEN-003 |
-| screen-definition subkey (pending EV-001A) | Optional subkey selecting a column subset at runtime. | FR-PARAM-005 (parameter type 98) |
+| `app_id`, `dsp_scrn_defn_id`, column ID (physical name not recorded in the reviewed evidence) | Application, screen-definition, and column identity. | Section 14.1 element identity; FR-SCREEN-003 |
+| screen-definition subkey (physical name not recorded in the reviewed evidence) | Optional subkey selecting a column subset at runtime. | FR-PARAM-005 (parameter type 98) |
 | `display_type` | `C` = criteria control; other values restrict an element to all, grid, or field presentation. | FR-ELEM-001 |
-| top/left position (pending EV-001A) | Explicit coordinates in the legacy layout unit. | FR-ELEM-002, FR-FIELD-002 |
-| column index, field index (pending EV-001A) | Grid order and field layout/tab order. | FR-ELEM-003 |
-| column caption, column description (pending EV-001A) | Grid/report heading and field label/explanatory text. | FR-ELEM-004 |
-| datafield (pending EV-001A) | Corresponding DataClass field. | FR-ELEM-005 |
-| default value (pending EV-001A) | Criteria initialization and hidden insert values. | FR-ELEM-006 |
-| edit type (pending EV-001A) | None, text, checkbox, dropdown value list, or calendar editing. | FR-GRID-004 |
-| key generation (pending EV-001A) | Framework-managed automatic key allocation flag. | FR-DML-010 |
-| column type, icons (pending EV-001A) | Text, icon, icon-plus-text, or checkbox presentation and icon keys. | FR-GRID-003 |
-| sort type (pending EV-001A) | Configured sort behavior for column-header clicks. | FR-SEARCH-004 |
-| visibility (pending EV-001A) | Visible/hidden independent of criteria or insert/update participation. | FR-ELEM-007 |
-| master-detail key (pending EV-001A) | Marks the element as a master-detail foreign key. | FR-MD-002, FR-INSERT-003 |
-| format, output format (pending EV-001A) | Display and export formatting tokens. | FR-ELEM-008 |
-| grouping, sizing/sorting/grouping permissions, alignment, width (pending EV-001A) | Column presentation and user-override permissions. | FR-GRID-005 |
-| value-list references (pending EV-001A) | Value-list DataClass, key field, and display field. | FR-LOOKUP-001 |
-| mandatory flag (pending EV-001A) | Reject empty input on editable elements. | FR-ELEM-009 |
-| datatype (pending EV-001A) | Numeric, string, database-object, or date/time criteria datatype. | FR-ELEM-011 |
+| top/left position (physical name not recorded in the reviewed evidence) | Explicit coordinates in the legacy layout unit. | FR-ELEM-002, FR-FIELD-002 |
+| column index, field index (physical name not recorded in the reviewed evidence) | Grid order and field layout/tab order. | FR-ELEM-003 |
+| column caption, column description (physical name not recorded in the reviewed evidence) | Grid/report heading and field label/explanatory text. | FR-ELEM-004 |
+| datafield (physical name not recorded in the reviewed evidence) | Corresponding DataClass field. | FR-ELEM-005 |
+| default value (physical name not recorded in the reviewed evidence) | Criteria initialization and hidden insert values. | FR-ELEM-006 |
+| edit type (physical name not recorded in the reviewed evidence) | None, text, checkbox, dropdown value list, or calendar editing. | FR-GRID-004 |
+| key generation (physical name not recorded in the reviewed evidence) | Framework-managed automatic key allocation flag. | FR-DML-010 |
+| column type, icons (physical name not recorded in the reviewed evidence) | Text, icon, icon-plus-text, or checkbox presentation and icon keys. | FR-GRID-003 |
+| sort type (physical name not recorded in the reviewed evidence) | Configured sort behavior for column-header clicks. | FR-SEARCH-004 |
+| visibility (physical name not recorded in the reviewed evidence) | Visible/hidden independent of criteria or insert/update participation. | FR-ELEM-007 |
+| master-detail key (physical name not recorded in the reviewed evidence) | Marks the element as a master-detail foreign key. | FR-MD-002, FR-INSERT-003 |
+| format, output format (physical name not recorded in the reviewed evidence) | Display and export formatting tokens. | FR-ELEM-008 |
+| grouping, sizing/sorting/grouping permissions, alignment, width (physical name not recorded in the reviewed evidence) | Column presentation and user-override permissions. | FR-GRID-005 |
+| value-list references (physical name not recorded in the reviewed evidence) | Value-list DataClass, key field, and display field. | FR-LOOKUP-001 |
+| mandatory flag (physical name not recorded in the reviewed evidence) | Reject empty input on editable elements. | FR-ELEM-009 |
+| datatype (physical name not recorded in the reviewed evidence) | Numeric, string, database-object, or date/time criteria datatype. | FR-ELEM-011 |
 | `field_type` | Element type 1–14. | Section 14.2 |
-| popup behavior options (pending EV-001A) | Multi-selection, delimiter, and text-editing options for popups. | FR-WIN-010, FR-WIN-011, FR-LOOKUP-006 |
+| popup behavior options (physical name not recorded in the reviewed evidence) | Multi-selection, delimiter, and text-editing options for popups. | FR-WIN-010, FR-WIN-011, FR-LOOKUP-006 |
 | `external_validation`, `external_process` | Helper-driven validation and derived-value flags. | FR-EXT-VAL-003, FR-EXT-FUNC-001 |
 
 ### 28.8 Parameter metadata
@@ -1273,48 +1275,48 @@ Physical column names are shown only where this document already cites them; the
 
 ### 28.10 Security and user metadata
 
-Physical column names are shown only where this document already cites them; the remaining names are pending EV-001A.
+Physical column names are shown only where the reviewed evidence records them; the remaining names are not recorded and are assigned by the rebuild's metadata-store design (D-013).
 
 `dsp_role` — role:
 
 | Column | Meaning | Consumer/behavior |
 |---|---|---|
-| `app_grp_id`, `app_id`, role identity (pending EV-001A) | Group/application-scoped role. | FR-SEC-005 |
-| positional display options (pending EV-001A) | `Y/N` positions 1–15 that can turn screen options off. | FR-SEC-006, FR-SEC-007, section 15 |
-| audit fields (pending EV-001A) | Insert/update user and timestamp. | FR-DML-008 |
+| `app_grp_id`, `app_id`, role identity (physical name not recorded in the reviewed evidence) | Group/application-scoped role. | FR-SEC-005 |
+| positional display options (physical name not recorded in the reviewed evidence) | `Y/N` positions 1–15 that can turn screen options off. | FR-SEC-006, FR-SEC-007, section 15 |
+| audit fields (physical name not recorded in the reviewed evidence) | Insert/update user and timestamp. | FR-DML-008 |
 
 `dsp_user` — user:
 
 | Column | Meaning | Consumer/behavior |
 |---|---|---|
-| login (pending EV-001A) | Workstation identity matched at startup. | FR-SEC-001, FR-SEC-002 |
-| email (pending EV-001A) | Error-notification recipient address. | FR-LOG-005 |
-| display name, location/region (pending EV-001A) | Presentation and diagnostics. | FR-SYSINFO-001 |
-| audit fields (pending EV-001A) | Insert/update user and timestamp. | FR-DML-008 |
+| login (physical name not recorded in the reviewed evidence) | Workstation identity matched at startup. | FR-SEC-001, FR-SEC-002 |
+| email (physical name not recorded in the reviewed evidence) | Error-notification recipient address. | FR-LOG-005 |
+| display name, location/region (physical name not recorded in the reviewed evidence) | Presentation and diagnostics. | FR-SYSINFO-001 |
+| audit fields (physical name not recorded in the reviewed evidence) | Insert/update user and timestamp. | FR-DML-008 |
 | `active` | Availability flag; inactive users fail initialization. | FR-SEC-002 |
 
 `dsp_role_users` — role membership:
 
 | Column | Meaning | Consumer/behavior |
 |---|---|---|
-| `app_grp_id`, `app_id`, role identity, user identity (pending EV-001A) | Group/application role-to-user membership; cumulative across roles. | FR-SEC-005, FR-SEC-006 |
+| `app_grp_id`, `app_id`, role identity, user identity (physical name not recorded in the reviewed evidence) | Group/application role-to-user membership; cumulative across roles. | FR-SEC-005, FR-SEC-006 |
 
 `dsp_user_app` — user application assignment:
 
 | Column | Meaning | Consumer/behavior |
 |---|---|---|
-| user identity, `app_id` (pending EV-001A) | Authorized application assignment. | FR-SEC-003 |
-| default-application flag (pending EV-001A) | First assignment marked default is selected at startup. | FR-SEC-004 |
-| last login, last logout (pending EV-001A) | Login/logout history per assignment. | FR-SEC-009, FR-SHUT-002 |
-| audit fields, `active` (pending EV-001A) | Audit and availability state. | FR-SEC-003 |
+| user identity, `app_id` (physical name not recorded in the reviewed evidence) | Authorized application assignment. | FR-SEC-003 |
+| default-application flag (physical name not recorded in the reviewed evidence) | First assignment marked default is selected at startup. | FR-SEC-004 |
+| last login, last logout (physical name not recorded in the reviewed evidence) | Login/logout history per assignment. | FR-SEC-009, FR-SHUT-002 |
+| audit fields, `active` (physical name not recorded in the reviewed evidence) | Audit and availability state. | FR-SEC-003 |
 
 Personal-override datasets (user display-option, display-column, filter, format, menu, submenu, and group configuration):
 
 | Column | Meaning | Consumer/behavior |
 |---|---|---|
-| user display-option row (pending EV-001A) | Per-user screen-option override that replaces the cumulative role result. | FR-SEC-008 |
-| display-column, filter, and format rows (pending EV-001A) | Visible columns, order, width, sorting, grouping, filters, format, frozen columns, flash configuration, scoped by application, menu, submenu, user, screen definition, and subkey. | FR-SEC-011, FR-CUSTOM-008 |
-| user menu/submenu rows (pending EV-001A) | Personal groups/items with ownership, sequence, dirty/deleted state. | FR-NAV-USER-001..008, FR-STATE-006 |
+| user display-option row (physical name not recorded in the reviewed evidence) | Per-user screen-option override that replaces the cumulative role result. | FR-SEC-008 |
+| display-column, filter, and format rows (physical name not recorded in the reviewed evidence) | Visible columns, order, width, sorting, grouping, filters, format, frozen columns, flash configuration, scoped by application, menu, submenu, user, screen definition, and subkey. | FR-SEC-011, FR-CUSTOM-008 |
+| user menu/submenu rows (physical name not recorded in the reviewed evidence) | Personal groups/items with ownership, sequence, dirty/deleted state. | FR-NAV-USER-001..008, FR-STATE-006 |
 | group configuration: `wnd_start_h`, `wnd_start_w`, `split_start_pos` | Per-user shell width, height, and splitter position. | FR-SEC-010, FR-SHELL-003, section 26.9.2 |
 
 ### 28.11 System metadata
@@ -1332,9 +1334,9 @@ Personal-override datasets (user display-option, display-column, filter, format,
 | ID | Requirement | Classification |
 |---|---|---|
 | FR-META-001 | The archived object workbook shall be treated as physical-schema lineage evidence contributing to the reconstructed metadata contract, not as its sole authority. | HISTORICAL / SCHEMA-INFERRED |
-| FR-META-002 | The logical metadata entities, attributes, relationships, ordering, and option semantics defined in sections 28.1–28.11 shall be the schema-derived migration baseline. Production metadata DDL shall be reconciled against it to record deployment-specific additions, renames, deprecations, physical defaults, and computed attributes. | SCHEMA-INFERRED / REPLACEMENT REQUIREMENT |
-| FR-META-003 | Known keys and relationships shall be inferred from schema lineage and source joins. Production DDL shall confirm exact physical types, indexes, uniqueness, foreign-key enforcement, defaults, and cascade behavior before metadata storage is implemented. | SCHEMA-INFERRED / PHYSICAL-DDL-VERIFY |
-| FR-META-004 | The replacement shall not assume the legacy issue backlog was empty because the archived enhancement spreadsheet contributes no issue rows; open issues shall be established from discovery evidence (EV-010 interviews) and section 31, and the spreadsheet's emptiness shall be recorded as a disposition. | HISTORICAL |
+| FR-META-002 | The logical metadata entities, attributes, relationships, ordering, and option semantics defined in sections 28.1–28.11 shall be the schema-derived baseline of the rebuilt metadata store. No production DDL exists to reconcile against; deviations the rebuild introduces (renames, additions, computed attributes) shall be recorded in the old-to-new mapping required by FR-META-006. | SCHEMA-INFERRED / REPLACEMENT REQUIREMENT |
+| FR-META-003 | Keys and relationships are inferred from schema lineage and source joins. Physical types, indexes, uniqueness, foreign-key enforcement, defaults, and cascade behavior are design decisions of the rebuilt metadata store (D-013) and shall be recorded before metadata storage is implemented. | SCHEMA-INFERRED / REPLACEMENT REQUIREMENT |
+| FR-META-004 | The replacement shall not assume the legacy issue backlog was empty because the archived enhancement spreadsheet contributes no issue rows; open issues are established from section 31 and product review, and the spreadsheet's emptiness is recorded as lineage. | HISTORICAL |
 | FR-META-005 | The five foreign keys in `foreignkeys.sql` relate `gd_app`, `gd_table`, `gd_column`, `gd_column_datatype`, and `gd_data`. No reviewed project source refers to those objects, so they shall remain a separate historical generic-datastore/workflow lineage until production database evidence proves otherwise. | HISTORICAL / OUT-OF-SCOPE |
 | FR-META-006 | Physical names may change in the replacement, but the semantics, keys, relationships, ordering, option interpretation, and null/default behavior of every entity in sections 28.1–28.11 shall be retained or explicitly migrated with a recorded old-to-new mapping. | SCHEMA-INFERRED / REPLACEMENT REQUIREMENT |
 
@@ -1418,13 +1420,13 @@ Dispositions in this register are governed by decision D-011 (MIGRATION_MASTER.m
 | Fix | The replacement implements the intended behavior; the intentional difference is recorded and tested |
 | Retire | The behavior and its feature are removed from the replacement; consumers are migrated or the removal is accepted |
 
-The `Approvers` column lists the roles D-011 is expected to name; named people replace the roles when a decision is recorded.
+The `Approvers` column lists the roles D-011 is expected to name; named people replace the roles when a decision is recorded. Because no deployed instance or user exists, `Preserve` requires a recorded product reason; the expected default is `Fix` or `Retire`.
 
 | ID | Legacy issue | Proposed disposition (non-binding until D-011) | Decision | Approvers | Approval date |
 |---|---|---|---|---|---|
 | DEF-001 | Plaintext credentials are stored in tracked INI and notes files. | Rotate any live credentials; replace with secret management; redact diagnostics. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-002 | Form-refresh message compares `DataClassNameMaster` twice and misses independent detail matches. | Implement intended master-or-detail matching. | Pending | Product/domain, security, affected technical owner | — |
-| DEF-003 | Closing the shell with the window close control bypasses the normal persistence/logout routine. | Consolidate all close paths. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-003 | Closing the shell with the window close control bypasses the normal persistence/logout routine. | Consolidate all close paths. Persisting personal menus and layout at the moment of change rather than at shutdown (MODERN_WEB_SYSTEM_DESIGN.md section 7.3) is an acceptable stronger form of this fix; it changes only the timing stated in FR-NAV-USER-007 and FR-SHUT-003. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-004 | Dock/undock reads the parent style for a child and uses horizontal pixel scale for floating height. | Implement platform-native docking with geometry tests. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-005 | Tree navigation omits user-created menus. | Product owner must choose parity or consistent personalization across navigation modes. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-006 | Outlook groups are removed while iterating the same collection during application switch. | Rebuild navigation safely and deterministically. | Pending | Product/domain, security, affected technical owner | — |
@@ -1432,14 +1434,14 @@ The `Approvers` column lists the roles D-011 is expected to name; named people r
 | DEF-008 | A duplicate calendar-popup case makes a later validation branch unreachable. | Define one validated calendar workflow. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-009 | Popup multi-select trimming can evaluate a zero-length string at position zero. | Handle empty selection/delimiter safely. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-010 | External function helper is used without assignment under suppressed errors. | Implement explicit dependency validation or remove feature. | Pending | Product/domain, security, affected technical owner | — |
-| DEF-011 | External edit validation is not called despite configuration/interface support. | Complete only if deployed metadata/helpers prove the feature is required. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-011 | External edit validation is not called despite configuration/interface support. | Retire unless decision D-019 admits the validation-helper contract. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-012 | Logical delete historically left rows visible until refresh. | Remove/requery immediately and test. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-013 | Locally cached update timestamps historically became stale. | Reconcile server values after every mutation. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-014 | Search historically failed with grouped grids. | Add grouped-grid search acceptance tests. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-015 | `vbExclamation And vbOKOnly` uses Boolean AND rather than style composition. | Use explicit message severity/icon/button properties. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-016 | `On Error Resume Next`, empty error branches, `Stop`, and ignored Boolean results conceal failures. | Use structured errors, telemetry, and explicit failure outcomes. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-017 | Source trees contain duplicate copies with some divergent server/database files. | Establish one canonical implementation and migration baseline. | Pending | Product/domain, security, affected technical owner | — |
-| DEF-018 | The compiled `AppServer/CAppServer.cls` contains malformed SQL for `GDDatasetDynamicParamsBlank` (an extra comma/table-list fragment); the shared copy and `AppServer.zip` snapshot contain the plausible query. | Treat the compiled-project version as defective and verify the production binary/database query before migration. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-018 | The compiled `AppServer/CAppServer.cls` contains malformed SQL for `GDDatasetDynamicParamsBlank` (an extra comma/table-list fragment); the shared copy and `AppServer.zip` snapshot contain the plausible query. | Treat the compiled-project version as defective and use the shared copy's query as the reference (D-009). | Pending | Product/domain, security, affected technical owner | — |
 | DEF-019 | The compiled `AppServer/CDB.cls` contains an unconditional `Stop` in the Simple Service result path and does not assign the successful result to the function return, while the shared copy does. | Use the shared behavior as repair evidence only after an integration test with a real adapter. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-020 | Current GUI/client sources refer to `GetIniFileString` and several command constants whose definitions are absent from the supplied source but may exist in referenced older binaries. | Recover the exact production type libraries/source or establish behavior in a running build; do not claim a reproducible source build. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-021 | Code recognizes `GDAPPGROUPID`, while historical documentation instructs operators to use `GDAPPLICATIONID`; polling/splash/config symbols also rely on definitions absent from the source snapshot. | Support both documented and observed aliases during migration, log deprecation, and confirm deployed shortcuts/config files. | Pending | Product/domain, security, affected technical owner | — |
@@ -1448,17 +1450,18 @@ The `Approvers` column lists the roles D-011 is expected to name; named people r
 | DEF-024 | Server option processing says command line overrides registry, but registry values subsequently override debug, no-log, and SQL-debug flags; the second command-line parse also requests full tokens where values are required for some overrides. | Define and test one explicit precedence model in the replacement. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-025 | The RDS harness reports the same “failed to disconnect” text on successful disconnect and has an empty query error handler; the validation harness methods are empty and its implemented method set does not match the checked-in validation interface cleanly. | Treat both projects as examples only, never compatibility or test oracles. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-026 | The three `GDCrystal*.ini` files spell `/NODATALOAD` as `/NODATALOA`, so the reviewed parser silently fails to suppress initialization loads. | Diagnose and migrate known misspellings; do not preserve silent ignore behavior. | Pending | Product/domain, security, affected technical owner | — |
-| DEF-027 | Retained R/T and 1.0/1.2 binaries reuse product names while changing type-library versions, LIBIDs, interface/class IDs, or compatibility mode; equal file versions do not establish binary interchangeability. | Reconcile the deployed registration map and generate compatibility adapters from exact type-library signatures, not filenames. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-027 | Retained R/T and 1.0/1.2 binaries reuse product names while changing type-library versions, LIBIDs, interface/class IDs, or compatibility mode; equal file versions do not establish binary interchangeability. | Lineage only; no compatibility adapter is built and no registration map exists to reconcile. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-028 | `AppShared/frmPopList.log` records “Cannot load control lst,” showing at least one retained form snapshot was opened without a required control dependency. | Verify forms/resources in a correctly provisioned VB6 environment and treat IDE log files as build-integrity evidence. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-029 | `CSFPDropDown` restores `AllowEntry` and the inner textbox `Locked` property independently. With the persisted defaults, the textbox can be editable while the control's `AllowEntry` state still prevents the dropdown from opening. | Define one coherent editable/locked/dropdown state model and cover default and restored-property cases; do not reproduce the accidental contradiction. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-030 | `CSFPTextLookup` exposes database/query-looking properties but performs no retrieval itself; its lookup button only raises `ButtonClick` for a host to implement. No active generic-form consumer is present in the supplied standard project. | Model this as a host lookup protocol, not as a self-contained query control; recover deployed consumers/metadata before claiming lookup parity. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-031 | `CSFPTextLookup` implements Return-as-Tab through `SendKeys`, recognizes ASCII 11 as a lookup shortcut, and suppresses errors while resolving an associated control by name. | Replace simulated keystrokes and silent name lookup with deterministic focus commands, explicit shortcut binding, and validated control association. | Pending | Product/domain, security, affected technical owner | — |
-| DEF-032 | Public compatibility names include misspellings such as toolbar `Orentation` and `CToolTip.AjustItemRect`; some error text also names the wrong control class. | Recognize exact legacy names only at compatibility boundaries and expose correctly named native APIs and diagnostics. | Pending | Product/domain, security, affected technical owner | — |
-| DEF-033 | `CSFPSplitter` publishes setters for orientation, minimum/maximum positions, and design-time resizing that reject changes at runtime. | Preserve this lifecycle rule in a coexistence adapter or deliberately support runtime changes in the native component; test whichever contract is selected. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-032 | Public compatibility names include misspellings such as toolbar `Orentation` and `CToolTip.AjustItemRect`; some error text also names the wrong control class. | Expose correctly named native APIs and diagnostics; the misspelled names are lineage only. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-033 | `CSFPSplitter` publishes setters for orientation, minimum/maximum positions, and design-time resizing that reject changes at runtime. | Support runtime changes in the native component or omit the setters; test whichever contract is selected. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-034 | `frmGDGeneric.InitialiseClientFormToolbarUser` is an empty success stub, so the apparent user-specific toolbar extension point adds no commands in the supplied implementation. | Treat it as unimplemented unless deployed source proves otherwise; define an explicit extension mechanism if user-specific commands are required. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-035 | `CSFPPanel` reads a missing `lblCaption` property as “Caption” but writes the same property with “CSFP Panel” as its omission default. A caption equal to the write default can therefore reopen as a different value. | Import the stored value literally when present, use one defined default when absent, and test legacy resources both with and without the key. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-036 | `CSFPTextLookup` reads missing `FieldName` and `CodeName` keys as empty strings but passes Boolean `True` as both write-default values. | Treat empty string as the intended absent value unless deployed property bags prove otherwise; do not reproduce cross-type default coercion. | Pending | Product/domain, security, affected technical owner | — |
 | DEF-037 | `CSFPTextLookup.CancelChangeEvent` and its associated-field/status recursion guards are backed by project-wide module variables, so changing or entering one lookup instance affects every lookup instance in the same control-library process/apartment. | Make change suppression and recursion guards instance- or operation-scoped in the replacement and add multi-control re-entrancy tests. | Pending | Product/domain, security, affected technical owner | — |
+| DEF-038 | Auto-refresh (FR-REFRESH-007) runs the ordinary refresh path, so on every interval it cancels an incomplete grid add-new row (FR-REFRESH-002) and replaces the in-memory rows a user may be editing; uncommitted edits are lost without warning. | Pause auto-refresh while the screen is dirty, hidden, disconnected, or saving and resume under the screen policy (MODERN_WEB_SYSTEM_DESIGN.md section 14.7); an interval refresh never discards uncommitted edits. | Pending | Product/domain, security, affected technical owner | — |
 
 ## 32. Re-platforming invariants
 
@@ -1477,17 +1480,34 @@ The replacement shall preserve the following independent of technology choice:
 | FR-INV-009 | No credentials or sensitive connection strings are exposed to source control or end users. | REPLACEMENT REQUIREMENT |
 | FR-INV-010 | Legacy option strings shall be migrated to named capabilities while retaining an import compatibility mapping. | REPLACEMENT REQUIREMENT |
 | FR-INV-011 | Legacy COM-specific details, twips, window handles, recordset bookmarks, and VBA format strings are implementation artifacts, not target architecture requirements. | REPLACEMENT REQUIREMENT |
+| FR-INV-012 | Every desktop-bound behavior listed in section 32.1 shall have an approved web reinterpretation under decision D-017 before a Phase 6 workflow that depends on it is accepted; none of those behaviors may be dropped or changed silently. | REPLACEMENT REQUIREMENT |
+
+### 32.1 Desktop-bound behaviors requiring web reinterpretation
+
+The requirements below are verified legacy behavior whose literal form depends on a desktop process, the workstation, a local file system, an installed Office application, or an operating-system window. They cannot be carried into a browser-hosted replacement unchanged, and they are not defects, so section 31 does not apply to them. Each row remains normative as written until decision D-017 (MIGRATION_MASTER.md section 17) approves the web reinterpretation proposed in the cited design section; the design proposals are candidates, not authority. The rows carry the `REPLATFORM DECISION` classification in their home sections for that reason, and FR-ACC-004 accepts either the legacy behavior or the approved reinterpretation.
+
+| Desktop-bound legacy behavior | Requirements | Design proposal | Decision |
+|---|---|---|---|
+| The session creates a client log file and an application temporary folder on the workstation | FR-START-008 | MODERN_WEB_SYSTEM_DESIGN.md section 7.7, diagnostics | Pending (D-017) |
+| User identity is taken from workstation identity, with a debug impersonation override | FR-START-009, FR-SEC-001 | Section 7.7, identity | Pending (D-017) |
+| Personal main-window width, height, maximized state, and splitter position are restored | FR-SEC-010, FR-SHELL-003, FR-SHELL-004 | Section 7.7, layout | Pending (D-017) |
+| Status-bar double-click opens System Explorer; About and System Explorer show workstation and environment facts | FR-SHELL-008, FR-SYSINFO-001, FR-SYSINFO-002 | Section 7.7, diagnostics | Pending (D-017) |
+| A drag gesture undocks a screen to a floating top-level window with a desktop focus rectangle; a Dock command returns it | FR-WIN-005, FR-WIN-006, FR-WIN-007, FR-TOOL-004 | Section 7.7, detach and reattach | Pending (D-017) |
+| The preview window opens at the invoking screen's bounds | FR-PRINT-003 | Section 7.7, print, and section 18.4 | Pending (D-017) |
+| Individual export creates a workbook in a running Excel instance; Export All appends to it; Excel start or copy failure is a critical diagnostic | FR-EXCEL-005, FR-EXCEL-006, FR-EXCEL-007 | Section 7.7, export, and section 18.3 | Pending (D-017) |
+| Timestamped local log file, debug window, and administrator error mail carrying system information | FR-LOG-001, FR-LOG-002, FR-LOG-005, FR-LOG-006 | Section 7.7, diagnostics, and section 23 | Pending (D-017) |
+| Messages are addressed to a user ID or a workstation name | FR-SYSMSG-002 | Section 7.7, messages, and section 12.7 | Pending (D-017) |
 
 ## 33. Minimum replacement acceptance suite
 
-The future implementation shall not be considered functionally equivalent until automated observable-behavior tests cover at least the scenarios below. The "Verifies" column cites the functional areas and the section 44 non-functional requirements each scenario exercises. Two section 44 requirements are verified by operational evidence rather than an automated test: NFR-AVAIL-001 by the post-pilot monitoring report and NFR-DR-001 by the documented restore exercise; FR-ACC-019 covers them through that evidence, and no other exemption from the automated-test rule exists.
+The future implementation shall not be considered functionally equivalent until automated observable-behavior tests cover at least the scenarios below. The "Verifies" column cites the functional areas and the section 44 non-functional requirements each scenario exercises. Two section 44 requirements are verified by operational evidence rather than an automated test: NFR-AVAIL-001 by the post-release monitoring report and NFR-DR-001 by the documented restore exercise; FR-ACC-019 covers them through that evidence, and no other exemption from the automated-test rule exists.
 
 | ID | Acceptance scenario | Verifies | Classification |
 |---|---|---|---|
 | FR-ACC-001 | Startup from default and redirected configuration. | FR-START-*, FR-CMD-*; NFR-SEC-003, NFR-BUILD-001 | REPLACEMENT REQUIREMENT |
 | FR-ACC-002 | Valid/invalid user, inactive user, no authorized applications, and default-app selection. | FR-SEC-001..004; NFR-SEC-001, NFR-SEC-002 | REPLACEMENT REQUIREMENT |
 | FR-ACC-003 | Outlook and Tree navigation with icons, expansion, application switching, and personal menus. | FR-NAV-*, FR-NAV-OUT-*, FR-NAV-USER-*, FR-APP-*; NFR-ACC-001 | REPLACEMENT REQUIREMENT |
-| FR-ACC-004 | Multiple docked screens, tab switching, resizing, floating/docking, modal popup, and controlled shutdown. | FR-WIN-*, FR-SHELL-*, FR-SHUT-*; NFR-UI-001, NFR-REL-002 | REPLACEMENT REQUIREMENT |
+| FR-ACC-004 | Multiple docked screens, tab switching, resizing, floating/docking (or the web equivalent approved under D-017, section 32.1), modal popup, and controlled shutdown. | FR-WIN-*, FR-SHELL-*, FR-SHUT-*; NFR-UI-001, NFR-REL-002 | REPLACEMENT REQUIREMENT |
 | FR-ACC-005 | Every screen type and every field type. | Sections 13 and 14; NFR-UI-001, NFR-ACC-001 | REPLACEMENT REQUIREMENT |
 | FR-ACC-006 | Every active custom control's public properties, defaults, persisted-property round trip, collection semantics, event order/payload, keyboard behavior, enabled/locked/visible states, and failure behavior, plus any dormant control accepted under FR-CTL-USE-006/007. | FR-CTL-API-001..004, sections 26.7–26.8; NFR-COMP-001, NFR-ACC-001 | REPLACEMENT REQUIREMENT |
 | FR-ACC-007 | Shell and generic-form integration of toolbar, title panel, splitter, navigation, popup/docked variants, metadata/security-driven commands, record-state captioning, resizing, and splitter-position persistence. | FR-CTL-USE-*, FR-TOOL-*, FR-SCREEN-007; NFR-UI-001 | REPLACEMENT REQUIREMENT |
@@ -1506,40 +1526,42 @@ The future implementation shall not be considered functionally equivalent until 
 
 Test-implementation rules are governed by CONTRIBUTING.md and MIGRATION_MASTER.md section 11.
 
-## 34. Traceability and discovery backlog
+## 34. Configuration to be authored
 
-### 34.1 Required next evidence
+### 34.1 Why no further evidence is expected
 
-| Priority | Evidence | Why it is required |
+No deployed metadata rows, physical DDL, application database objects, helper binaries, role matrices, runtime recordings, volume measurements, or business interviews exist, and none will be obtained (section 2; MIGRATION_MASTER.md section 24). Every gap those sources would have closed is closed instead by authoring or by a recorded decision.
+
+| Priority | Gap | How the rebuild closes it |
 |---:|---|---|
-| 1 | Active metadata row export, preserving keys and relationships | Instantiates the already-reconstructed schema model and enumerates actual applications, screens, fields, configured SQL/procedure references, permissions, reports, and options. |
-| 2 | Production metadata DDL and referenced application-database DDL/views/procedures/functions | Confirms physical types, indexes, defaults and constraints, then specifies referenced business calculations, actions, validation, and mutation behavior. |
-| 3 | Working legacy runtime and dependency manifest | Confirms exact UI, popup, docking, formatting, printing, error, and edge-case behavior. |
-| 4 | All deployed helper/service DLLs and registration map | Determines which extension contracts are truly required. |
-| 5 | Role/user matrix using sanitized representative users | Derives effective authorization cases. |
-| 6 | Production-like volume characteristics | Establishes pagination, caching, refresh, export, and timeout requirements. |
-| 7 | Business-owner interviews and screen recordings | Resolves defects versus relied-upon quirks and identifies undocumented workflows. |
+| 1 | Configured applications, screens, fields, DataClasses, permissions, reports, and options | Authored in the rebuilt platform's metadata tool (D-015) using the section 28 grammar, starting with the reference application embedded in the runtime prototype (MIGRATION_MASTER.md section 3.5) |
+| 2 | Physical metadata storage and referenced application-database objects | Designed with the metadata store (D-013) and with each authored application (D-004, D-010) |
+| 3 | Exact runtime behavior where the source is ambiguous | Resolved by reading, or by a recorded product decision under D-011 or D-017; the decided behavior is the tested behavior |
+| 4 | Extension contracts | Decided under D-019 |
+| 5 | Effective authorization cases | Authored roles plus representative synthetic subjects in the security test matrix |
+| 6 | Volume, latency, concurrency, and export characteristics | The section 44 provisional profiles stand until a recorded decision changes them |
+| 7 | Relied-upon quirks and user workflows | None exist; desktop-bound behaviors are decided under D-017 |
 
-### 34.2 Specification expansion deliverables
+### 34.2 Specification per authored application
 
-Once the populated deployment metadata is available, this document shall be expanded with:
+For each application authored in the rebuild, the following shall be produced and traced to this document:
 
-- a catalog entry for every application group and application;
-- every role and effective capability matrix;
-- a navigation tree for every application;
-- one screen specification per display-definition control ID;
-- one control/column specification per screen-element row;
+- a catalog entry for the application group and application;
+- every role and its effective capability matrix;
+- the navigation tree;
+- one screen specification per display definition;
+- one control/column specification per screen element;
 - one DataClass specification per ID/name, including source, parameters, refresh, keys, stamps, and consumers;
 - one action specification per action DataClass/stored procedure;
 - one report specification per report ID;
-- one system message and administrative workflow catalog;
+- the system-message and administrative workflow catalog;
 - field-level validation, default, formatting, lookup, and editability rules;
-- representative screenshots and acceptance scenarios;
-- completion of the generated [requirements-to-source/metadata/test traceability matrix](DOCUMENT_CONTROL.md#8-requirement-traceability-matrix), replacing each pending evidence/test status as deployed metadata rows, physical DDL, and executable fixtures become available.
+- acceptance scenarios and test IDs; and
+- updates to the generated [requirements-to-test traceability matrix](DOCUMENT_CONTROL.md#8-requirement-traceability-matrix) as executable fixtures are added.
 
 ## 35. Current coverage statement
 
-This baseline covers the framework feature surface visible in every supplied project manifest, the project-member source, retained source-only components, interface/control/harness projects, the active and alternate GUI projects, retained binaries and embedded type libraries, zip/release snapshots, linked UI resources, configuration/SQL/developer artifacts, the primary and historical PLM document sets, the available Word backup/temp snapshots, and the archived spreadsheet/presentation evidence. It includes the complete repository-visible public contract of each custom control, an explicit map of how the active shell and generic form consume those controls, and the reconstructed metadata schema contract that drives application generation. “Covered” means classified and traceable; it does not mean every retained file was shipped or every historical intention was implemented. The supplied snapshot is not a reproducible clean-build baseline because manifests, source generations, compatibility settings, external dependencies, and binary identities disagree. It also does not enumerate the deployment-specific metadata rows and referenced business-database behavior stored outside the repository. The row-population, referenced-database, and runtime discovery in section 34 remains mandatory before a named deployed application can be claimed as specified “in its entirety.”
+This baseline covers the framework feature surface visible in every supplied project manifest, the project-member source, retained source-only components, interface/control/harness projects, the active and alternate GUI projects, retained binaries and embedded type libraries, zip/release snapshots, linked UI resources, configuration/SQL/developer artifacts, the primary and historical PLM document sets, the available Word backup/temp snapshots, and the archived spreadsheet/presentation evidence. It includes the complete repository-visible public contract of each custom control, an explicit map of how the active shell and generic form consumed those controls, and the reconstructed metadata schema contract that drives application generation. "Covered" means classified and traceable; it does not mean every retained file was shipped or every historical intention was implemented. The supplied snapshot is not a reproducible clean-build baseline because manifests, source generations, compatibility settings, external dependencies, and binary identities disagree, and it is not built or run. No deployment-specific configuration exists; the applications of the rebuilt platform are authored under section 34.
 
 ## 36. Source traceability index
 
@@ -1632,12 +1654,12 @@ The standard 1.2 client and server projects use project-compatibility mode again
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-PROJ-001 | Re-platforming shall treat the standard `GenFormDataGUI.vbp`, top-level `GenFormDataClient.vbp`, and `AppServer/GenFormDataServer.vbp` as the initial project-membership baseline, subject to runtime/binary reconciliation. | REPLATFORM DECISION / BUILD-UNVERIFIED |
+| FR-PROJ-001 | Re-platforming shall treat the standard `GenFormDataGUI.vbp`, top-level `GenFormDataClient.vbp`, and `AppServer/GenFormDataServer.vbp` as the initial project-membership baseline, subject to runtime/binary reconciliation. | REPLATFORM DECISION (D-009) / BUILD-UNVERIFIED |
 | FR-PROJ-002 | Alternate `_Build` projects and duplicate folder projects shall be retained as lineage evidence, not merged blindly into the canonical behavior. | REPLACEMENT REQUIREMENT |
 | FR-PROJ-003 | Every retained source-only component shall be explicitly accepted into or excluded from modern scope; folder presence shall not silently add a feature. | REPLACEMENT REQUIREMENT |
-| FR-PROJ-004 | Binary compatibility identifiers, COM ProgIDs, public class/event signatures, and deployment registration shall be inventoried from the production binaries before any compatibility bridge is finalized. | RUNTIME-VERIFY |
+| FR-PROJ-004 | Binary compatibility identifiers, COM ProgIDs, public class/event signatures, and deployment registration shall be inventoried from the production binaries before any compatibility bridge is finalized. | NOT APPLICABLE |
 | FR-PROJ-005 | The replacement build shall be reproducible from version-controlled source and dependency declarations without absolute developer-machine paths or reliance on previously registered development binaries. | REPLACEMENT REQUIREMENT |
-| FR-PROJ-006 | A source-to-executable matrix shall identify which exact source/project/configuration produced each retained or deployed binary; the retained `GFDGUI.exe` shall not be attributed to the standard GUI project merely because the product name matches. | BUILD-UNVERIFIED / REPLACEMENT REQUIREMENT |
+| FR-PROJ-006 | A source-to-executable matrix shall identify which exact source/project/configuration produced each retained or deployed binary; the retained `GFDGUI.exe` shall not be attributed to the standard GUI project merely because the product name matches. | NOT APPLICABLE |
 
 ## 38. Legacy runtime and deployment dependencies
 
@@ -1645,8 +1667,8 @@ The standard 1.2 client and server projects use project-compatibility mode again
 
 | Dependency family | Observed version/use | Consumers | Re-platform treatment |
 |---|---|---|---|
-| VB6/OLE Automation | VB6 runtime, `stdole2` | All projects | Replace; retain only automation contracts needed for coexistence |
-| ADO | Microsoft ActiveX Data Objects 2.5 | Client, server, interfaces, GUI, RDS harness | Replace recordsets with a technology-neutral tabular contract; provide boundary adapters if staged coexistence requires ADO |
+| VB6/OLE Automation | VB6 runtime, `stdole2` | All projects | Replace |
+| ADO | Microsoft ActiveX Data Objects 2.5 | Client, server, interfaces, GUI, RDS harness | Replace recordsets with a technology-neutral tabular contract |
 | CDO/MAPI | CDO 1.21 and MAPI Session | GUI/client logging and mail | Replace with supported notification service |
 | Excel Automation | Excel 9.0 type library, paths sometimes pointing at Office 11 executable | GUI/client export | Replace with server/client file generation; preserve workbook/sheet behavior |
 | Scripting Runtime | `FileSystemObject` | configuration, XML/file handling | Replace with platform file APIs |
@@ -1667,9 +1689,9 @@ The standard 1.2 client and server projects use project-compatibility mode again
 | ID | Requirement | Classification |
 |---|---|---|
 | FR-DEP-001 | Modern functional requirements shall preserve observable grid, navigation, message, report, and popup behavior without requiring the original OCXs. | REPLACEMENT REQUIREMENT |
-| FR-DEP-002 | A migration inventory shall map every deployed COM class/ProgID and version to its consumers and replacement endpoint before cutover. | REPLACEMENT REQUIREMENT |
+| FR-DEP-002 | A migration inventory shall map every deployed COM class/ProgID and version to its consumers and replacement endpoint before cutover. | NOT APPLICABLE |
 | FR-DEP-003 | The replacement shall not automate an installed desktop Office application to export, report, or print data; export and report generation is performed server-side without desktop Office (NFR-PERF-004). Any other Office integration requires a separately approved ADR. | REPLACEMENT REQUIREMENT |
-| FR-DEP-004 | Missing or incompatible client-side component registration shall become an actionable health-check result rather than a late startup/runtime failure during coexistence. | REPLACEMENT REQUIREMENT |
+| FR-DEP-004 | Missing or incompatible client-side component registration shall become an actionable health-check result rather than a late startup/runtime failure during coexistence. | NOT APPLICABLE |
 
 ## 39. Startup-option grammar and precedence
 
@@ -1706,10 +1728,10 @@ The legacy parser splits one flat string on `/`. Each resulting token is matched
 | FR-CMD-004 | The splash independently parses the raw executable command line before client initialization, which is why a splash directive can coexist with `/CONFIG` even though the client later replaces its option string. | VERIFIED |
 | FR-CMD-005 | A custom splash path is treated as relative to the executable folder; the current implementation does not support an arbitrary absolute splash path reliably. | VERIFIED LIMITATION |
 | FR-CMD-006 | Server processing first reads options forwarded by the client and then its own process command line, but later registry reads can override debug/no-log/SQL-debug values. Exact deployed precedence shall be runtime-verified before compatibility behavior is chosen. | VERIFIED / DOCUMENT CONFLICT |
-| FR-CMD-007 | The compatibility importer shall accept both `GDAPPGROUPID` and documented `GDAPPLICATIONID`, identify conflicts, and emit a migration warning. | REPLACEMENT REQUIREMENT |
+| FR-CMD-007 | The compatibility importer shall accept both `GDAPPGROUPID` and documented `GDAPPLICATIONID`, identify conflicts, and emit a migration warning. | NOT APPLICABLE |
 | FR-CMD-008 | The modern parser shall reject missing values, unknown critical options, invalid numbers, and unsafe connection directives with precise diagnostics; secrets shall never be echoed. | REPLACEMENT REQUIREMENT |
 | FR-CMD-009 | Options shall have a documented precedence order across executable arguments, redirected file, default file, environment/secret store, registry import, and administrative configuration. | REPLACEMENT REQUIREMENT |
-| FR-CMD-010 | Configuration migration shall diagnose `/NODATALOA` and other near-match legacy directive names rather than silently treating them as valid or ignoring them. | REPLACEMENT HARDENING |
+| FR-CMD-010 | Configuration migration shall diagnose `/NODATALOA` and other near-match legacy directive names rather than silently treating them as valid or ignoring them. | NOT APPLICABLE |
 
 ## 40. Component responsibility catalog
 
@@ -1878,16 +1900,16 @@ Fourteen retained PE artifacts were found (six client DLL files, six server DLL 
 |---|---|---|
 | FR-BUILD-001 | Canonical-source selection shall be made per component, not per folder. | REPLACEMENT REQUIREMENT |
 | FR-BUILD-002 | Where a project member differs from an apparently repaired shared copy, production-binary behavior and integration tests shall decide the baseline; neither copy is automatically authoritative. | RUNTIME-VERIFY |
-| FR-BUILD-003 | A source-to-binary reconciliation shall record file hashes, public type-library signatures, binary versions, compile constants, and project compatibility settings for deployed builds. | REPLACEMENT REQUIREMENT |
+| FR-BUILD-003 | A source-to-binary reconciliation shall record file hashes, public type-library signatures, binary versions, compile constants, and project compatibility settings for deployed builds. | NOT APPLICABLE |
 | FR-BUILD-004 | Compile constants such as error-handler inclusion shall be captured because conditional compilation materially changes failure behavior. | BUILD-UNVERIFIED / REPLACEMENT REQUIREMENT |
 | FR-BUILD-005 | The modern repository shall eliminate linked-source duplication or enforce one generated/shared source with automated divergence checks. | REPLACEMENT REQUIREMENT |
 | FR-BUILD-006 | Retained backup, design, harness, and source-only files shall be placed in explicit archival/example scopes so they cannot enter production builds accidentally. | REPLACEMENT REQUIREMENT |
-| FR-BUILD-007 | Any temporary COM compatibility bridge shall bind to the exact deployed LIBID, type-library version, class/interface IDs, member signatures, events, and bitness; product/file names are insufficient. | REPLACEMENT REQUIREMENT |
-| FR-BUILD-008 | Client 1.2 R/T and server 1.2 R/T shall not be assumed interchangeable: the client pair differs in type-library version/IDs, and the server pair has different LIBIDs. | BUILD-UNVERIFIED / RUNTIME-VERIFY |
+| FR-BUILD-007 | Any temporary COM compatibility bridge shall bind to the exact deployed LIBID, type-library version, class/interface IDs, member signatures, events, and bitness; product/file names are insufficient. | NOT APPLICABLE |
+| FR-BUILD-008 | Client 1.2 R/T and server 1.2 R/T shall not be assumed interchangeable: the client pair differs in type-library version/IDs, and the server pair has different LIBIDs. | NOT APPLICABLE |
 | FR-BUILD-009 | The 1.0 release archive and the three later zip snapshots shall be retained as immutable lineage inputs with per-file hashes and diff reports. | REPLACEMENT REQUIREMENT |
-| FR-BUILD-010 | Embedded form/control resources shall be migrated or deliberately replaced using a visual asset catalog; the presence of every legacy companion file establishes availability, not a requirement to reproduce obsolete artwork pixel-for-pixel. | REPLATFORM DECISION |
+| FR-BUILD-010 | Embedded form/control resources shall be migrated or deliberately replaced using a visual asset catalog; the presence of every legacy companion file establishes availability, not a requirement to reproduce obsolete artwork pixel-for-pixel. | REPLATFORM DECISION (D-001) |
 | FR-BUILD-011 | IDE workspaces, source-control metadata, obsolete shortcuts, import/export libraries, and dated duplicate binaries shall not enter the modern runtime package. | REPLACEMENT REQUIREMENT |
-| FR-BUILD-012 | If an x86 coexistence host is required, its process boundary, registration isolation, lifetime, failure recovery, and secure marshaling shall be specified and tested explicitly. | REPLATFORM DECISION |
+| FR-BUILD-012 | No x86 coexistence host is required, because no legacy consumer exists. | NOT APPLICABLE |
 
 ## 43. Historical PLM subsystem boundary
 
@@ -1916,12 +1938,12 @@ Slides 27–29 of `old/Global Control Room Offsite - Mark.ppt` provide the only 
 
 | ID | Requirement | Classification |
 |---|---|---|
-| FR-PLM-001 | A future scope decision shall separate GD Framework parity from PLM business-product parity and list the binaries/databases owned by each. | REPLATFORM DECISION |
+| FR-PLM-001 | A future scope decision shall separate GD Framework parity from PLM business-product parity and list the binaries/databases owned by each. | REPLATFORM DECISION (D-020) |
 | FR-PLM-002 | No scheduling, pooling, FTP/feed, workflow, web-client, or limit-plugin requirement shall be considered implemented solely because it appears in a historical PLM document. | REPLACEMENT REQUIREMENT |
 | FR-PLM-003 | If PLM parity is required, discovery shall obtain Control Server, Object Pool Manager, connector, COMFlexTran, limit interfaces/plugins, schemas/procedures, schedule/action metadata, and notification templates. | METADATA-DEPENDENT |
 | FR-PLM-004 | If limit processing is migrated, tests shall cover evaluation order, AND/OR/group semantics, current/previous COB, jurisdiction, all rule/plugin types, idempotent persistence, rerun, partial failure, duplicate alerts, acknowledgement, recipient selection, and underlying-data traceability. | REPLACEMENT REQUIREMENT |
 | FR-PLM-005 | Remote/process boundaries shall use coarse-grained serializable messages rather than chatty object references, consistent with the unresolved DCOM performance concern recorded by the original team. | REPLACEMENT REQUIREMENT |
-| FR-PLM-006 | If PLM-product parity is requested, discovery shall explicitly locate or retire `GDTransformer`, `GDFlexTran`/`COMFlexTran`, `GDReportServer`, `GDRuleEngine`, `GDMessageChannel`, `SendMail`, `SysLogger`, the PLMS client connector/thin client, and the eWorkflow components; their names in a deck do not establish supplied functionality. | REPLATFORM DECISION |
+| FR-PLM-006 | If PLM-product parity is requested, discovery shall explicitly locate or retire `GDTransformer`, `GDFlexTran`/`COMFlexTran`, `GDReportServer`, `GDRuleEngine`, `GDMessageChannel`, `SendMail`, `SysLogger`, the PLMS client connector/thin client, and the eWorkflow components; their names in a deck do not establish supplied functionality. | REPLATFORM DECISION (D-020) |
 | FR-PLM-007 | Historical presentation claims such as “all screens support selection criteria and data input validation” shall be decomposed by screen/control type and accepted only where source, metadata, or runtime evidence confirms the behavior. | DOCUMENT CONFLICT / RUNTIME-VERIFY |
 
 ## 44. Non-functional requirements
@@ -1940,14 +1962,14 @@ risk owner, compensating control, and expiry date.
 
 | Profile | Initial definition |
 |---|---|
-| Interactive read | Up to 10,000 returned rows and 100 columns on the NFR measurement fixture: a nonproduction environment whose network latency between client, host, and provider is recorded with each result and does not exceed the production path measured under EV-007 (topology per D-003) |
+| Interactive read | Up to 10,000 returned rows and 100 columns on the NFR measurement fixture: a nonproduction environment whose network latency between client, host, and provider is recorded with each result (topology per D-003) |
 | Interactive change | One atomic change set of up to 100 inserted/updated/deleted rows |
 | Large export | 100,000 rows and 100 columns to a supported file format |
-| Concurrency | 50 simultaneously active user sessions with a read/write mix of 80% interactive reads and 20% interactive changes until EV-007 replaces it with the observed mix |
+| Concurrency | 50 simultaneously active user sessions with a read/write mix of 80% interactive reads and 20% interactive changes (provisional mix; revisable through a recorded decision) |
 | Client display | 1366×768 and 1920×1080 viewports at 100%, 125%, 150%, and 200% scaling |
 
-Phase 1 shall replace these profiles with observed production percentiles and
-retain the original profile for regression comparison.
+No production measurements exist. These profiles are the acceptance profiles
+until a recorded decision changes them.
 
 ### 44.2 Requirements
 
@@ -1956,12 +1978,12 @@ retain the original profile for regression comparison.
 | NFR-PERF-001 | Interactive read | 95th percentile server response no more than 2 seconds and 99th percentile no more than 5 seconds for the interactive-read profile, excluding an explicitly asynchronous export/report | Timed provider integration test with warm and cold-cache results separated |
 | NFR-PERF-002 | Client usability | First usable screen state no more than 3 seconds after a successful interactive response; user input remains responsive during operations longer than 500 ms | End-to-end workflow timing and UI responsiveness test |
 | NFR-PERF-003 | Change execution | 95th percentile no more than 2 seconds for the interactive-change profile; timeout must produce an accurate rollback/unknown-outcome status | Transactional integration test |
-| NFR-PERF-004 | Export | Complete the large-export profile within 60 seconds without requiring installed desktop Office software and without the export process exceeding 1 GB of memory above its idle baseline (provisional limit; EV-007 may revise it through a recorded decision) | Production-shaped export test with process-memory sampling |
+| NFR-PERF-004 | Export | Complete the large-export profile within 60 seconds without requiring installed desktop Office software and without the export process exceeding 1 GB of memory above its idle baseline (provisional limit; revisable through a recorded decision) | Production-shaped export test with process-memory sampling |
 | NFR-SCALE-001 | Concurrency | Meet PERF targets at the concurrency profile with no cross-user/application data leakage and less than 1% unexpected failures | Load and isolation test |
 | NFR-REL-001 | Atomicity | Zero partial commits for operations specified as atomic; every indeterminate provider outcome is reported distinctly and reconciled | Failure injection at each transaction boundary using real provider fixtures |
 | NFR-REL-002 | Resource cleanup | Repeated cancellation, timeout, and provider failure produces no sustained growth in open connections, file handles, or temporary files across 1,000 operations | Soak test and resource counters |
 | NFR-REL-003 | Recovery | Host restart restores service within 5 minutes without corrupting committed data or shared configuration | Restart/recovery exercise |
-| NFR-AVAIL-001 | Availability | Initial service objective 99.9% monthly excluding approved maintenance; provider-specific outages are reported separately from host availability | Monitoring report after pilot |
+| NFR-AVAIL-001 | Availability | Initial service objective 99.9% monthly excluding approved maintenance; provider-specific outages are reported separately from host availability | Monitoring report after the first production release |
 | NFR-DR-001 | Recovery objectives | Initial RTO 4 hours and RPO 15 minutes for migration-owned configuration/state; application-database objectives inherit approved database policy | Documented restore exercise and owner approval |
 | NFR-SEC-001 | Identity | 100% of protected operations derive identity from the trusted host; caller-supplied user/audit IDs never establish authority | Authentication/impersonation tests |
 | NFR-SEC-002 | Authorization | Zero unauthorized dataset, field, command, administrative, or cross-application accesses in the controlled security suite | Role/claim matrix tests |
@@ -1971,15 +1993,15 @@ retain the original profile for regression comparison.
 | NFR-ACC-001 | Accessibility | Every supported workflow is keyboard operable with visible focus and logical order; semantic names/roles/states are exposed through the selected platform accessibility API; a WCAG 2.2 AA-equivalent audit has no critical/serious issue | Automated scan plus manual keyboard and assistive-technology test |
 | NFR-UI-001 | Scaling/layout | No clipped required content, overlapping controls, unreachable command, or unusable dialog at any client-display profile; reflow/scrolling is allowed where documented | Screenshot and interaction matrix |
 | NFR-I18N-001 | Text and locale | Unicode round trips without loss; dates, times, numbers, and currency use an explicitly selected locale/time zone; invariant protocol values do not depend on workstation locale | Cross-locale contract/UI tests |
-| NFR-COMP-001 | Compatibility | Every supported contract version and legacy adapter operation has an owner, deprecation date, telemetry, and passing differential fixture | Compatibility report showing zero adapter operations without owner, deprecation date, or telemetry, and every differential fixture passing; the retirement dashboard is the running view of the same data |
+| NFR-COMP-001 | Compatibility (NOT APPLICABLE) | Not applicable: no legacy consumer or adapter exists; the row is retained for identifier stability. Contract versioning is governed by NFR-BUILD-001 and design section 13.1 | None |
 | NFR-BUILD-001 | Reproducibility | A clean checkout on the pinned build image restores, builds, tests, and packages without machine-specific paths or pre-registered development components | CI clean-build job |
 
-### 44.3 Open calibration evidence
+### 44.3 Calibration
 
-The following evidence is still required and does not make the targets above
-optional: production row/column distributions, peak concurrency, network
-latency, export sizes, report duration, availability history, backup policy,
-supported locales, accessibility platform, and business-approved RTO/RPO.
+No production calibration evidence exists or will arrive. The targets above
+are acceptance floors for the rebuilt platform; load tests at the section 44.1
+profiles (MIGRATION_MASTER.md section 18, Gate E) are the verification, and a
+recorded decision is the only way to change a value.
 
 ## 45. Glossary
 
@@ -1996,6 +2018,6 @@ supported locales, accessibility platform, and business-approved RTO/RPO.
 | Outlook-style navigation | Navigation mode in which top-level menus appear as collapsible groups and submenus appear as large/small-icon items within the expanded group (section 10.2). |
 | DataClass | A named, configured data operation (select SQL, action SQL, procedure, function, XML source, or simple-service call) that resolves to a tabular dataset or action result (section 16.1). |
 | display definition | A `dsp_defn_ctl` row: the metadata describing one screen instance, including its caption, type, master DataClass, screen elements, options, report, and helper (section 28.6). |
-| DISPID/LIBID/CLSID/ProgID | COM identifiers: dispatch member ID, type-library GUID, class GUID, and programmatic string name; recorded from deployed binaries for compatibility bridges (FR-BUILD-007, FR-DEP-002). |
-| coexistence adapter | A temporary compatibility component that exposes legacy binary names, signatures, and identifiers so that unmigrated consumers keep working while the replacement is introduced (FR-CTL-API-002, FR-BUILD-012). |
+| DISPID/LIBID/CLSID/ProgID | COM identifiers: dispatch member ID, type-library GUID, class GUID, and programmatic string name; recorded from the retained binaries as lineage only (section 42.3). |
+| coexistence adapter | A compatibility component that would have exposed legacy binary names and identifiers to unmigrated consumers; not applicable to the rebuild, since no consumer exists (FR-CTL-API-002, FR-BUILD-012 are marked `NOT APPLICABLE`). |
 | characterization test | An automated test that records the observed behavior of the legacy implementation, defects included, so that replacement behavior can be compared against it before any deliberate correction is approved. |

@@ -1,4 +1,4 @@
-# Contributing to the GDFramework Migration
+# Contributing to the GDFramework Rebuild
 
 ## Documentation-first workflow
 
@@ -10,6 +10,8 @@
 3. Record legacy defect decisions as `Preserve`, `Fix`, or `Retire` in the
    `Decision`, `Approvers`, and `Approval date` columns of the functional
    specification section 31; never silently copy or correct behavior.
+   Desktop-bound behaviors that cannot be carried into the browser go in
+   section 32.1 under decision D-017.
 4. Record architecture/security/compatibility decisions as ADRs in
    `MIGRATION_MASTER.md` section 30 and link them from the section 17 register.
 5. Regenerate the traceability matrix (document control section 8) with
@@ -20,7 +22,7 @@
 
 ## Change requirements
 
-- Do not modify the legacy evidence tree to simplify the migration.
+- Do not modify, build, or run the legacy reference tree.
 - Do not commit secrets, access tokens, passwords, or unredacted connection
   strings.
 - Do not introduce machine-specific or share-specific paths in documents or
@@ -40,7 +42,7 @@
 ## Review checklist
 
 - `tools/Test-Documentation.ps1` passes (tables, links and anchors, ID
-  uniqueness, traceability coverage, NFR/EV/decision linkage, manifest
+  uniqueness, traceability coverage, NFR/decision linkage, manifest
   identity, no machine paths).
 - Source paths and line references resolve against the captured baseline when
   the legacy tree is reachable.

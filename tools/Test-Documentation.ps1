@@ -107,9 +107,21 @@ foreach ($name in $registerMap.Keys) {
     if (-not $rowMatch.Success) { $errors += "DOCUMENT_CONTROL.md section 3 has no register row for $name"; continue }
     if ($headerVersions[$name] -and $rowMatch.Groups[1].Value -ne $headerVersions[$name]) { $errors += "DOCUMENT_CONTROL.md section 3 lists $name as $($rowMatch.Groups[1].Value) but its header says $($headerVersions[$name])" }
 }
+# README "Current status" must state the same versions as the document headers.
+$readmeRaw = Get-Content -LiteralPath (Join-Path $ProjectRoot 'README.md') -Raw
+$readmeMap = @{
+    'GDFramework Functional Specification.md' = 'Functional specification: Controlled working baseline (\d+\.\d+)'
+    'MODERN_WEB_SYSTEM_DESIGN.md' = 'Modern web system design: Controlled working baseline (\d+\.\d+)'
+    'MIGRATION_MASTER.md' = 'Migration master: Controlled working baseline (\d+\.\d+)'
+    'DOCUMENT_CONTROL.md' = 'Document control: Controlled working baseline (\d+\.\d+)'
+}
+foreach ($name in $readmeMap.Keys) {
+    if ($readmeRaw -notmatch $readmeMap[$name]) { $errors += "README.md current status has no version line for $name"; continue }
+    if ($headerVersions[$name] -and $Matches[1] -ne $headerVersions[$name]) { $errors += "README.md lists $name as $($Matches[1]) but its header says $($headerVersions[$name])" }
+}
 foreach ($file in $markdownFiles) {
     $raw = Get-Content -LiteralPath $file.FullName -Raw
-    foreach ($cite in [regex]::Matches($raw, '\[[^\]]*?\b(\d+\.\d+)\]\(([^)#]+\.md)(?:#[^)]*)?\)')) {
+    foreach ($cite in [regex]::Matches($raw, '\[[^\]]*?\b(?:Specification|Design|Control)\s+(\d+\.\d+)\]\(([^)#]+\.md)(?:#[^)]*)?\)')) {
         $targetName = [IO.Path]::GetFileName([uri]::UnescapeDataString($cite.Groups[2].Value))
         if ($headerVersions.ContainsKey($targetName) -and $headerVersions[$targetName] -and $cite.Groups[1].Value -ne $headerVersions[$targetName]) {
             $errors += "$($file.Name) cites $targetName as version $($cite.Groups[1].Value); its header says $($headerVersions[$targetName])"

@@ -1,9 +1,11 @@
 # GDFramework Migration
 
-This repository is the planning and implementation workspace for replacing the
-legacy VB6 GDFramework codebase.
+This repository is the planning and implementation workspace for rebuilding
+GDFramework as a modern web platform. The legacy VB6 system is not deployed
+anywhere: its source tree and documents are the behavioral reference, and
+nothing is migrated, run side by side, or retired.
 
-The migration is documentation-first. No replacement implementation may be
+The rebuild is documentation-first. No replacement implementation may be
 treated as conformant until the applicable functional requirements, decisions,
 and phase exit criteria have approved evidence.
 
@@ -18,12 +20,12 @@ The controlled set is exactly four documents under `docs/`, in precedence order:
 2. [Modern web system design](docs/MODERN_WEB_SYSTEM_DESIGN.md) is normative for
    the target web architecture, design-verification requirements, and
    implementation boundaries.
-3. [Migration master plan and design](docs/MIGRATION_MASTER.md) is normative for
+3. [Rebuild master plan and design](docs/MIGRATION_MASTER.md) is normative for
    governance, sequencing, decisions, risks, and quality gates. It also holds
-   the legacy baseline, the evidence-acquisition register, the component,
-   dependency, public API, dataset, and provider inventories (sections 23–29),
-   and the architecture decision records (section 30). It may not silently
-   override a functional requirement.
+   the reference baseline and evidence boundary (sections 23–24), the
+   component, dependency, public API, dataset, and provider inventories
+   (sections 25–29), and the architecture decision records (section 30). It
+   may not silently override a functional requirement.
 4. [Document control](docs/DOCUMENT_CONTROL.md) defines approval, versioning,
    precedence, and change history, and carries the generated requirement
    traceability matrix (section 8).
@@ -31,7 +33,7 @@ The controlled set is exactly four documents under `docs/`, in precedence order:
 Superseded drafts are not kept in the working tree; git history is the archive
 (the 0.1 design and plan drafts were last present at commit `bb1991a`).
 
-## Interactive prototypes
+## Reference implementations of the layouts
 
 - [Open the single-file GDFramework runtime mockup](prototype/gdframework-web-mockup.html).
   It demonstrates the end-user shell, navigation, tabs, all seven screen
@@ -44,8 +46,12 @@ Superseded drafts are not kept in the working tree; git history is the archive
   version, publication, rollback, and audit configuration workflows.
 
 Both prototypes run locally without a server or external assets and embed their
-metadata and representative data sources as JSON. They are non-normative
-illustrations of the design document.
+metadata and representative data sources as JSON. They are the reference
+implementations of the target layouts and of the authoring workflow, and the
+sample application inside the runtime mockup (Operations Hub and Risk &
+Controls) is the first application the rebuilt platform will carry. They are
+non-normative for behavior: where they and the design differ, the design
+governs (migration master section 3.5).
 
 ## Source system
 
@@ -55,9 +61,8 @@ and described in the migration master, section 23. The tools embed no share or
 machine path; when the root is unreachable, the generator reuses the committed
 baseline and the validator reports source-path checks as skipped.
 
-The legacy source is the behavioral reference during discovery and
-characterization. It should not be modified merely to make the replacement
-easier unless a separately approved stabilization change is required.
+The legacy source is the behavioral reference. It is never built, run, or
+modified.
 
 ## Tools
 
@@ -68,13 +73,14 @@ pwsh tools/Test-Documentation.ps1          # validate the four-document set
 
 ## Current status
 
-- Functional specification: Controlled working baseline 0.6; framework and
-  metadata-schema scope reconstructed, deployed row/runtime expansion pending
-- Modern web system design: Controlled working baseline 0.2; complete logical
+- Functional specification: Controlled working baseline 0.9; framework and
+  metadata-schema scope reconstructed from source; applications are authored
+- Modern web system design: Controlled working baseline 0.5; complete logical
   target design, concrete technology ADRs pending
-- Migration master: Controlled working baseline 0.5
-- Document control: Controlled working baseline 0.2
+- Migration master: Controlled working baseline 0.8
+- Document control: Controlled working baseline 0.5
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Target UI: Modern web application selected (D-001); implementation framework pending
 - Deployment topology: Not decided (D-003)
+- Legacy system: not deployed anywhere; no migration, coexistence, or retirement work
