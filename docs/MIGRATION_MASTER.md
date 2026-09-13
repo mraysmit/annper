@@ -1,13 +1,13 @@
 # GDFramework Rebuild Master Plan and Design
 
 **Status:** Controlled working baseline  
-**Version:** 0.8  
-**Date:** 10 September 2026  
+**Version:** 0.9  
+**Date:** 13 September 2026  
 **Owner:** Migration technical lead  
 **Reference source baseline:** `${LEGACY_SOURCE_ROOT}`; see [section 23 Legacy baseline](#23-legacy-baseline). Nothing else exists: no deployed instance, metadata database, user, or consumer  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
-**Functional baseline:** [GDFramework Functional Specification 0.9](GDFramework%20Functional%20Specification.md)  
-**Target design:** [GDFramework Modern Web System Design 0.5](MODERN_WEB_SYSTEM_DESIGN.md)  
+**Functional baseline:** [GDFramework Functional Specification 0.10](GDFramework%20Functional%20Specification.md)  
+**Target design:** [GDFramework Modern Web System Design 0.6](MODERN_WEB_SYSTEM_DESIGN.md)  
 **Document control:** [DOCUMENT_CONTROL.md](DOCUMENT_CONTROL.md)  
 **Consolidates:** the former legacy-baseline, evidence-acquisition, component-inventory, dependency-inventory, provider-matrix, public-API-catalogue, dataset-catalogue, and ADR documents (now sections 23–30); and the superseded 0.1 design/plan drafts (deleted from the working tree; last present in git history at commit bb1991a)
 
@@ -22,6 +22,7 @@
 | 0.6 | 2026-09-10 | Cross-document version citations corrected; D-011 enforced at Phase 0 exit and Gate A; D-009 removed from the Gate C deferrable list; Phase 2 entry aligned with Gate C; decisions D-013..D-016 registered for the design section 34 items; online-only default recorded; technology-neutral testing rule; git-history reference corrected; accountable role and gate per phase and workstream; entry criteria for Phases 3–5 and 7; evidence-bound exit criteria for Phases 2–6; Phase 0 target date; section 19.1 cutover, reconciliation, and rollback criteria; team/skills/cost placeholder with owner and due date |
 | 0.7 | 2026-09-10 | D-017 desktop-bound behavior reinterpretation registered and added to Phase 6 entry; D-014 and D-015 timing aligned between sections 13 and 17; Phase 0 target-date rationale corrected; Phase 0 activity 9 reworded as maintenance; section 6.1 clarified as registers within the four documents; risk status vocabulary defined; DEF range extended to DEF-038; Gate D cites NFR-PERF-003; section 19.1 measurement window defined; D-001 owns the browser support matrix; Phase 0 target date and estimation due date removed so the plan carries no delivery dates |
 | 0.8 | 2026-09-10 | Premise corrected: the legacy system is not deployed anywhere and no metadata, users, or consumers exist, so the document becomes a rebuild plan. Coexistence, pilot, cutover, retirement, compatibility, and evidence-acquisition content removed; sections 1, 2, 3.4, 4.3, 5, 6.1, 8.3, 11–22, 23.5, 24, 25–29, and Appendix A rewritten or trimmed in place so that section numbers cited by the other documents remain valid. Phases reduced to 0–5 and gates to A–F; D-006 and D-012 closed; D-001 moved to Gate C; D-015 adopted (authoring first); D-018..D-020 registered; risks that assumed a deployed instance closed; penetration test placed at Phase 5 exit; section 3.5 records the prototypes as reference implementations and adopts their sample application as the first application |
+| 0.9 | 2026-09-13 | Design-review reconciliation: coordinate scope in D-017, Gate C deferral consistency, Phase 3 threat-model work, test-layer mapping, and baseline references; historical phase references retained in change history |
 
 ## 1. Document purpose and authority
 
@@ -54,8 +55,8 @@ working tree and remain in git history (last present at commit bb1991a).
 
 | Area | Status |
 |---|---|
-| Consolidated plan | Controlled working baseline 0.8 |
-| Functional reference baseline | Version 0.9; framework, generic UI, custom controls, and metadata schema contract documented from source; no deployment-specific rows exist or will exist |
+| Consolidated plan | Controlled working baseline 0.9 |
+| Functional reference baseline | Version 0.10; framework, generic UI, custom controls, and metadata schema contract documented from source; no deployment-specific rows exist or will exist |
 | Requirement traceability | All functional/defect IDs inventoried; test mapping generated; rows that assumed a deployed legacy instance are marked not applicable |
 | Phase 0 | Started: Git repository and controlled artifacts established; canonical source copies not yet chosen (D-009) |
 | Replacement code | Not started |
@@ -636,6 +637,10 @@ Representative characterization shall include:
 - Generic UI toolbar, panel, splitter, navigation, filtering, grouping, search,
   CRUD, reporting, export, print, and popup/docking behavior.
 
+The layer mapping to modern design section 29 is: Characterization to
+Conformance; UI/control behavior to Component and Screen renderer; Operational
+to Workflow, Reliability, and Deployment. Shared boundary tests reuse evidence.
+
 ## 12. Workstreams
 
 | Workstream | Scope | Accountable role (section 6.4) |
@@ -750,7 +755,7 @@ the Operations owner (workstream G). **Gate:** C.
 
 - Gate B passed.
 - Gate C decision rule met: D-001, D-004 (first provider), D-005, D-008, and
-  D-013 decided and not deferred; D-002, D-003, D-007, and D-014 decided or
+  D-013 decided and not deferred; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016 decided or
   explicitly deferred with a documented safe default.
 - Supported SDK, build image, CI, and test environment are available.
 
@@ -824,6 +829,8 @@ owner (workstream F) and the Product/domain owner (workstream E). **Gate:** D.
 7. Verify conformance with the characterization fixtures and approved
    dispositions.
 8. Add operational metrics and correlated failure diagnostics.
+9. Complete slice threat-model work and accessibility acceptance cases; record
+   security-owner review before Gate D, extending the approved Gate C boundaries.
 
 **Deliverables**
 
@@ -1028,7 +1035,7 @@ identifier stays stable.
 | D-014 | Queue, cache, and object storage: select durable queue, distributed cache, and object storage (design sections 6.2, 21, 34). | Operations owner | Phase 4 entry, before the first capability group that needs durable jobs; Phase 3 entry instead if the first slice includes a job or export | Open | None raised (add as section 30.N) |
 | D-015 | Metadata authoring scope: governed web authoring is a first-release capability because no legacy metadata rows exist to import (design section 11.4). The ADR records the approval model and ownership. | Product/domain owner | Gate C (approval model); the minimum authoring path is part of Phase 3 | Adopted: authoring first | Pending ADR for the approval model (add as section 30.N) |
 | D-016 | Offline behavior: the client is online-only by default (design section 7.6); any offline editing requires an ADR covering encrypted storage, conflict, expiry, and support. | UI/workflow owner | Gate C (confirm) | Default adopted (online-only) | None raised (add as section 30.N if the default is challenged) |
-| D-017 | Desktop-bound behavior and legacy control scope: approve, for each row of functional specification section 32.1, the web equivalent proposed in design section 7.7 (identity, layout, detach and reattach, diagnostics, print, export, messages), and decide the legacy control scope rows FR-CTL-API-005 and FR-CTL-USE-005..007. No user evidence exists; these are product choices. FR-INV-012 forbids silent removal. | Product/domain owner with the UI/workflow owner | Gate B | Open | None raised (add as section 30.N) |
+| D-017 | Desktop-bound behavior and legacy control scope: approve, for each row of functional specification section 32.1, the web equivalent proposed in design section 7.7 (identity, shell layout, element coordinates, detach and reattach, diagnostics, print, export, messages), and decide the legacy control scope rows FR-CTL-API-005 and FR-CTL-USE-005..007. No user evidence exists; these are product choices. FR-INV-012 forbids silent removal. | Product/domain owner with the UI/workflow owner | Gate B | Open | None raised (add as section 30.N) |
 | D-018 | Format token model: define the technology-neutral display and output format tokens and the mapping from the legacy VBA-format semantics (FR-ELEM-008). | Migration technical lead | Phase 4 entry, before capability group 1 | Open | None raised (add as section 30.N) |
 | D-019 | Extension contract scope: decide which of the legacy helper contracts (validation, function, simple service, database helper; functional specification section 24 and FR-EXT-DB-001) become registered adapter contracts in the rebuild, and which are retired. | Migration technical lead | Phase 4 entry, before capability group 8 | Open | None raised (add as section 30.N) |
 | D-020 | PLM, aggregation, and limit-processing scope: decide whether any of the specialist components in functional specification sections 27 and 43 (FR-PLM-001, FR-PLM-006, FR-AGG-*, FR-LIMIT-*) is in scope for the rebuild; the default is out of scope. | Product/domain owner | Gate B | Open; default out of scope | None raised (add as section 30.N) |

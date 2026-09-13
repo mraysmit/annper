@@ -1,8 +1,8 @@
 # GDFramework Migration Document Control
 
 **Status:** Controlled working baseline  
-**Version:** 0.5  
-**Control date:** 10 September 2026  
+**Version:** 0.6  
+**Control date:** 13 September 2026  
 **Owner:** Test/quality owner  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`
 
@@ -34,8 +34,8 @@ functional requirement. A deliberate behavior change requires:
 
 A verified desktop-bound behavior that cannot be carried into the browser
 unchanged is not a defect. It is listed in functional specification section
-32.1, and its web reinterpretation is approved under decision D-017 before the
-dependent Phase 6 workflow is accepted (FR-INV-012).
+32.1, and its web reinterpretation is approved under decision D-017 at Gate B, before implementation of the
+dependent workflow (FR-INV-012).
 
 ## 2. Status vocabulary
 
@@ -53,10 +53,10 @@ functional specification's completeness boundary remains binding.
 
 | Document | Version/status | Owner role | Approval required from |
 |---|---|---|---|
-| Functional specification (including section 44 NFRs and section 31 dispositions) | 0.9 / controlled working baseline | Product/domain owner | Product, legacy technical, security, test/quality |
-| Modern web system design | 0.5 / controlled working design baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
-| Migration master (including sections 23–30 baseline, evidence, inventories, ADRs) | 0.8 / controlled working baseline | Migration technical lead | Product, security, database, operations, legacy technical, test/quality |
-| Document control (including section 8 traceability) | 0.5 / controlled working baseline | Test/quality owner | Owners of linked evidence and tests |
+| Functional specification (including section 44 NFRs and section 31 dispositions) | 0.10 / controlled working baseline | Product/domain owner | Product, legacy technical, security, test/quality |
+| Modern web system design | 0.6 / controlled working design baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
+| Migration master (including sections 23–30 baseline, evidence, inventories, ADRs) | 0.9 / controlled working baseline | Migration technical lead | Product, security, database, operations, legacy technical, test/quality |
+| Document control (including section 8 traceability) | 0.6 / controlled working baseline | Test/quality owner | Owners of linked evidence and tests |
 
 Named people and approval dates shall replace role placeholders during Phase 0.
 Absorbed sections keep their own status line where the evidence status differs
@@ -119,10 +119,11 @@ reviewed copy, not a required path.
 | 2026-09-10 | Modern web system design 0.4 | Section 7.7 desktop-bound reinterpretation; compatibility major version and field-level rule reconciled; FR-CUSTOM-008 preference scope; FR-NAV-008 navigation depth; version state machine with rollback path; field-type mapping; message-dialog contract; DEF-038 auto-refresh reference; vocabulary; Satisfies lines for sections 6 and 33; support matrix owned by D-001 | Superseded by 0.5 |
 | 2026-09-10 | Migration master 0.7 | D-017 registered and required at Phase 6 entry; D-014/D-015 timing aligned; Phase 0 date rationale and activity 9 corrected; section 6.1 and risk status vocabulary clarified; DEF-038; Gate D NFR-PERF-003; measurement window; D-001 support matrix; delivery dates removed | Superseded by 0.8 |
 | 2026-09-10 | Document control 0.4 | Register versions; desktop-bound reinterpretation rule in section 1; section 5 version-record wording aligned with the section 6 table; generator maps FR-ARCH-* to a phase and marks `REPLATFORM DECISION` rows as decision pending; matrix location column no longer embeds line numbers; validator checks README versions and matches citation versions only in document-title links | Superseded by 0.5 |
-| 2026-09-10 | Functional specification 0.9 | Premise corrected: no deployed instance, metadata, users, or consumers exist; section 2 evidence boundary; `NOT APPLICABLE` classification; discovery-evidence conditions replaced by decisions D-017/D-019/D-020; section 34 restated; NFR-COMP-001 not applicable; decision pointers on `REPLATFORM DECISION` rows | Controlled; approval pending |
-| 2026-09-10 | Modern web system design 0.5 | Compatibility adapter, legacy callers, routing, cutover, and retirement removed; WDES-014/015 withdrawn; authoring-first lifecycle; section 28 delivery sequencing; Appendix C configuration to be authored; D-018..D-020 in section 34 | Controlled; approval pending |
-| 2026-09-10 | Migration master 0.8 | Rebuild plan: coexistence, pilot, cutover, retirement, and evidence-acquisition content removed in place; Phases 0–5, Gates A–F; D-001 at Gate C; D-015 adopted; D-018..D-020; closed decisions and risks retained for identifier stability; penetration test at Phase 5; section 3.5 prototypes as reference implementations and the reference application as the first application | Controlled; approval pending |
-| 2026-09-10 | Document control 0.5 | Register versions and master authority description; generator statuses for not-applicable and decision-pending rows and rebuild phase names | Controlled; approval pending |
+| 2026-09-10 | Functional specification 0.9 | Premise corrected: no deployed instance, metadata, users, or consumers exist; section 2 evidence boundary; `NOT APPLICABLE` classification; discovery-evidence conditions replaced by decisions D-017/D-019/D-020; section 34 restated; NFR-COMP-001 not applicable; decision pointers on `REPLATFORM DECISION` rows | Superseded by 0.10 |
+| 2026-09-10 | Modern web system design 0.5 | Compatibility adapter, legacy callers, routing, cutover, and retirement removed; WDES-014/015 withdrawn; authoring-first lifecycle; section 28 delivery sequencing; Appendix C configuration to be authored; D-018..D-020 in section 34 | Superseded by 0.6 |
+| 2026-09-10 | Migration master 0.8 | Rebuild plan: coexistence, pilot, cutover, retirement, and evidence-acquisition content removed in place; Phases 0–5, Gates A–F; D-001 at Gate C; D-015 adopted; D-018..D-020; closed decisions and risks retained for identifier stability; penetration test at Phase 5; section 3.5 prototypes as reference implementations and the reference application as the first application | Superseded by 0.9 |
+| 2026-09-10 | Document control 0.5 | Register versions and master authority description; generator statuses for not-applicable and decision-pending rows and rebuild phase names | Superseded by 0.6 |
+| 2026-09-13 | Functional specification 0.10; Modern web system design 0.6; Migration master 0.9; Document control 0.6 | Design-review findings reconciled with qualified recommendations: coordinate decision pending, mutation and key guarantees, authored capabilities, message/security/startup contracts, gates, applicable acceptance, and regenerated traceability. No D-017 or DEF approval implied. | Controlled; approval pending |
 
 ## 7. Approval record
 
@@ -266,7 +267,7 @@ Every requirement, non-functional requirement, defect, and design-verification I
 | FR-GRID-009 | 13.1 Grid view (`dsp_type=1`) | VERIFIED | Functional specification §36: Grid metadata construction; Grid context/customization | Source evidence only; no deployed instance exists | AT-FR-GRID-009 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-GRID-010 | 13.1 Grid view (`dsp_type=1`) | VERIFIED | Functional specification §36: Grid metadata construction; Grid context/customization | Source evidence only; no deployed instance exists | AT-FR-GRID-010 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-FIELD-001 | 13.2 Field view (`dsp_type=2`) | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-FIELD-001 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
-| FR-FIELD-002 | 13.2 Field view (`dsp_type=2`) | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-FIELD-002 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
+| FR-FIELD-002 | 13.2 Field view (`dsp_type=2`) | VERIFIED / REPLATFORM DECISION (D-017; existing behavior governs until approved) | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-FIELD-002 | Phase 3 first slice; Phase 4 expansion | Replatform decision pending; test not implemented |
 | FR-FIELD-003 | 13.2 Field view (`dsp_type=2`) | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-FIELD-003 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-FIELD-004 | 13.2 Field view (`dsp_type=2`) | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-FIELD-004 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-FIELD-005 | 13.2 Field view (`dsp_type=2`) | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-FIELD-005 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
@@ -291,7 +292,7 @@ Every requirement, non-functional requirement, defect, and design-verification I
 | FR-CHART-004 | 13.7 Chart view (`dsp_type=7`) | VERIFIED | Functional specification §§13.7, 21 and component catalogue | Source evidence only; no deployed instance exists | AT-FR-CHART-004 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-CHART-005 | 13.7 Chart view (`dsp_type=7`) | UNFINISHED | Functional specification §§13.7, 21 and component catalogue | Source evidence only; no deployed instance exists | AT-FR-CHART-005 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-ELEM-001 | 14.1 Common element contract | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-ELEM-001 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
-| FR-ELEM-002 | 14.1 Common element contract | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-ELEM-002 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
+| FR-ELEM-002 | 14.1 Common element contract | VERIFIED / REPLATFORM DECISION (D-017; existing behavior governs until approved) | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-ELEM-002 | Phase 3 first slice; Phase 4 expansion | Replatform decision pending; test not implemented |
 | FR-ELEM-003 | 14.1 Common element contract | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-ELEM-003 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-ELEM-004 | 14.1 Common element contract | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-ELEM-004 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |
 | FR-ELEM-005 | 14.1 Common element contract | VERIFIED | Functional specification §36: Grid metadata construction; Dynamic parameters and criteria | Source evidence only; no deployed instance exists | AT-FR-ELEM-005 | Phase 3 first slice; Phase 4 expansion | Source-specified; test not implemented |

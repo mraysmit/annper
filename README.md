@@ -73,12 +73,12 @@ pwsh tools/Test-Documentation.ps1          # validate the four-document set
 
 ## Current status
 
-- Functional specification: Controlled working baseline 0.9; framework and
+- Functional specification: Controlled working baseline 0.10; framework and
   metadata-schema scope reconstructed from source; applications are authored
-- Modern web system design: Controlled working baseline 0.5; complete logical
+- Modern web system design: Controlled working baseline 0.6; complete logical
   target design, concrete technology ADRs pending
-- Migration master: Controlled working baseline 0.8
-- Document control: Controlled working baseline 0.5
+- Migration master: Controlled working baseline 0.9
+- Document control: Controlled working baseline 0.6
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Target UI: Modern web application selected (D-001); implementation framework pending

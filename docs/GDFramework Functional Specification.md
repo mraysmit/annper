@@ -1,7 +1,7 @@
 # GD Framework Functional Specification
 
-Document status: Controlled working baseline 0.9 (framework scope covered from source; metadata schema reconstructed; no deployed configuration exists, so applications are authored in the rebuild)  
-Prepared: 1 August 2026; reviewed and controlled: 6 September 2026; consolidated: 9 September 2026; corrected: 10 September 2026  
+Document status: Controlled working baseline 0.10 (framework scope covered from source; metadata schema reconstructed; no deployed configuration exists, so applications are authored in the rebuild)  
+Prepared: 1 August 2026; reviewed and controlled: 6 September 2026; consolidated: 9 September 2026; corrected: 13 September 2026  
 System lineage reviewed: GD Framework 1.0–1.2, GFDGUI, GFDClient, GFDServer, GFDGUICtls  
 Primary purpose: technology-neutral behavioral reference for rebuilding the framework as a web platform
 
@@ -20,6 +20,7 @@ Change history: see DOCUMENT_CONTROL.md section 6
 | 0.7 | 2026-09-10 | Section 31 subordinated to decision D-011 with the disposition vocabulary defined; FR-DEP-003 closed as a replacement requirement consistent with NFR-PERF-004; FR-ACC-019 extended to NFR-AVAIL-001 and NFR-DR-001 with operational-evidence verification stated; section 15 reserved positions 13–15 and FR-TOOL-008 security rule for positions 16–20; section 33 classification column; section 44 measurable wording for the read fixture, concurrency mix, export memory, scan severity, and compatibility verification |
 | 0.8 | 2026-09-10 | Section 32.1 register of desktop-bound behaviors requiring web reinterpretation under decision D-017, with the affected rows reclassified `REPLATFORM DECISION` and FR-INV-012 added; FR-ACC-004 accepts the approved web equivalent; DEF-038 records the auto-refresh loss of uncommitted edits; DEF-003 proposed disposition notes change-time persistence |
 | 0.9 | 2026-09-10 | Premise corrected: no deployed instance, metadata rows, users, or consumers exist. Section 2 rewritten as the evidence boundary; `NOT APPLICABLE` classification added and applied to coexistence and deployment rows; discovery-evidence conditions replaced by product-decision conditions (D-017, D-019, D-020); physical-DDL and production-calibration wording removed; section 34 restated as configuration to be authored; NFR-COMP-001 marked not applicable; decision pointers added to every `REPLATFORM DECISION` row |
+| 0.10 | 2026-09-13 | Review reconciliation: coordinate reinterpretation registered as pending D-017; named-capability mapping clarified without importer scope; invariant gate and applicable custom-control acceptance corrected |
 
 Relative source paths in this specification are intentionally preserved from
 the legacy review. Resolve paths such as `../AppControls` and
@@ -355,7 +356,7 @@ The shell contains a global toolbar, left navigation area, resizable splitter, t
 | ID | Requirement | Classification |
 |---|---|---|
 | FR-FIELD-001 | The screen shall display one current record using dynamically created labeled controls. | VERIFIED |
-| FR-FIELD-002 | Controls shall follow explicit top/left coordinates when provided and calculated field/tab order otherwise. | VERIFIED |
+| FR-FIELD-002 | Controls shall follow explicit top/left coordinates when provided and calculated field/tab order otherwise. | VERIFIED / REPLATFORM DECISION (D-017; existing behavior governs until approved) |
 | FR-FIELD-003 | Previous and Next commands shall cycle through records and wrap at BOF/EOF. | VERIFIED |
 | FR-FIELD-004 | The secondary caption shall show current absolute position and total count where supported by the cursor. | VERIFIED |
 | FR-FIELD-005 | When no rows exist, all generated controls shall be reset to empty/default state. | VERIFIED |
@@ -414,7 +415,7 @@ Every screen element is identified by application ID, screen-definition ID, and 
 | ID | Requirement | Classification |
 |---|---|---|
 | FR-ELEM-001 | `display_type=C` shall identify criteria controls; other supported values shall restrict an element to all, grid, or field presentation. | VERIFIED |
-| FR-ELEM-002 | Explicit top and left positions are stored in the legacy layout unit; the legacy layout unit (twips, 1/1440 inch) shall be converted to device-independent units by the replacement so that configured layouts are preserved (legacy: twips). | VERIFIED |
+| FR-ELEM-002 | Explicit top and left positions are stored in the legacy layout unit; the legacy layout unit (twips, 1/1440 inch) shall be converted to device-independent units by the replacement so that configured layouts are preserved (legacy: twips). | VERIFIED / REPLATFORM DECISION (D-017; existing behavior governs until approved) |
 | FR-ELEM-003 | Column index shall determine grid order; field index shall determine field layout/tab order. | VERIFIED |
 | FR-ELEM-004 | Column caption shall supply grid/report headings, while column description shall supply field labels and explanatory text. | VERIFIED |
 | FR-ELEM-005 | Datafield shall identify the corresponding DataClass recordset field. | VERIFIED |
@@ -1478,13 +1479,13 @@ The replacement shall preserve the following independent of technology choice:
 | FR-INV-007 | Errors are correlated across UI, application service, and data-source operations. | REPLACEMENT REQUIREMENT |
 | FR-INV-008 | Configuration errors fail safely with actionable diagnostics. | REPLACEMENT REQUIREMENT |
 | FR-INV-009 | No credentials or sensitive connection strings are exposed to source control or end users. | REPLACEMENT REQUIREMENT |
-| FR-INV-010 | Legacy option strings shall be migrated to named capabilities while retaining an import compatibility mapping. | REPLACEMENT REQUIREMENT |
+| FR-INV-010 | The authored target model shall use named capabilities. Retain the positional-option-to-capability compatibility mapping as documentation, with lineage in sections 15, 28.1, and 28.6; no executable legacy importer or positional compiler input is required because no deployed configuration exists. | REPLACEMENT REQUIREMENT |
 | FR-INV-011 | Legacy COM-specific details, twips, window handles, recordset bookmarks, and VBA format strings are implementation artifacts, not target architecture requirements. | REPLACEMENT REQUIREMENT |
-| FR-INV-012 | Every desktop-bound behavior listed in section 32.1 shall have an approved web reinterpretation under decision D-017 before a Phase 6 workflow that depends on it is accepted; none of those behaviors may be dropped or changed silently. | REPLACEMENT REQUIREMENT |
+| FR-INV-012 | Every desktop-bound behavior listed in section 32.1 shall have an approved web reinterpretation under decision D-017 at Gate B, before implementation of a dependent workflow; none of those behaviors may be dropped or changed silently. | REPLACEMENT REQUIREMENT |
 
 ### 32.1 Desktop-bound behaviors requiring web reinterpretation
 
-The requirements below are verified legacy behavior whose literal form depends on a desktop process, the workstation, a local file system, an installed Office application, or an operating-system window. They cannot be carried into a browser-hosted replacement unchanged, and they are not defects, so section 31 does not apply to them. Each row remains normative as written until decision D-017 (MIGRATION_MASTER.md section 17) approves the web reinterpretation proposed in the cited design section; the design proposals are candidates, not authority. The rows carry the `REPLATFORM DECISION` classification in their home sections for that reason, and FR-ACC-004 accepts either the legacy behavior or the approved reinterpretation.
+The requirements below are verified legacy behavior whose literal form depends on a desktop process, the workstation, a local file system, an installed Office application, an operating-system window, or explicit element-coordinate placement requiring a responsive-layout decision. Their web treatment must be explicitly decided, and they are not defects, so section 31 does not apply to them. Each row remains normative as written until decision D-017 (MIGRATION_MASTER.md section 17) approves the web reinterpretation proposed in the cited design section; the design proposals are candidates, not authority. The rows carry the `REPLATFORM DECISION` classification in their home sections for that reason, and FR-ACC-004 accepts either the legacy behavior or the approved reinterpretation.
 
 | Desktop-bound legacy behavior | Requirements | Design proposal | Decision |
 |---|---|---|---|
@@ -1492,6 +1493,7 @@ The requirements below are verified legacy behavior whose literal form depends o
 | User identity is taken from workstation identity, with a debug impersonation override | FR-START-009, FR-SEC-001 | Section 7.7, identity | Pending (D-017) |
 | Personal main-window width, height, maximized state, and splitter position are restored | FR-SEC-010, FR-SHELL-003, FR-SHELL-004 | Section 7.7, layout | Pending (D-017) |
 | Status-bar double-click opens System Explorer; About and System Explorer show workstation and environment facts | FR-SHELL-008, FR-SYSINFO-001, FR-SYSINFO-002 | Section 7.7, diagnostics | Pending (D-017) |
+| Explicit element top/left coordinates converted from twips are honored when configured | FR-ELEM-002, FR-FIELD-002 | Sections 7.7 and 8.5, candidate responsive coordinate reinterpretation | Pending (D-017) |
 | A drag gesture undocks a screen to a floating top-level window with a desktop focus rectangle; a Dock command returns it | FR-WIN-005, FR-WIN-006, FR-WIN-007, FR-TOOL-004 | Section 7.7, detach and reattach | Pending (D-017) |
 | The preview window opens at the invoking screen's bounds | FR-PRINT-003 | Section 7.7, print, and section 18.4 | Pending (D-017) |
 | Individual export creates a workbook in a running Excel instance; Export All appends to it; Excel start or copy failure is a critical diagnostic | FR-EXCEL-005, FR-EXCEL-006, FR-EXCEL-007 | Section 7.7, export, and section 18.3 | Pending (D-017) |
@@ -1509,7 +1511,7 @@ The future implementation shall not be considered functionally equivalent until 
 | FR-ACC-003 | Outlook and Tree navigation with icons, expansion, application switching, and personal menus. | FR-NAV-*, FR-NAV-OUT-*, FR-NAV-USER-*, FR-APP-*; NFR-ACC-001 | REPLACEMENT REQUIREMENT |
 | FR-ACC-004 | Multiple docked screens, tab switching, resizing, floating/docking (or the web equivalent approved under D-017, section 32.1), modal popup, and controlled shutdown. | FR-WIN-*, FR-SHELL-*, FR-SHUT-*; NFR-UI-001, NFR-REL-002 | REPLACEMENT REQUIREMENT |
 | FR-ACC-005 | Every screen type and every field type. | Sections 13 and 14; NFR-UI-001, NFR-ACC-001 | REPLACEMENT REQUIREMENT |
-| FR-ACC-006 | Every active custom control's public properties, defaults, persisted-property round trip, collection semantics, event order/payload, keyboard behavior, enabled/locked/visible states, and failure behavior, plus any dormant control accepted under FR-CTL-USE-006/007. | FR-CTL-API-001..004, sections 26.7–26.8; NFR-COMP-001, NFR-ACC-001 | REPLACEMENT REQUIREMENT |
+| FR-ACC-006 | Every applicable observable custom-control contract: defaults, collection semantics, event meaning, keyboard behavior, enabled/locked/visible states, and failure behavior; target preference/configuration round trips; plus dormant contracts explicitly admitted by D-017. Exclude NOT APPLICABLE rows and native COM/property-bag mechanics. | Applicable rows of sections 26.7–26.8; FR-CTL-API-005, FR-CTL-USE-005..007 subject to D-017; NFR-ACC-001, NFR-UI-001 | REPLACEMENT REQUIREMENT |
 | FR-ACC-007 | Shell and generic-form integration of toolbar, title panel, splitter, navigation, popup/docked variants, metadata/security-driven commands, record-state captioning, resizing, and splitter-position persistence. | FR-CTL-USE-*, FR-TOOL-*, FR-SCREEN-007; NFR-UI-001 | REPLACEMENT REQUIREMENT |
 | FR-ACC-008 | Security removal of each protected toolbar capability. | FR-SEC-005..008, FR-TOOL-001; NFR-SEC-002 | REPLACEMENT REQUIREMENT |
 | FR-ACC-009 | Dynamic parameters of every supported type and parameter-driven screen subkeys. | FR-PARAM-*, FR-CRIT-*; NFR-SEC-003, NFR-I18N-001 | REPLACEMENT REQUIREMENT |

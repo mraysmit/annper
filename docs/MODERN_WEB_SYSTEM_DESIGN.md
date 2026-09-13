@@ -1,11 +1,11 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.5  
-**Date:** 10 September 2026  
+**Status:** Controlled working design baseline 0.6  
+**Date:** 13 September 2026  
 **Owner:** Migration technical lead  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
-**Functional authority:** [GD Framework Functional Specification 0.9](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.8](MIGRATION_MASTER.md)  
+**Functional authority:** [GD Framework Functional Specification 0.10](GDFramework%20Functional%20Specification.md)  
+**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.9](MIGRATION_MASTER.md)  
 **Technology status:** Web direction is selected (D-001, MIGRATION_MASTER.md section 17); framework and product selections remain deferred to ADRs
 
 **Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
@@ -19,6 +19,7 @@
 | 0.3 | 2026-09-10 | Version citations corrected; screen-lifecycle diagram completed (refreshing, forbidden, data-error exits); compatibility major version defined; unsaved-change protocol defined; Preference/Message/Report services added to the controlled vocabulary; section 34 decisions mapped to register IDs D-013..D-016; testing rule stated normatively |
 | 0.4 | 2026-09-10 | Section 7.7 desktop-bound behavior reinterpretation under D-017; compatibility major version limited to DataClass and key-set changes with field-level compatibility; preference scope restored to FR-CUSTOM-008; arbitrary-depth navigation made conditional on FR-NAV-008; version state machine gains Superseded and Withdrawn with a rollback path; field-type mapping table; message-dialog contract; auto-refresh pause tied to DEF-038; vocabulary and endpoint candidate labelling; Satisfies lines for sections 6 and 33; browser support matrix assigned to the D-001 ADR; personalization persistence timing noted against DEF-003 |
 | 0.5 | 2026-09-10 | Premise corrected: no deployed legacy instance, metadata, users, or consumers exist. Compatibility adapter, legacy callers, side-by-side routing, cutover, and retirement removed (sections 5, 6, 28, 29, 33, 36); WDES-014 and WDES-015 withdrawn; metadata lifecycle starts at Draft and web authoring is a first-release capability (D-015); section 28 restated as delivery sequencing; Appendix C restated as configuration to be authored; D-018..D-020 added to section 34; NFR-COMP-001 citations removed; prototypes recorded as the reference implementations of the layouts and of the authoring workflow |
+| 0.6 | 2026-09-13 | Design-review corrections: explicit pending layout scope, safe mutations and keys, authored capabilities, messages, startup and security, lifecycle, preference identity, gate alignment, and citations; no pending product or defect decision approved |
 
 ## 1. Purpose and authority
 
@@ -274,7 +275,7 @@ mouse movement, or desktop window coordinates.
 
 - The API returns only authorized active applications in authorized groups.
 - The user's valid default application opens first; otherwise the first valid
-  application is selected or a choice page is shown.
+  application is selected.
 - Switching application changes the route, navigation, metadata bundle,
   command context, message scope, and personalization scope.
 - If a dirty screen would be discarded, the shell presents Save, Discard, and
@@ -291,11 +292,12 @@ variants:
 - ordered groups and terminal items;
 - icons with text alternatives or decorative semantics;
 - two-level Outlook-style grouping where configured;
-- arbitrary-depth trees only where FR-NAV-008 discovery evidence proves an
-  active consumer; the default and imported model is the two-level one;
+- arbitrary-depth trees only where recorded decision D-017 requires them
+  (FR-NAV-008); the default authored model is the two-level one;
 - expand/collapse, initial expansion, selection, keyboard arrows, Home/End,
   type-ahead, and Enter/Space activation;
-- application-owned items and user-defined shortcuts;
+- application-owned items and user-defined shortcuts; consistent personal menus
+  across navigation modes remain a candidate DEF-005 disposition pending D-011;
 - authorized drag/reorder or explicit Move controls for personal menus;
 - optimistic personalization updates with rollback on failure, persisted at
   the time of change rather than at shutdown (the stronger form of the DEF-003
@@ -311,6 +313,12 @@ and are excluded from the published navigation bundle.
 - A normal navigation action opens or activates a uniquely keyed workspace tab.
 - Metadata controls whether multiple instances of a screen are allowed and
   whether subkeys form part of tab identity.
+- The configured single-instance rule takes precedence over navigation-item
+  identity. When it applies, another menu item activates the existing instance;
+  the first-opening item's preference scope stays attached until that tab closes.
+  When multiple instances are allowed, tab identity includes the originating
+  navigation item (menu/submenu), preserving separate preference scopes.
+  Reopening after closure uses the newly selected item's preferences.
 - Tab labels use configured captions and expose dirty, loading, error, and
   attention state without relying on color alone.
 - Closing a dirty tab invokes the common unsaved-change protocol.
@@ -355,11 +363,17 @@ Startup proceeds as follows:
 
 1. load versioned static assets under a restrictive security policy;
 2. establish or resume an authenticated session;
-3. retrieve session capabilities and valid application choices;
+3. require an active metadata user mapped to the authenticated subject and an
+   active application assignment in the selected group (FR-SEC-002..003);
+   otherwise show a blocking security message and load no application data;
+   retrieve session capabilities and valid application choices;
 4. select the requested/default application;
 5. retrieve the published shell/navigation metadata bundle;
 6. restore permitted user preferences and route;
-7. connect the message channel; and
+7. execute authorized initialization DataClasses on the server unless
+   no-data-load is active (FR-DC-005), using the cache rules in section 14.7;
+   expose failure/retry without claiming startup succeeded, then connect the
+   message channel; and
 8. render the first usable state with loading placeholders and retryable errors.
 
 Sign-out and session expiry clear the session credential (whatever carrier
@@ -377,7 +391,8 @@ for later replay.
 
 Functional specification section 32.1 lists verified legacy behaviors whose
 literal form depends on a desktop process, the workstation, a local file
-system, an installed Office application, or an operating-system window. The
+system, an installed Office application, an operating-system window, or explicit
+element-coordinate placement requiring a responsive-layout decision. The
 proposals below are candidates pending decision D-017 (MIGRATION_MASTER.md
 section 17). Until that ADR is approved the specification rows govern, and
 FR-INV-012 forbids dropping any of them silently.
@@ -385,12 +400,13 @@ FR-INV-012 forbids dropping any of them silently.
 | Area | Requirements | Candidate web equivalent |
 |---|---|---|
 | Identity | FR-START-009, FR-SEC-001 | The subject is established by the organization identity provider (sections 10.1, 12.1, 15.1; NFR-SEC-001). Workstation identity is never an authority. Debug impersonation is replaced by the audited support mechanism in section 23.3. |
-| Layout | FR-SEC-010, FR-SHELL-003, FR-SHELL-004 | Split position, navigation expansion, and last application persist as preferences (section 16). Browser window size and maximized state belong to the browser; application-group option 20 is imported as a diagnostic only. |
+| Layout | FR-SEC-010, FR-SHELL-003, FR-SHELL-004 | Split position, navigation expansion, and last application persist as preferences (section 16). Browser window size and maximized state belong to the browser; the legacy maximized-window option is lineage only, with no authored browser-window setting. |
+| Element coordinates | FR-ELEM-002, FR-FIELD-002 | Candidate responsive ordering/grouping reinterpretation in section 8.5; explicit configured positions remain binding until D-017 approves this row. |
 | Detach and reattach | FR-WIN-005, FR-WIN-006, FR-WIN-007, FR-TOOL-004 | A Detach command (stable key, section 8.8) opens the screen in a separate browser window or standalone route that shares the session and the unsaved-change protocol; a Reattach command returns it to the workspace. The drag gesture and desktop focus rectangle have no equivalent. Whether Detach is required at all is a D-017 product choice; no user evidence exists. |
 | Diagnostics | FR-START-008, FR-SHELL-008, FR-SYSINFO-001, FR-SYSINFO-002, FR-LOG-001, FR-LOG-002, FR-LOG-005, FR-LOG-006 | No client file, folder, or log is written. Session diagnostics are server-side structured telemetry correlated by session (section 23). The global command bar exposes About (application, client build, API and metadata versions, subject, locale, correlation ID) and, for authorized support users, a diagnostics view replacing System Explorer and the debug window (section 23.3). Administrator error mail becomes alert routing through the telemetry platform (section 23.1) under the FR-LOG-008 transport rule. |
 | Print | FR-PRINT-003 | The print document opens in a print view or as a download (section 18.4); the invoking screen's bounds are not preserved. |
 | Export | FR-EXCEL-005, FR-EXCEL-006, FR-EXCEL-007 | Each export is a server-generated file (section 18.3); Export All is one job producing a multi-sheet workbook-compatible file; generation failure is reported through the job and error contracts (sections 13.6, 21) rather than as an Excel diagnostic. |
-| Messages | FR-SYSMSG-002 | Message audience is subject, role, application, group, or system (section 12.7). A workstation-addressed legacy message is imported with a diagnostic and mapped to the subjects who use that workstation where an authored application needs that audience. |
+| Messages | FR-SYSMSG-002 | Message audience is subject, role, application, group, or system (section 12.7). Any workstation-associated audience must be authored as an explicit subject mapping with defined ownership; browser-supplied workstation identity is not trusted. |
 
 ## 8. Generic screen engine
 
@@ -413,7 +429,15 @@ For each published display definition, the metadata runtime exposes a compiled
 - key, identity, concurrency, audit, and mutation policy;
 - helper/extension references translated to approved adapter IDs;
 - user-personalization capability and bounds;
-- diagnostics showing ignored or translated legacy options.
+- named capabilities and diagnostics for invalid or unsupported authored settings.
+
+Authors store named capabilities, not positional Y/N strings or bit fields.
+The lineage for this documented compatibility mapping is distributed across
+functional specification sections 15 (screen capabilities and extended options),
+28.1 (option-string interpretation), and 28.6 (display definitions). Those
+sections retain the reference semantics under FR-INV-010; they do not define an
+executable importer or alternative compiler input format. Unresolved positional
+meanings remain subject to FR-TOOL-007 before a named capability is bound.
 
 The definition is immutable after publication and identified by application,
 screen, and metadata version. The browser shall never merge unrelated versions
@@ -426,7 +450,8 @@ stateDiagram-v2
     [*] --> Resolving
     Resolving --> LoadingDefinition
     Resolving --> Forbidden: not authorized
-    LoadingDefinition --> LoadingData
+    LoadingDefinition --> Ready: Action or no initial load
+    LoadingDefinition --> LoadingData: initial load required
     LoadingDefinition --> ConfigurationError
     LoadingDefinition --> Forbidden: definition denied
     LoadingData --> Ready
@@ -483,7 +508,8 @@ layout reference: Order register (grid), Customer records (field), Inventory
 by product (master-detail), Repricing action and Run limit check (action),
 Regional hierarchy (tree/detail), Customer products (junction), and Sales
 performance (chart). Its Welcome page is a shell landing page, not a screen
-family.
+family. Run limit check is a plain Action DataClass demonstrating type 4,
+not specialist Limit Server behavior under D-020.
 
 ### 8.4 Field and column types
 
@@ -530,9 +556,15 @@ styles, event handlers, URLs, or arbitrary component names.
 
 ### 8.5 Layout
 
-Absolute positions in the legacy layout model (FR-ELEM-002) are interpreted as
-ordering and grouping hints, not raw
-pixel coordinates. The layout engine uses responsive grid regions with:
+FR-ELEM-002 and FR-FIELD-002 currently require explicit configured positions
+converted from twips to device-independent units and honored; otherwise field/tab
+order applies. This remains the acceptance baseline until D-017 approves the
+section 32.1 coordinate row in the functional specification.
+
+The candidate web reinterpretation treats coordinates as ordering/grouping hints
+in responsive regions. It is not approved by this design update. Either the
+preserved layout or its approved alternative must satisfy NFR-UI-001, including
+zoom and narrow-view access. The candidate layout provides:
 
 - explicit label/control association;
 - minimum/maximum widths and documented overflow;
@@ -603,12 +635,16 @@ pixel-level rendering or ActiveX event plumbing.
 | `CSFPButtons` | Command collection model | indexed/keyed access and ordered mutation during construction | immutable published collection; keyed state updates |
 | `CSFPPanel` | Layout panel/surface | border, caption, child containment, resize participation | CSS layout regions, semantic heading/region, responsive sizing |
 | `CSFPSplitter` | Resizable separator | linked panes, min/max bounds, drag completion and position | pointer and keyboard resizing, ARIA separator, saved bounded preference |
-| `CSFPDropDown` | Select/combobox | values, selected key, display text, enabled/read-only state, change event | accessible listbox/combobox, async paging when required |
-| `CSFPTextLookup` | Lookup input with search trigger | editable/display text, lookup button event, host-provided retrieval | lookup dialog/service owned by host; control never executes SQL |
-| Outlook bar hierarchy | Navigation groups/tree | group/items, order, selected item, expansion, icon/caption, activation | unified responsive navigation; two-level by default, deeper trees only under FR-NAV-008 evidence |
+| `CSFPDropDown` (generic-screen contract conditional on D-017) | Select/combobox | values, selected key, display text, enabled/read-only state, change event | accessible listbox/combobox, async paging when required |
+| `CSFPTextLookup` (generic-screen contract conditional on D-017) | Lookup input with search trigger | editable/display text, lookup button event, host-provided retrieval | lookup dialog/service owned by host; control never executes SQL |
+| Outlook bar hierarchy | Navigation groups/tree | group/items, order, selected item, expansion, icon/caption, activation | unified responsive navigation; two-level by default, deeper trees only where D-017 requires them (FR-NAV-008) |
 | Legacy grid OCX | Data grid | columns, rows, selection, editing, grouping, sorting, filtering, frozen columns, context actions | virtualization, semantic table/grid modes, server paging, keyboard and screen-reader acceptance |
 | Legacy tabs/docking | Workspace tab/panel system | active screen identity, close, resize, modal/modeless relationships | route integration, responsive panels, no OS-level docking dependency |
 | Tooltip helper | Design-system tooltip/help | delayed contextual description | never the sole source of required information; keyboard/touch accessible |
+
+Ordinary dropdown and lookup behaviors in section 8.4 remain required. D-017
+controls the specific dormant custom-control contracts, not those standard field
+types (FR-CTL-USE-005, FR-CTL-LU-006).
 
 Component properties that affect observable behavior remain part of the
 compiled view model. Design-time property pages, window handles, COM persistence
@@ -720,13 +756,14 @@ stateDiagram-v2
 The compiler shall:
 
 1. parse authored definitions without executing them;
-2. normalize legacy nulls, booleans, option arrays/bit fields, enum values,
-   identifiers, ordering, and data types;
+2. normalize authored nulls, booleans, named capabilities, enum values,
+   identifiers, ordering, and data types; reject positional option strings;
 3. resolve all foreign references and detect cycles/orphans/duplicates;
 4. translate screen, element, command, validation, parameter, and provider
    options into typed structures;
 5. reject executable client code, unregistered helpers, raw credentials,
    malformed identifiers, unsafe substitution, and unknown critical options;
+   enforce the legacy parameter type 3 alternatives below;
 6. calculate effective defaults and inheritance explicitly;
 7. validate provider capabilities and read/write consistency;
 8. validate security coverage and deny by default when ambiguous;
@@ -738,13 +775,21 @@ Warnings may be published only under an approved rule. Errors block the
 affected publication unit. The compiler output is reproducible from the same
 input, compiler version, and approved environment-independent configuration.
 
+**Parameter type 3 replacement.** Database-object selection uses authored
+allow-lists mapping stable keys to server-owned identifiers. Predicate fragments
+become typed expression trees under sections 13.4 and 17. Other executable
+behavior requires a D-019-approved adapter. Raw SQL fragments and unsupported
+substitutions are compilation errors. Requests carry typed values and approved
+selection keys only; adapters validate and quote identifiers separately from
+bound values.
+
 ### 11.4 Authoring and administration
 
 Governed web authoring is a first-release capability (D-015 adopted), because
 no legacy metadata rows exist to import. The minimum authoring path needed for
 the first vertical slice is delivered in Phase 3 and completed in Phase 4
 (MIGRATION_MASTER.md section 13). Authoring shall use the same APIs and
-validation pipeline as any automated import and support:
+validation pipeline as programmatic submission or promotion of newly authored configuration and support:
 
 - search and dependency navigation;
 - schema-aware editors rather than raw JSON/SQL fields where possible;
@@ -799,7 +844,14 @@ inference.
 Builds the trusted `SessionContext` from host-established identity, current
 application selection, effective roles/claims, locale, time zone, correlation
 context, and supported client/API versions. It never accepts caller-provided
-roles or audit identity as authority.
+roles or audit identity as authority. Missing/inactive identity mappings and
+missing active assignments block startup (section 7.6).
+
+Record last successful login and last explicit logout per user/application
+assignment with server timestamps and session IDs (FR-SEC-009, FR-SHUT-002).
+Expiry, revocation, and connection loss are distinct audit events; lost browser
+connections are not explicit logouts. Concurrent sessions must not move these
+timestamps backwards.
 
 ### 12.2 Definition service
 
@@ -836,7 +888,10 @@ grouping, sorting, filters, formats, split positions, and application defaults.
 Each preference is scoped to subject, application, navigation item (menu and
 submenu), screen, optional screen subkey, metadata compatibility range
 (section 11.5), and type. This preserves the FR-CUSTOM-008 scope, so one
-screen reached from two navigation items keeps two personalizations. Invalid or obsolete fields are ignored with diagnostics and
+screen reached from two navigation items keeps two stored personalizations.
+For a single-instance screen, section 7.4 selects the first-opening item's
+scope until closure; activating it through another item neither applies nor
+overwrites that other item's preferences. Invalid or obsolete fields are ignored with diagnostics and
 can be reset to published defaults.
 
 ### 12.7 Message service
@@ -1041,7 +1096,7 @@ The reference implementation (MIGRATION_MASTER.md sections 23 and 29)
 supported SQL Server, Sybase, Oracle, Access, XML datasets, and registered
 service/helper adapters; that is lineage, not a target provider list. A
 provider is supported only when D-004 selects it for an authored application
-and its matrix passes. Access or local-file sources should normally be migrated or isolated in
+and its matrix passes. Access or local-file sources should be isolated in
 a controlled worker rather than mounted into the web tier.
 
 ### 14.3 Connection management
@@ -1121,11 +1176,40 @@ or missing-row result, never silent success. If a provider failure leaves commit
 outcome unknown, the API returns `unknown`, prevents unsafe automatic retry, and
 records reconciliation work.
 
+Before commit, a single-row update/delete affecting more than one target row
+fails the entire atomic change set and triggers rollback (FR-DML-006,
+FR-INV-003). Providers must establish exact target-row counts separately from
+trigger side effects or procedure aggregate counts; an adapter unable to prove
+the bound cannot support that mutation. Return `failed` after confirmed rollback,
+or `unknown` with reconciliation if the transaction outcome is indeterminate.
+
+**Framework-managed keys (FR-DML-010).** Use a transactional allocation record
+keyed by application/table with the configured increment. An atomic locked update
+reserves the next value or a bounded block, committing the reservation before
+returning it. Concurrent reservations cannot overlap. A database sequence is an
+equivalent only where it preserves this scope and increment. No process-local
+maximum-plus-one allocation is permitted. Business rollback or worker failure may
+leave gaps; reserved values are never reissued. Detect overflow, exhaustion, and
+existing-key collisions and fail before business commit. Idempotent retries
+reconcile the original mutation before allocating a new key; unknown outcomes
+are never blindly replayed.
+
+After committed logical delete, remove/requery the visible row under candidate
+DEF-012; reconcile generated values and audit stamps under candidate DEF-013.
+These changes remain pending approval of their D-011 dispositions.
+
 ### 14.7 Caching and refresh
 
 Metadata bundles are strongly versioned and may be cached broadly because they
 are immutable after publication. Data caches are optional and disabled by
 default for a new DataClass until scope and invalidation are proven.
+
+Initialization DataClasses loaded during startup (section 7.6) retain their
+results in a bounded server-side initialization cache under the application,
+parameter, and security scope below. Initialization is an explicit cache policy,
+subject to the same scope and invalidation checks as other cached DataClasses.
+These datasets are not prefetched into the browser. A later authorized screen
+query may reuse a valid scoped result or reload after invalidation or expiry.
 
 A data cache key includes DataClass/definition version, application, every
 result-affecting parameter/filter/sort/page, locale when formatting is server
@@ -1155,10 +1239,17 @@ Authorization combines:
 - authenticated subject and service identity;
 - application/group entitlement;
 - role or claim membership;
+- a user-specific display-option row replacing the cumulative role result for
+  that screen, including explicit grants and denials (FR-SEC-008);
 - screen, DataClass, operation, action, report, administrative, and command policy;
 - field read/write policy;
 - row/data-scope predicates derived from trusted context; and
 - active dates/status and emergency revocation.
+
+Display-option overrides are resolved server-side before capabilities are
+emitted. They do not bypass active assignment, row scope, revocation, or other
+independent authorization boundaries. Test absent overrides, explicit grants and
+denials, and invalidation after changes.
 
 The default is deny. Definition delivery is filtered to avoid unnecessary
 disclosure, and every data/action endpoint independently authorizes execution.
@@ -1298,6 +1389,20 @@ System messages support stable type, audience, application scope, priority,
 effective/expiry times, display mode, payload, acknowledgement, and status.
 Examples include information, warning, forced refresh, metadata/navigation
 invalidation, application availability, and session/security notices.
+
+| Reference intent (spec section 23) | Target type | Handling |
+|---|---|---|
+| Client message box | `dialogNotice` | Accessible administrator-text dialog under section 22; later message processing continues independently of acknowledgement |
+| Immediate client shutdown | `terminateSession` | Stop new work, terminate the targeted session, give the safest notice and discard under section 7.4 item 4; no Save/Cancel veto |
+| Dataset refresh | `invalidateDataset` | Mark the named cached DataClass stale for refresh on next access; this intent alone does not force immediate queries |
+| Form refresh | `refreshScreen` | Refresh open screens bound to the named master or detail DataClass, with dirty-state safeguards and request coalescing |
+| Polling-frequency change | `setPollingInterval` | Apply the configured interval; zero resolves to the ten-second runtime default under FR-SYSMSG-001 until its documented conflict is decided; reject negative/non-numeric values; retain the setting for fallback during live delivery |
+| Generic message | `notification` | Route to scoped inbox/status presentation with severity and acknowledgement policy |
+
+All six types use the audience, timing, expiry, deduplication, and audit contract.
+Unknown types cannot execute actions. FR-ACC-016 tests every intent, future and
+duplicate delivery, dirty screens, and live/polling transitions; shutdown also
+verifies FR-SHUT-005.
 
 The server publishes through a live channel and retains polling compatibility.
 The client de-duplicates, orders where required, defers future messages, ignores
@@ -1498,7 +1603,7 @@ system but its objectives and dependencies are recorded.
 
 ## 26. Accessibility, responsive design, and localization
 
-**Satisfies:** FR-CTL-* accessibility/scaling rows (spec §26); NFR-ACC-001, NFR-UI-001, NFR-I18N-001 (spec §44).
+**Satisfies:** FR-CTL-* accessibility/scaling rows (spec §26); NFR-ACC-001, NFR-UI-001, NFR-I18N-001 (spec §44; not-applicable rows excepted).
 
 All supported workflows shall meet the WCAG 2.2 AA-equivalent acceptance floor
 in the NFR baseline. Required behaviors include semantic landmarks/headings,
@@ -1516,7 +1621,7 @@ differ by locale or database are documented and tested.
 
 ## 27. Deployment and environment design
 
-**Satisfies:** FR-PROJ-*, FR-DEP-*, FR-CMD-*, FR-BUILD-* (spec §§37–39, 42); NFR-BUILD-001, NFR-DR-001, NFR-SEC-003.
+**Satisfies:** FR-PROJ-*, FR-DEP-*, FR-CMD-*, FR-BUILD-* (not-applicable rows excepted) (spec §§37–39, 42); NFR-BUILD-001, NFR-DR-001, NFR-SEC-003.
 
 ### 27.1 Environments
 
@@ -1596,7 +1701,7 @@ migration and rollback plans as in section 27.2.
 
 ## 29. Testing and quality strategy
 
-**Satisfies:** spec §§31, 33 (acceptance suite) and every NFR-* ID in spec §44 through the layers below; NFR-REL-002, NFR-SEC-002, NFR-ACC-001, NFR-BUILD-001 are cited directly.
+**Satisfies:** spec §§31, 33 (acceptance suite) and every applicable NFR-* ID in spec §44 through the layers below; NFR-REL-002, NFR-SEC-002, NFR-ACC-001, NFR-BUILD-001 are cited directly.
 
 Observable behavior shall be tested with real implementations, protocol
 fixtures, lightweight purpose-built fakes at protocol boundaries, and real
@@ -1611,16 +1716,21 @@ prohibited. This rule is normative here and in MIGRATION_MASTER.md section
 | Component | Keyboard, focus, semantics, validation, responsive states, toolbar, splitter, dropdown, lookup, navigation, grid, dialog, status, message |
 | Screen renderer | All seven screen types, every field type, command/state lifecycle, dirty/close, empty/loading/error/forbidden/conflict states |
 | Contract | API schemas, versions, typed values, nulls, errors, pagination, idempotency, conditional versions, backward compatibility |
-| Provider integration | Real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider |
+| Provider integration | Single-row counts of zero/one/multiple, unknown counts and trigger/procedure counts, concurrent key allocation and exhaustion; real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider |
 | Security | Authentication, cross-user/application isolation, field/row-scope/command policies (section 15.2), injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation |
 | Conformance | Workflows and requests against the expected outcomes recorded in the functional specification and its approved dispositions and decisions |
 | Workflow | Startup, application switch, navigation, query, criteria/filter, CRUD, master-detail, action, refresh, preferences, report/export/print, messages, shutdown |
 | Accessibility | Automated checks plus manual keyboard, screen reader, zoom/reflow, contrast, dialogs, grids, trees, charts, and error handling |
 | Performance | NFR profiles, cold/warm cache, concurrency, large exports, long jobs, browser responsiveness, provider pool limits |
-| Reliability | Failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, and the NFR-REL-002 repeated cancellation/timeout/failure soak |
+| Reliability | Multi-row fail-safe rollback, allocator restart/rollback gaps and idempotent retry; failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, and the NFR-REL-002 repeated cancellation/timeout/failure soak |
 | Deployment | Clean build, package promotion, configuration validation, migration, health, rolling update, rollback, backup/restore |
 
-Every functional requirement, NFR, and approved defect disposition maps to one
+The master section 11 and this table describe one strategy: Characterization
+feeds Conformance; UI/control behavior maps to Component and Screen renderer;
+Operational maps to Workflow, Reliability, and Deployment. Shared contract,
+provider, security, accessibility, and performance evidence is reused.
+
+Every applicable functional requirement, NFR, and approved defect disposition maps to one
 or more acceptance tests in the traceability matrix generated into
 [DOCUMENT_CONTROL.md section 8](DOCUMENT_CONTROL.md#8-requirement-traceability-matrix)
 from the FR-*/NFR-*/DEF-* rows of the functional specification and the
@@ -1744,13 +1854,18 @@ Implementation may begin with a vertical slice when:
    database objects are catalogued;
 2. its reference behavior is specified with characterization fixtures, and its
    defect dispositions and D-017 decisions are approved;
-3. technology ADRs for client, API/runtime, identity, provider, metadata store,
-   deployment, and test environments are approved;
+3. Gate C is passed: D-001, D-004 (first provider), D-005, D-008, and D-013
+   are decided; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016
+   are decided or explicitly deferred with a documented safe default, each
+   recorded by ADR as required by master section 18;
 4. API, metadata, policy, provider, component, and telemetry contracts are
    versioned;
-5. accessibility and security threat models identify acceptance cases;
-6. environments, secrets, real provider fixtures, CI, artifact promotion,
-   monitoring, backup, and rollback are available;
+5. security and operations boundaries are approved, and the Phase 3 slice plan
+   assigns threat-model work and accessibility acceptance cases;
+6. the Phase 2 foundation, CI, test environment, and first-provider fixtures
+   with a least-privilege identity exist; slice deployment, monitoring, and
+   rollback evidence is delivered in Phase 3, and production backup and
+   operational readiness are completed before the Phase 5 release gate;
 7. the traceability matrix generated into DOCUMENT_CONTROL.md section 8
    includes the slice's functional IDs and `WDES-*` design requirements; and
 8. product, security, database, UI/workflow, operations, and test owners accept
@@ -1792,12 +1907,16 @@ sequenceDiagram
     M-->>A: Filtered compiled definition
     A-->>W: Definition + version/ETag
     W->>W: Render accessible loading screen
+    alt initial data load required
     W->>A: Typed DataClass query
     A->>M: Resolve policy and execution plan
     A->>D: Parameterized query
     D-->>A: Typed provider result
     A-->>W: Dataset envelope
-    W-->>U: Ready grid/form/detail state
+    else Action or no initial load
+    W->>W: Initialize controls without presentation query
+    end
+    W-->>U: Ready screen state
 ```
 
 ### A.2 Save edits
@@ -1810,7 +1929,8 @@ sequenceDiagram
 4. Server authenticates, authorizes, resolves current compatible metadata,
    validates all rows/fields/helpers, and produces a typed mutation plan.
 5. Provider executes the plan in the required transaction.
-6. On success, generated keys and authoritative stamps reconcile into the
+6. On success, generated keys and authoritative stamps reconcile (candidate
+   DEF-013, pending D-011 approval) into the
    browser, dirty state clears, and post-commit invalidation/messages publish.
 7. On validation failure, draft values remain and fields/rows receive errors.
 8. On conflict, the UI offers only approved reload/compare/resolution actions.
@@ -1922,7 +2042,7 @@ metadata contract documented in functional specification section 28.
 | Non-functional requirements (§44): performance NFR-PERF-001, NFR-PERF-002, NFR-PERF-003, NFR-PERF-004 | §§8, 13–14, 18, 21, 24 |
 | Non-functional requirements (§44): scale and reliability NFR-SCALE-001, NFR-REL-001, NFR-REL-002, NFR-REL-003 | §§6.2, 11.2, 14.6, 15, 20.2, 21, 24, 27.4, 29 |
 | Non-functional requirements (§44): availability and recovery NFR-AVAIL-001, NFR-DR-001 | §§24–25, 27 |
-| Non-functional requirements (§44): security NFR-SEC-001, NFR-SEC-002, NFR-SEC-003 | §§10.1, 12.1, 13–15, 17, 20, 28.5 |
+| Non-functional requirements (§44): security NFR-SEC-001, NFR-SEC-002, NFR-SEC-003 | §§10.1, 12.1, 13–15, 17, 20, 28.3 |
 | Non-functional requirements (§44): observability NFR-OBS-001, NFR-OBS-002 | §§13.6, 22–23, 30.3 |
 | Non-functional requirements (§44): accessibility, layout, and locale NFR-ACC-001, NFR-UI-001, NFR-I18N-001 | §§7–9, 10.3, 18.2, 22, 26 |
 | Non-functional requirements (§44): build NFR-BUILD-001 (NFR-COMP-001 is not applicable) | §§11.3, 27.2, 29 |
