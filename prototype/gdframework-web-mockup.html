@@ -291,13 +291,13 @@
     .message time { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; }
 
     .modal-backdrop { display: grid; place-items: center; padding: 20px; }
-    .modal { width: min(680px, 96vw); max-height: min(760px, 92vh); overflow: hidden; background: var(--surface); border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,.28); transform: translateY(12px) scale(.98); transition: transform .18s ease; display: flex; flex-direction: column; }
+    .modal { width: min(680px, 100%); min-width: 0; max-height: min(760px, 92vh); overflow: hidden; background: var(--surface); border-radius: 14px; box-shadow: 0 24px 70px rgba(0,0,0,.28); transform: translateY(12px) scale(.98); transition: transform .18s ease; display: flex; flex-direction: column; }
     .modal-backdrop.open .modal { transform: translateY(0) scale(1); }
     .modal-head { padding: 15px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; }
-    .modal-head h2 { margin: 0; font-size: 17px; }
+    .modal-head h2 { margin: 0; font-size: 17px; min-width: 0; overflow-wrap: anywhere; }
     .modal-head button { margin-left: auto; }
     .modal-body { padding: 18px; overflow: auto; }
-    .modal-foot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+    .modal-foot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
     .button { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 8px; padding: 8px 13px; min-height: 36px; }
     .button:hover { background: var(--surface-2); }
     .button.primary { border-color: var(--brand); background: var(--brand); color: #fff; }
@@ -708,7 +708,7 @@
     const modalBody = document.getElementById('modalBody');
     const modalFoot = document.getElementById('modalFoot');
     const appContainer = document.getElementById('app');
-    let modalFocus=null;
+    let modalFocus=null,modalBusy=false,modalSequence=0;
     modalBackdrop.inert=true; document.getElementById('messageDrawer').inert=true;
     const state = {
       appId: 'ops',
@@ -732,7 +732,9 @@
       wait(ms = 160) { return new Promise(resolve => setTimeout(resolve, ms)); },
       async query(name) { await this.wait(); return structuredClone(db[name] || []); },
       async save(name, record, key = 'id') {
+        const epoch=state.sessionEpoch;
         await this.wait(240);
+        if(state.signedOut||epoch!==state.sessionEpoch)throw Error('Session ended before save.');
         const rows = db[name];
         const index = rows.findIndex(row => row[key] === record[key]);
         const next = { ...record, version: (record.version || 0) + 1 };
@@ -741,7 +743,9 @@
         return structuredClone(next);
       },
       async remove(name, id, key = 'id') {
+        const epoch=state.sessionEpoch;
         await this.wait(180);
+        if(state.signedOut||epoch!==state.sessionEpoch)throw Error('Session ended before delete.');
         const index = db[name].findIndex(row => row[key] === id);
         if (index >= 0) db[name].splice(index, 1);
         return index >= 0;
@@ -796,6 +800,7 @@
       hostEl.focus({preventScroll:true});
       setStatus(`${def.caption} ready`);
       sidebar.classList.remove('mobile-open');
+      mobileState();
     }
 
     // UI-01: drafts belong to a record, never to transient DOM controls.
@@ -807,25 +812,48 @@
       const tab=state.tabs.find(t=>t.key===state.activeTab);
       if(!tab)return;
       const def=metadata[tab.screenId],s=screenState(def.id);
+      if(s.saving)return;
       if(def.type==='field' && document.getElementById('recordForm')) {
         s.drafts ||= {};
         s.drafts[draftKey(def)]=collectForm(document.getElementById('recordForm'));
         s.dirty=true; renderTabs();
       }
       if(def.type==='action' && document.getElementById('actionForm'))s.actionValues=collectForm(document.getElementById('actionForm'));
+      if(def.type==='masterDetail') {
+        s.stockDrafts ||= {};
+        document.querySelectorAll('[data-stock]').forEach(input=>{
+          const row=db[def.detailSource].find(r=>r.id===input.dataset.stock);
+          if(input.value.trim()!==''&&Number(input.value)===row.onHand-row.reserved)delete s.stockDrafts[row.id];
+          else s.stockDrafts[row.id]=input.value;
+        });
+        s.dirty=Object.keys(s.stockDrafts).length>0;renderTabs();
+      }
     }
     function discardDraft(id) {
-      const s=screenState(id); s.drafts={}; s.dirty=false; s.isNew=false;
+      const s=screenState(id); s.drafts={};s.stockDrafts={}; s.dirty=false; s.isNew=false;
     }
     function resolveUnsaved(ids, next) {
+      if(ids.some(id=>screenState(id).saving))return toast('Wait for the current save to finish before continuing.','warning');
       const pending=[...new Set(ids)].filter(id=>screenState(id).dirty);
       if(!pending.length){next();return;}
       const id=pending[0],def=metadata[id];
       showModal('Unsaved changes',`<p><strong>${escapeHtml(def.caption)}</strong> has an unsaved draft. Save or discard it before continuing.</p>`,[
         {label:'Cancel',action:closeModal},
         {label:'Discard',danger:true,action:()=>{discardDraft(id);closeModal();resolveUnsaved(pending.slice(1),next);}},
-        {label:'Save',primary:true,action:async()=>{if(await saveFieldForm(def)){closeModal();resolveUnsaved(pending.slice(1),next);}}}
+        {label:'Save',primary:true,action:async()=>{if(await (def.type==='masterDetail'?saveStock(def):saveFieldForm(def))){closeModal(true);resolveUnsaved(pending.slice(1),next);}}}
       ]);
+    }
+
+    function saveStock(def) {
+      const s=screenState(def.id),changes=Object.entries(s.stockDrafts||{}),updates=[];
+      for(const [id,value] of changes){
+        const row=db[def.detailSource].find(r=>r.id===id),amount=Number(value);
+        if(!row||value.trim()===''||!Number.isSafeInteger(amount)||amount<0||!Number.isSafeInteger(amount+row.reserved)){
+          toast(`${row?.warehouse||id}: available stock must be a non-negative whole number. No changes were saved.`,'warning');return false;
+        }
+        updates.push({row,onHand:amount+row.reserved});
+      }
+      updates.forEach(({row,onHand})=>{row.onHand=onHand;});discardDraft(def.id);renderAll();toast('Stock changes committed');return true;
     }
     function closeTab(key) {
       const tab=state.tabs.find(t=>t.key===key);if(!tab)return;
@@ -839,7 +867,7 @@
     function goHome() {
       resolveUnsaved(state.tabs.map(t=>t.screenId),()=>{
         state.tabs=[];state.activeTab=null;renderAll();
-        hostEl.focus({preventScroll:true});setStatus('Workspace home ready');sidebar.classList.remove('mobile-open');
+        hostEl.focus({preventScroll:true});setStatus('Workspace home ready');sidebar.classList.remove('mobile-open');mobileState();
       });
     }
 
@@ -943,13 +971,13 @@
 
     function renderField(def) {
       const s=screenState(def.id), rows=db[def.dataSource], record={...(s.isNew?{}:rows[s.formIndex] || rows[0] || {}),...s.drafts?.[draftKey(def)]};
-      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="toolbar" role="toolbar" aria-label="Record commands">${toolButton('add','New record',true,'primary')}${toolButton('save','Save',true)}${toolButton('delete','Delete',!s.isNew && !!record.id,'danger')}<span class="tool-separator"></span>${toolButton('refresh','Refresh',true)}<span class="toolbar-spacer"></span><label>Record <select data-record-select>${rows.map((r,i)=>`<option value="${i}" ${i===s.formIndex&&!s.isNew?'selected':''}>${escapeHtml(r.name)}</option>`).join('')}</select></label></div>
-        <div class="panel"><div class="panel-head"><h2>${s.isNew?'New customer':escapeHtml(record.name || 'Customer')}</h2><p>${s.isNew?'Unsaved record':`Version ${record.version}`}</p></div><div class="panel-body"><div id="formSummary" class="form-summary">Fields marked * are required. Drafts survive tab navigation; validation is simulated locally.</div><form id="recordForm" class="form-grid" novalidate>${def.fields.map(f=>fieldInput(f,record[f.id],'record')).join('')}</form></div></div></section>`;
+      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="toolbar" role="toolbar" aria-label="Record commands">${toolButton('add','New record',true,'primary')}${toolButton('save',s.saving?'Saving…':'Save',!s.saving&&(s.isNew||!!record.id))}${toolButton('delete','Delete',!s.isNew && !!record.id,'danger')}<span class="tool-separator"></span>${toolButton('refresh','Refresh',true)}<span class="toolbar-spacer"></span><label>Record <select data-record-select>${rows.map((r,i)=>`<option value="${i}" ${i===s.formIndex&&!s.isNew?'selected':''}>${escapeHtml(r.name)}</option>`).join('')}</select></label></div>
+        <div class="panel"><div class="panel-head"><h2>${s.isNew?'New customer':escapeHtml(record.name || 'Customer')}</h2><p>${s.isNew?'Unsaved record':`Version ${record.version}`}</p></div><div class="panel-body"><div id="formSummary" class="form-summary">Fields marked * are required. Drafts survive tab navigation; validation is simulated locally.</div><form id="recordForm" class="form-grid" novalidate><fieldset ${s.saving||(!s.isNew&&!record.id)?'disabled':''} style="display:contents">${def.fields.map(f=>fieldInput(f,record[f.id],'record')).join('')}</fieldset></form></div></div></section>`;
     }
 
     function renderMasterDetail(def) {
       const products=db[def.masterSource], product=products.find(p=>p.id===state.masterProduct)||products[0], stock=db[def.detailSource].filter(s=>s.productId===product.id);
-      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="toolbar">${toolButton('refresh','Refresh',true)}${toolButton('export','Export stock',true)}<span class="toolbar-spacer"></span><span style="color:var(--muted);font-size:11px">Master selection drives detail DataClass parameters</span></div><div class="master-detail"><div class="panel"><div class="panel-head"><h2>Products</h2><p>${products.length} records</p></div><ul class="master-list">${products.map(p=>`<li><button data-master-product="${p.id}" class="${p.id===product.id?'active':''}"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.category)} · ${currency.format(p.price)}</span></button></li>`).join('')}</ul></div><div class="panel"><div class="panel-head"><h2>${escapeHtml(product.name)} warehouse stock</h2><p>${stock.length} locations</p></div><div class="table-wrap"><table style="min-width:600px"><thead><tr><th>Warehouse</th><th class="number">On hand</th><th class="number">Reserved</th><th class="number">Available</th><th class="number">Reorder at</th><th>Status</th></tr></thead><tbody>${stock.map(s=>{const avail=s.onHand-s.reserved,low=avail<=s.reorderAt;return `<tr><td><strong>${escapeHtml(s.warehouse)}</strong></td><td class="number">${number.format(s.onHand)}</td><td class="number">${number.format(s.reserved)}</td><td class="number"><input data-stock="${s.id}" type="number" value="${avail}" style="width:82px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:right"></td><td class="number">${number.format(s.reorderAt)}</td><td><span class="status-chip ${low?'pending':'active'}">${low?'Reorder':'Healthy'}</span></td></tr>`;}).join('')||'<tr><td colspan="6" class="empty-state">No stock locations configured.</td></tr>'}</tbody></table></div><div class="table-footer"><span>Total available: ${number.format(stock.reduce((n,s)=>n+s.onHand-s.reserved,0))}</span><button class="button primary" data-save-stock>Save detail changes</button></div></div></div></section>`;
+      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="toolbar">${toolButton('refresh','Refresh',true)}${toolButton('export','Export stock',true)}<span class="toolbar-spacer"></span><span style="color:var(--muted);font-size:11px">Master selection drives detail DataClass parameters</span></div><div class="master-detail"><div class="panel"><div class="panel-head"><h2>Products</h2><p>${products.length} records</p></div><ul class="master-list">${products.map(p=>`<li><button data-master-product="${p.id}" class="${p.id===product.id?'active':''}"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.category)} · ${currency.format(p.price)}</span></button></li>`).join('')}</ul></div><div class="panel"><div class="panel-head"><h2>${escapeHtml(product.name)} warehouse stock</h2><p>${stock.length} locations</p></div><div class="table-wrap"><table style="min-width:600px"><thead><tr><th>Warehouse</th><th class="number">On hand</th><th class="number">Reserved</th><th class="number">Available</th><th class="number">Reorder at</th><th>Status</th></tr></thead><tbody>${stock.map(s=>{const avail=s.onHand-s.reserved,low=avail<=s.reorderAt;return `<tr><td><strong>${escapeHtml(s.warehouse)}</strong></td><td class="number">${number.format(s.onHand)}</td><td class="number">${number.format(s.reserved)}</td><td class="number"><input data-stock="${s.id}" type="number" value="${escapeHtml(screenState(def.id).stockDrafts?.[s.id]??avail)}" min="0" step="1" aria-label="Available stock for ${escapeHtml(s.warehouse)}" style="width:82px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:right"></td><td class="number">${number.format(s.reorderAt)}</td><td><span class="status-chip ${low?'pending':'active'}">${low?'Reorder':'Healthy'}</span></td></tr>`;}).join('')||'<tr><td colspan="6" class="empty-state">No stock locations configured.</td></tr>'}</tbody></table></div><div class="table-footer"><span>Total available: ${number.format(stock.reduce((n,s)=>n+s.onHand-s.reserved,0))}</span><button class="button primary" data-save-stock>Save detail changes</button></div></div></div></section>`;
     }
 
     function renderAction(def) {
@@ -996,17 +1024,35 @@
           if(errors.length){document.getElementById('dialogSummary').className='form-summary error';document.getElementById('dialogSummary').innerHTML=`<strong>Correct ${errors.length} issue${errors.length===1?'':'s'}:</strong><br>${errors.map(escapeHtml).join('<br>')}`;return;}
           if(isNew){values.id=def.dataSource==='orders'?uid('ORD'):uid('RSK');values.version=0;values.updatedAt=new Date().toISOString();}
           else Object.assign(values,{id:record.id,version:record.version});
-          setStatus('Saving change set…'); const saved=await api.save(def.dataSource,values); state.changedRows.add(saved.id); closeModal(); renderScreen(); toast(`${saved.id} saved`); setStatus('Change committed');
+          setStatus('Saving change set…'); const saved=await api.save(def.dataSource,values); state.changedRows.add(saved.id); closeModal(true); renderScreen(); toast(`${saved.id} saved`); setStatus('Change committed');
         }}]);
     }
 
     function showModal(title, body, buttons=[]) {
+      if(modalBusy)return;
+      const sequence=++modalSequence;
+      modalBackdrop.querySelector('[data-modal-close]').disabled=false;
       modalFocus=document.activeElement; appContainer.inert=true; modalBackdrop.inert=false;
       modalTitle.textContent=title; modalBody.innerHTML=body; modalFoot.innerHTML='';
-      buttons.forEach(b=>{const btn=document.createElement('button');btn.className=`button ${b.primary?'primary':''} ${b.danger?'danger':''}`;btn.textContent=b.label;btn.addEventListener('click',b.action);modalFoot.appendChild(btn);});
-      modalBackdrop.classList.add('open'); modalBackdrop.setAttribute('aria-hidden','false'); setTimeout(()=>modalBackdrop.querySelector('input,select,textarea,button')?.focus(),30);
+      buttons.forEach(b=>{const btn=document.createElement('button');btn.className=`button ${b.primary?'primary':''} ${b.danger?'danger':''}`;btn.textContent=b.label;btn.addEventListener('click',async()=>{
+        if(modalBusy)return;
+        let controls=[];
+        try{
+          const result=b.action();
+          if(result&&typeof result.then==='function'){
+            modalBusy=true;modalBackdrop.setAttribute('aria-busy','true');
+            controls=[...modalBackdrop.querySelectorAll('button,input,select,textarea')].map(el=>({el,disabled:el.disabled}));controls.forEach(({el})=>el.disabled=true);
+            await result;
+          }
+        }catch(error){toast(error.message||'Change failed; please try again.','warning');}
+        finally{if(sequence===modalSequence){modalBusy=false;modalBackdrop.removeAttribute('aria-busy');controls.forEach(({el,disabled})=>el.disabled=disabled);}}
+      });modalFoot.appendChild(btn);});
+      modalBackdrop.classList.add('open'); modalBackdrop.setAttribute('aria-hidden','false'); modalBackdrop.querySelector('input,select,textarea,button')?.focus();
     }
-    function closeModal(){
+    function closeModal(completed=false){
+      if(modalBusy&&completed!==true)return;
+      modalBusy=false;modalSequence++;modalBackdrop.removeAttribute('aria-busy');
+      modalBackdrop.querySelector('[data-modal-close]').disabled=false;
       modalBackdrop.classList.remove('open');modalBackdrop.setAttribute('aria-hidden','true');modalBackdrop.inert=true;
       appContainer.inert=state.signedOut; modalBody.innerHTML='';modalFoot.innerHTML='';state.dialogReturn=null;
       if(modalFocus?.isConnected&&!state.signedOut)modalFocus.focus();else if(!state.signedOut)hostEl.focus();
@@ -1037,8 +1083,8 @@
       if(name==='add'){ if(def.type==='grid')openRecordDialog(def,null); else if(def.type==='field')resolveUnsaved([def.id],()=>{const s=screenState(def.id);s.isNew=true;renderAll();captureDraft();}); }
       if(name==='edit'&&def.type==='grid'){const row=db[def.dataSource].find(r=>r.id===[...selected][0]);if(row)openRecordDialog(def,row);}
       if(name==='delete'){
-        if(def.type==='grid'){const ids=[...selected];showModal(`Delete ${ids.length} record${ids.length===1?'':'s'}?`,`<p>This updates the in-memory mocked JSON data source. The action cannot be undone in this session.</p><p><strong>${ids.map(escapeHtml).join(', ')}</strong></p>`,[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:async()=>{for(const id of ids)await api.remove(def.dataSource,id);selected.clear();closeModal();renderScreen();toast(`${ids.length} record${ids.length===1?'':'s'} deleted`);}}]);}
-        else if(def.type==='field')resolveUnsaved([def.id],()=>{const s=screenState(def.id),row=db[def.dataSource][s.formIndex];if(!row)return;showModal(`Delete ${row.name}?`,'<p>Delete this customer from the in-memory demo data?</p>',[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:async()=>{await api.remove(def.dataSource,row.id);discardDraft(def.id);s.formIndex=0;closeModal();renderScreen();toast('Customer deleted');}}]);});
+        if(def.type==='grid'){const ids=[...selected];showModal(`Delete ${ids.length} record${ids.length===1?'':'s'}?`,`<p>This updates the in-memory mocked JSON data source. The action cannot be undone in this session.</p><p><strong>${ids.map(escapeHtml).join(', ')}</strong></p>`,[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:async()=>{for(const id of ids)await api.remove(def.dataSource,id);selected.clear();closeModal(true);renderScreen();toast(`${ids.length} record${ids.length===1?'':'s'} deleted`);}}]);}
+        else if(def.type==='field')resolveUnsaved([def.id],()=>{const s=screenState(def.id),row=db[def.dataSource][s.formIndex];if(!row)return;showModal(`Delete ${row.name}?`,'<p>Delete this customer from the in-memory demo data?</p>',[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:async()=>{await api.remove(def.dataSource,row.id);discardDraft(def.id);s.formIndex=0;closeModal(true);renderScreen();toast('Customer deleted');}}]);});
       }
       if(name==='refresh')resolveUnsaved([def.id],()=>{state.changedRows.clear();renderScreen();setStatus(`${def.caption} refreshed`);toast('Data refreshed');});
       if(name==='filter'){screenState(def.id).filterOpen=!screenState(def.id).filterOpen;renderScreen();}
@@ -1059,13 +1105,14 @@
         toast(errors.join(' '),'warning');return false;
       }
       if(s.isNew){values.id=uid('CUS');values.version=0;}
-      else {const original=db[def.dataSource][s.formIndex];values.id=original.id;values.version=original.version;}
-      s.saving=true;setStatus('Saving customer…');
+      else {const original=db[def.dataSource][s.formIndex];if(!original){toast('Create a new record first.','warning');return false;}values.id=original.id;values.version=original.version;}
+      s.saving=true;renderAll();setStatus('Saving customer…');
       try{
         const saved=await api.save(def.dataSource,values);discardDraft(def.id);
         s.formIndex=db[def.dataSource].findIndex(r=>r.id===saved.id);
         renderAll();toast(`${saved.name} saved`);setStatus('Change committed');return true;
-      }finally{s.saving=false;}
+      }catch(error){toast(error.message||'Save failed; your draft is retained.','warning');return false;}
+      finally{s.saving=false;renderAll();}
     }
 
     // UI-07: one operation per screen; asynchronous work owns no DOM references.
@@ -1116,7 +1163,7 @@
       const rowCheck=e.target.closest('[data-select-row]');if(rowCheck){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],set=state.selected[def.id]||new Set();rowCheck.checked?set.add(rowCheck.dataset.selectRow):set.delete(rowCheck.dataset.selectRow);state.selected[def.id]=set;renderScreen();return;}
       const row=e.target.closest('[data-row-id]');if(row&&!e.target.closest('input,button')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],set=state.selected[def.id]||new Set();set.clear();set.add(row.dataset.rowId);state.selected[def.id]=set;renderScreen();return;}
       const sort=e.target.closest('[data-sort]');if(sort){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],s=screenState(def.id);if(s.sort===sort.dataset.sort)s.direction*=-1;else{s.sort=sort.dataset.sort;s.direction=1;}renderScreen();return;}
-      const master=e.target.closest('[data-master-product]');if(master){state.masterProduct=master.dataset.masterProduct;renderScreen();return;}
+      const master=e.target.closest('[data-master-product]');if(master){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];resolveUnsaved([def.id],()=>{state.masterProduct=master.dataset.masterProduct;renderScreen();});return;}
       const treeToggle=e.target.closest('[data-tree-toggle]');if(treeToggle){const id=treeToggle.dataset.treeToggle;state.expandedTree.has(id)?state.expandedTree.delete(id):state.expandedTree.add(id);renderScreen();return;}
       const treeSelect=e.target.closest('[data-tree-select]');if(treeSelect){state.treeSelection=treeSelect.dataset.treeSelect;renderScreen();return;}
       if(e.target.closest('[data-expand-all]')){const walk=ns=>ns.forEach(n=>{if(n.children?.length){state.expandedTree.add(n.id);walk(n.children);}});walk(db.regionTree);renderScreen();return;}
@@ -1125,7 +1172,7 @@
       const right=e.target.closest('[data-pick-right]');if(right){state.junctionRight=right.dataset.pickRight;state.junctionLeft=null;renderScreen();return;}
       if(e.target.closest('[data-assign]')){const link=junctionLink();if(state.junctionLeft&&!link.productIds.includes(state.junctionLeft))link.productIds.push(state.junctionLeft);state.junctionLeft=null;renderScreen();toast('Product assigned');return;}
       if(e.target.closest('[data-unassign]')){const link=junctionLink();link.productIds=link.productIds.filter(id=>id!==state.junctionRight);state.junctionRight=null;renderScreen();toast('Product removed');return;}
-      if(e.target.closest('[data-save-stock]')){document.querySelectorAll('[data-stock]').forEach(input=>{const item=db.stock.find(x=>x.id===input.dataset.stock);item.onHand=Number(input.value)+item.reserved;});renderScreen();toast('Stock changes committed');return;}
+      if(e.target.closest('[data-save-stock]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];captureDraft();saveStock(def);return;}
       if(e.target.closest('[data-run-action]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];runAction(def);return;}
       const lookup=e.target.closest('[data-lookup]');if(lookup){showLookup(lookup.dataset.lookup,lookup.dataset.lookupField);return;}
       const lookupValue=e.target.closest('[data-lookup-value]');if(lookupValue){const field=document.querySelector(`[data-field="${state.dialogReturn}"]`);if(field){field.value=lookupValue.dataset.lookupValue;captureDraft();const active=state.tabs.find(t=>t.key===state.activeTab);if(active){screenState(active.screenId).dirty=true;renderTabs();}}closeModal();toast('Lookup value selected');return;}
@@ -1134,6 +1181,13 @@
       if(e.target.closest('[data-close-drawer]')||e.target.id==='messageDrawer'){closeDrawer();return;}
     });
 
+    document.addEventListener('submit',e=>{
+      e.preventDefault();
+      if(e.target.id==='recordForm')command('save');
+      else if(e.target.id==='dialogForm')modalFoot.querySelector('.primary:not(:disabled)')?.click();
+      else if(e.target.id==='actionForm'){const tab=state.tabs.find(t=>t.key===state.activeTab);if(tab)runAction(metadata[tab.screenId]);}
+    });
+    document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input:not([type="checkbox"])')&&e.target.closest('#recordForm,#dialogForm,#actionForm')){e.preventDefault();e.target.closest('form').requestSubmit();}});
     document.addEventListener('change', e => {
       if(e.target.id==='appSelect'){const next=e.target.value;e.target.value=state.appId;resolveUnsaved(state.tabs.filter(t=>t.appId===state.appId).map(t=>t.screenId),()=>{state.appId=next;const defaultId=app().defaultScreen;if(defaultId==='welcome'){state.activeTab=null;renderAll();}else openScreen(defaultId);});return;}
       if(e.target.matches('[data-select-all]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],set=state.selected[def.id]||new Set();filteredRows(def).forEach(r=>e.target.checked?set.add(r.id):set.delete(r.id));state.selected[def.id]=set;renderScreen();return;}
@@ -1147,7 +1201,7 @@
     });
 
     document.addEventListener('input', e => {
-      if(e.target.matches('#recordForm [data-field],#actionForm [data-field]'))captureDraft();
+      if(e.target.matches('#recordForm [data-field],#actionForm [data-field],[data-stock]'))captureDraft();
       if(e.target.matches('[data-grid-search]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).search=e.target.value;const pos=e.target.selectionStart;renderScreen();const n=document.querySelector('[data-grid-search]');n.focus();n.setSelectionRange(pos,pos);}
       if(e.target.matches('[data-pick-search]')){const side=e.target.dataset.pickSearch,q=e.target.value.toLowerCase();document.querySelectorAll(`[data-pick-list="${side}"] .pick-item`).forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)));}
     });
@@ -1168,9 +1222,16 @@
     splitter.addEventListener('pointerup',()=>{dragging=false;splitter.classList.remove('dragging');localStorage.setItem('gd-nav-width',getComputedStyle(document.documentElement).getPropertyValue('--nav-width'));});
     splitter.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;const now=Number(splitter.getAttribute('aria-valuenow'));const w=Math.max(210,Math.min(420,now+(e.key==='ArrowRight'?10:-10)));document.documentElement.style.setProperty('--nav-width',w+'px');splitter.setAttribute('aria-valuenow',w);});
     document.getElementById('collapseNav').addEventListener('click',()=>{const collapsed=sidebar.classList.toggle('collapsed');document.documentElement.style.setProperty('--nav-width',collapsed?'72px':'272px');document.getElementById('collapseNav').textContent=collapsed?'›':'‹';document.getElementById('collapseNav').setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
-    const mobileButton=document.getElementById('mobileNavButton');mobileButton.addEventListener('click',()=>sidebar.classList.toggle('mobile-open'));
-    const media=matchMedia('(max-width:760px)');function mobileState(){mobileButton.classList.toggle('hidden',!media.matches);}media.addEventListener('change',mobileState);mobileState();
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modalBackdrop.classList.contains('open'))closeModal();else if(document.getElementById('messageDrawer').classList.contains('open'))closeDrawer();else sidebar.classList.remove('mobile-open');}});
+    const mobileButton=document.getElementById('mobileNavButton');mobileButton.setAttribute('aria-controls','sidebar');mobileButton.addEventListener('click',()=>{sidebar.classList.toggle('mobile-open');mobileState();});
+    const media=matchMedia('(max-width:760px)');
+    function mobileState(){
+      mobileButton.classList.toggle('hidden',!media.matches);
+      const hidden=media.matches&&!sidebar.classList.contains('mobile-open');
+      if(hidden&&sidebar.contains(document.activeElement))mobileButton.focus();
+      sidebar.inert=hidden;mobileButton.setAttribute('aria-expanded',String(!hidden));
+    }
+    media.addEventListener('change',mobileState);mobileState();
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modalBackdrop.classList.contains('open'))closeModal();else if(document.getElementById('messageDrawer').classList.contains('open'))closeDrawer();else{sidebar.classList.remove('mobile-open');mobileState();}}});
 
     function signOut() {
       state.signedOut=true;state.sessionEpoch++;state.tabs=[];state.activeTab=null;state.screens={};state.selected={};

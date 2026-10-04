@@ -48,6 +48,8 @@ function studio() {
     showModal: (title, body, buttons) => dialogs.push({ title, body, buttons }),
   });
   const names = ['configuration','canonical','digest','hash','freeze','restore','readOnly','invalidate',
+    'isStableId','configurationShapeIssues','importConfiguration','reconcileSelection','duplicateScreen','reportPreview',
+    'renderValues','renderScreens','renderDataClasses','renderSecurity',
     'auditTarget','appendAudit','checkpoint','startNextDraft','selectVersion','comparison',
     'recordApproval','rollbackTo','publish','validationIssues','fixtureRows','previewValue','screenCanvas'];
   const bootstrap = admin.slice(admin.indexOf('    const configKeys='), admin.indexOf('    const modules=['));
@@ -56,6 +58,10 @@ function studio() {
       selectedRole:'operations-editor',reviewActor:'Jordan Lee',viewVersion:null,validated:false,
       validation:null,approvals:{},history:[],future:[],dirty:0,publicationNote:''};
     ${admin.split('\n').find(line=>line.startsWith('    const esc='))}
+    const host={innerHTML:''};
+    const app=()=>model.applications.find(a=>a.id===state.appId);
+    const dc=()=>model.dataClasses.find(d=>d.id===state.selectedDataClass);
+    const list=()=>model.valueLists.find(v=>v.id===state.selectedList);
     const dcFor=s=>model.dataClasses.find(d=>d.id===s.dataClassId);
     const screen=()=>model.screens.find(s=>s.id===state.selectedScreen);
     ${names.map(name => implementation(admin, name)).join('\n')}
@@ -167,4 +173,102 @@ test('UI-11: incompatible fixture dates are reported without a rendering crash',
   const s=studio();
   assert.equal(s.run("previewValue({binding:'amount',type:'date'},fixtures.datasets.orders[0])"),'Invalid date fixture');
 });
-console.log(`${passed} contract regressions passed; both HTML scripts and JSON parse.`);
+test('Pass 2: malformed nested import leaves configuration and audit unchanged', () => {
+  const s=studio(),before=s.run('canonical(configuration())'),count=s.run('audit.length');
+  assert.throws(()=>s.run("const incoming=configuration();incoming.screens[0].fields=null;importConfiguration(incoming)"),/fields/);
+  assert.equal(s.run('canonical(configuration())'),before);assert.equal(s.run('audit.length'),count);
+});
+
+test('Pass 2: editor IDs reject unsafe attribute/delimiter values consistently', () => {
+  const s=studio();
+  for(const id of ['good-id','limitCheck','new_field'])assert.equal(s.run(`isStableId(${JSON.stringify(id)})`),true);
+  for(const id of ['bad"id','bad:id','__proto__','constructor','1bad'])assert.equal(s.run(`isStableId(${JSON.stringify(id)})`),false);
+});
+
+test('Pass 2: malformed collections and unsafe imported IDs are rejected', () => {
+  const s=studio();
+  assert.ok(s.run("const bad=configuration();bad.roles={};bad.navigation.ops[0].items='bad';configurationShapeIssues(bad).length>=2"));
+  assert.ok(s.run("const unsafe=configuration();unsafe.screens[0].id='bad\" onclick=\"';configurationShapeIssues(unsafe).length>0"));
+});
+
+test('Pass 2: valid import is a configuration-only audited draft change', () => {
+  const s=studio();s.run("const incoming=configuration();incoming.applications[0].name='Imported Ops';incoming.audit=[];importConfiguration(incoming)");
+  assert.equal(s.run('model.applications[0].name'),'Imported Ops');assert.equal(s.run('audit[0].action'),'Imported JSON draft');
+  assert.equal(s.run('state.history.length'),1);assert.equal(s.run('state.validated'),false);
+});
+
+test('Pass 2: empty editors show recoverable states rather than throwing', () => {
+  const s=studio();
+  for(const [collection,renderer,expected] of [['valueLists','renderValues','No value lists'],['screens','renderScreens','No screens'],['dataClasses','renderDataClasses','No DataClasses'],['roles','renderSecurity','No roles']]){
+    s.run(`model.${collection}=[];${renderer}()`);assert.match(s.run('host.innerHTML'),new RegExp(expected));
+  }
+});
+
+test('Pass 2: a new application exposes existing roles with no implicit grants', () => {
+  const s=studio();s.run("model.screens.push({id:'new-home',appId:'new',caption:'New home'});state.appId='new';renderSecurity()");
+  assert.match(s.run('host.innerHTML'),/Operations reader/);assert.match(s.run('host.innerHTML'),/New home/);
+  assert.equal(s.run("host.innerHTML.includes('checked')"),false);
+});
+
+test('Pass 2: restoring configuration reconciles a deleted application selection', () => {
+  const s=studio();s.run("state.appId='deleted';state.selectedScreen='deleted-home';state.navSelection='group:missing';reconcileSelection()");
+  assert.equal(s.run('state.appId'),'ops');assert.equal(s.run('state.selectedScreen'),'orders');assert.equal(s.run('state.navSelection'),null);
+});
+
+test('Pass 2: repeated screen duplication allocates distinct stable IDs', () => {
+  const s=studio();s.run("duplicateScreen();state.selectedScreen='orders';duplicateScreen()");
+  assert.equal(s.run("model.screens.filter(s=>s.id.startsWith('orders-copy')).length"),2);
+  assert.ok(s.run("model.screens.some(s=>s.id==='orders-copy-2')"));
+});
+
+test('Pass 2: report previews follow JSON bindings, order and currency format', () => {
+  const s=studio(),html=s.run("reportPreview(model.reports.find(r=>r.id==='order-export'))");
+  assert.match(html,/Northstar Retail/);assert.match(html,/£48,250\.00/);assert.doesNotMatch(html,/>Sample 2?</);
+  s.run("model.reports[0].columns=[{field:'missing',caption:'Missing',format:''}]");
+  assert.match(s.run('reportPreview(model.reports[0])'),/no fixture binding/);
+});
+
+function inventory() {
+  const source=json(runtime,'mock-datasources'),messages=[];
+  const context=vm.createContext({structuredClone,Number,Object,Set,JSON,
+    renderAll:()=>{},renderTabs:()=>{},toast:(...args)=>messages.push(args)});
+  vm.runInContext(`const db=${JSON.stringify(source.dataSources)},metadata=${JSON.stringify(source.screenDefinitions)};
+    const state={screens:{},tabs:[{key:'inventory:ops',screenId:'inventory'}],activeTab:'inventory:ops'};
+    ${['screenState','discardDraft','saveStock'].map(name=>implementation(runtime,name)).join('\n')}`,context);
+  return {run:code=>vm.runInContext(code,context),messages};
+}
+
+test('Pass 2: stock change set validates every row before any mutation', () => {
+  const s=inventory(),before=s.run('JSON.stringify(db.stock)');
+  s.run("screenState('inventory').stockDrafts={[db.stock[0].id]:'999',[db.stock[1].id]:''};screenState('inventory').dirty=true");
+  assert.equal(s.run('saveStock(metadata.inventory)'),false);assert.equal(s.run('JSON.stringify(db.stock)'),before);
+  assert.equal(s.run("screenState('inventory').dirty"),true);
+});
+
+test('Pass 2: stock counts reject negative, fractional and non-finite quantities', () => {
+  const s=inventory();for(const value of ['-1','0.5','Infinity','9007199254740992']){
+    s.run(`screenState('inventory').stockDrafts={[db.stock[0].id]:${JSON.stringify(value)}}`);
+    assert.equal(s.run('saveStock(metadata.inventory)'),false);
+  }
+});
+
+test('Pass 2: zero stock commits and clears the in-memory dirty state', () => {
+  const s=inventory();s.run("screenState('inventory').stockDrafts={[db.stock[0].id]:'0'};screenState('inventory').dirty=true");
+  assert.equal(s.run('saveStock(metadata.inventory)'),true);
+  assert.equal(s.run('db.stock[0].onHand'),s.run('db.stock[0].reserved'));assert.equal(s.run("screenState('inventory').dirty"),false);
+});
+
+async function checkSessionBoundary() {
+  let release;
+  const wait=new Promise(resolve=>release=resolve),context=vm.createContext({structuredClone,Date,Error,setTimeout});
+  const apiSource=runtime.slice(runtime.indexOf('    const api = {'),runtime.indexOf('    const iconMap ='));
+  vm.runInContext(`const state={sessionEpoch:0,signedOut:false},db={orders:[]};${apiSource}`,context);
+  context.pendingWait=wait;vm.runInContext('api.wait=()=>pendingWait',context);
+  const save=vm.runInContext("api.save('orders',{id:'test',version:0})",context);
+  const removal=vm.runInContext("api.remove('orders','test')",context);
+  vm.runInContext('state.signedOut=true;state.sessionEpoch++;delete db.orders',context);release();
+  await assert.rejects(save,/Session ended/);await assert.rejects(removal,/Session ended/);
+  assert.equal(vm.runInContext('Object.keys(db).length',context),0);
+  passed++;console.log('PASS Pass 2: late save/delete cannot repopulate an ended session');
+}
+checkSessionBoundary().then(()=>console.log(`${passed} contract regressions passed; both HTML scripts and JSON parse.`)).catch(error=>{console.error(error);process.exitCode=1;});
