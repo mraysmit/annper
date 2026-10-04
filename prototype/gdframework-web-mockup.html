@@ -137,7 +137,8 @@
     .tab.active { border-bottom-color: var(--brand); color: var(--text); font-weight: 650; }
     .tab-label { overflow: hidden; text-overflow: ellipsis; }
     .tab-dirty { color: var(--warning); }
-    .tab-close { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; color: var(--muted); }
+    .tab-group { display:flex; align-items:center; }
+    .tab-close { border:1px solid var(--line); background:var(--surface); cursor:pointer; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; color: var(--muted); }
     .tab-close:hover { background: var(--surface-3); color: var(--text); }
     .screen-host { min-height: 0; overflow: auto; padding: 18px; }
     .screen { max-width: 1600px; margin: 0 auto; }
@@ -399,6 +400,7 @@
       .heading-actions { display: none !important; }
       .topbar .help-button { display: none; }
     }
+    .bar:focus-visible { outline:3px solid var(--brand); outline-offset:3px; }
     @media print {
       .topbar, .sidebar, .splitter, .tabs, .statusbar, .toolbar, .filter-panel, .toast-region { display: none !important; }
       body, #app, .body-grid, .workspace, .screen-host { display: block; height: auto; overflow: visible; background: #fff; color: #000; }
@@ -705,6 +707,9 @@
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
     const modalFoot = document.getElementById('modalFoot');
+    const appContainer = document.getElementById('app');
+    let modalFocus=null;
+    modalBackdrop.inert=true; document.getElementById('messageDrawer').inert=true;
     const state = {
       appId: 'ops',
       tabs: [],
@@ -718,7 +723,9 @@
       junctionCustomer: 'CUS-001',
       junctionLeft: null,
       junctionRight: null,
-      dialogReturn: null
+      dialogReturn: null,
+      signedOut: false,
+      sessionEpoch: 0
     };
 
     const api = {
@@ -781,6 +788,7 @@
 
     function openScreen(id) {
       const def = metadata[id]; if (!def) return;
+      if (state.signedOut) return;
       const key = `${id}:${state.appId}`;
       if (!state.tabs.some(t => t.key === key)) state.tabs.push({ key, screenId:id, appId:state.appId, title:def.caption });
       state.activeTab = key;
@@ -790,36 +798,66 @@
       sidebar.classList.remove('mobile-open');
     }
 
-    function closeTab(key) {
-      const tab = state.tabs.find(t => t.key === key);
-      if (tab && screenState(tab.screenId).dirty && !confirm('This screen has unsaved changes. Discard them and close?')) return;
-      const index = state.tabs.findIndex(t => t.key === key);
-      state.tabs = state.tabs.filter(t => t.key !== key);
-      if (state.activeTab === key) state.activeTab = state.tabs[index]?.key || state.tabs[index - 1]?.key || null;
-      renderAll();
+    // UI-01: drafts belong to a record, never to transient DOM controls.
+    function draftKey(def) {
+      const s=screenState(def.id);
+      return s.isNew ? '__new__' : (db[def.dataSource][s.formIndex]?.id || '__empty__');
     }
-
+    function captureDraft() {
+      const tab=state.tabs.find(t=>t.key===state.activeTab);
+      if(!tab)return;
+      const def=metadata[tab.screenId],s=screenState(def.id);
+      if(def.type==='field' && document.getElementById('recordForm')) {
+        s.drafts ||= {};
+        s.drafts[draftKey(def)]=collectForm(document.getElementById('recordForm'));
+        s.dirty=true; renderTabs();
+      }
+      if(def.type==='action' && document.getElementById('actionForm'))s.actionValues=collectForm(document.getElementById('actionForm'));
+    }
+    function discardDraft(id) {
+      const s=screenState(id); s.drafts={}; s.dirty=false; s.isNew=false;
+    }
+    function resolveUnsaved(ids, next) {
+      const pending=[...new Set(ids)].filter(id=>screenState(id).dirty);
+      if(!pending.length){next();return;}
+      const id=pending[0],def=metadata[id];
+      showModal('Unsaved changes',`<p><strong>${escapeHtml(def.caption)}</strong> has an unsaved draft. Save or discard it before continuing.</p>`,[
+        {label:'Cancel',action:closeModal},
+        {label:'Discard',danger:true,action:()=>{discardDraft(id);closeModal();resolveUnsaved(pending.slice(1),next);}},
+        {label:'Save',primary:true,action:async()=>{if(await saveFieldForm(def)){closeModal();resolveUnsaved(pending.slice(1),next);}}}
+      ]);
+    }
+    function closeTab(key) {
+      const tab=state.tabs.find(t=>t.key===key);if(!tab)return;
+      resolveUnsaved([tab.screenId],()=>{
+        const index=state.tabs.findIndex(t=>t.key===key);
+        state.tabs=state.tabs.filter(t=>t.key!==key);
+        if(state.activeTab===key)state.activeTab=state.tabs[index]?.key||state.tabs[index-1]?.key||null;
+        renderAll(); hostEl.focus({preventScroll:true});
+      });
+    }
     function goHome() {
-      const hasUnsaved = state.tabs.some(t => screenState(t.screenId).dirty);
-      if (hasUnsaved && !confirm('One or more screens have unsaved changes. Discard them and return to Workspace home?')) return;
-      state.tabs = [];
-      state.activeTab = null;
-      renderAll();
-      hostEl.focus({preventScroll:true});
-      setStatus('Workspace home ready');
-      sidebar.classList.remove('mobile-open');
+      resolveUnsaved(state.tabs.map(t=>t.screenId),()=>{
+        state.tabs=[];state.activeTab=null;renderAll();
+        hostEl.focus({preventScroll:true});setStatus('Workspace home ready');sidebar.classList.remove('mobile-open');
+      });
     }
 
     function renderTabs() {
-      tabsEl.innerHTML = state.tabs.length ? state.tabs.map(t => {
-        const dirty = screenState(t.screenId).dirty;
-        return `<button class="tab ${t.key === state.activeTab ? 'active':''}" role="tab" aria-selected="${t.key === state.activeTab}" data-tab="${t.key}">
-          <span class="tab-label">${escapeHtml(t.title)}</span>${dirty ? '<span class="tab-dirty" aria-label="Unsaved changes">●</span>':''}<span class="tab-close" data-close-tab="${t.key}" aria-label="Close ${escapeHtml(t.title)}">×</span>
-        </button>`;
-      }).join('') : `<span style="color:var(--muted);font-size:11px;padding:0 8px;align-self:center">No open screens</span>`;
+      tabsEl.innerHTML=state.tabs.length?state.tabs.map(t=>`
+        <div class="tab-group">
+          <button class="tab ${t.key===state.activeTab?'active':''}" role="tab"
+            tabindex="${t.key===state.activeTab?'0':'-1'}" aria-selected="${t.key===state.activeTab}"
+            aria-controls="screenHost" data-tab="${t.key}">
+            <span class="tab-label">${escapeHtml(t.title)}</span>
+            ${screenState(t.screenId).dirty?'<span class="tab-dirty" aria-label="Unsaved changes">●</span>':''}
+          </button>
+          <button class="tab-close" data-close-tab="${t.key}" aria-label="Close ${escapeHtml(t.title)}">×</button>
+        </div>`).join(''):'<span style="padding:0 8px;align-self:center">No open screens</span>';
     }
 
     function renderAll() {
+      if(state.signedOut)return;
       renderAppPicker(); renderNav(); renderTabs(); renderScreen();
       document.getElementById('statusRight').textContent = `Metadata ${source.metadataVersion} · API v1 · ${source.session.locale}`;
     }
@@ -842,7 +880,7 @@
     }
 
     function toolButton(command, label, enabled=true, cls='') {
-      return `<button class="tool-button ${cls}" data-command="${command}" ${enabled?'':'disabled'}><span aria-hidden="true">${iconMap[command] || '•'}</span><span class="label-text">${label}</span></button>`;
+      return `<button class="tool-button ${cls}" data-command="${command}" aria-label="${escapeHtml(label)}" ${enabled?'':'disabled'}><span aria-hidden="true">${iconMap[command] || '•'}</span><span class="label-text">${label}</span></button>`;
     }
 
     function formatCell(value, col) {
@@ -904,9 +942,9 @@
     }
 
     function renderField(def) {
-      const s=screenState(def.id), rows=db[def.dataSource], record=s.isNew?{}:rows[s.formIndex] || rows[0] || {};
+      const s=screenState(def.id), rows=db[def.dataSource], record={...(s.isNew?{}:rows[s.formIndex] || rows[0] || {}),...s.drafts?.[draftKey(def)]};
       hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="toolbar" role="toolbar" aria-label="Record commands">${toolButton('add','New record',true,'primary')}${toolButton('save','Save',true)}${toolButton('delete','Delete',!s.isNew && !!record.id,'danger')}<span class="tool-separator"></span>${toolButton('refresh','Refresh',true)}<span class="toolbar-spacer"></span><label>Record <select data-record-select>${rows.map((r,i)=>`<option value="${i}" ${i===s.formIndex&&!s.isNew?'selected':''}>${escapeHtml(r.name)}</option>`).join('')}</select></label></div>
-        <div class="panel"><div class="panel-head"><h2>${s.isNew?'New customer':escapeHtml(record.name || 'Customer')}</h2><p>${s.isNew?'Unsaved record':`Version ${record.version}`}</p></div><div class="panel-body"><div id="formSummary" class="form-summary">Fields marked * are required. Changes are validated again by the server.</div><form id="recordForm" class="form-grid" novalidate>${def.fields.map(f=>fieldInput(f,record[f.id],'record')).join('')}</form></div></div></section>`;
+        <div class="panel"><div class="panel-head"><h2>${s.isNew?'New customer':escapeHtml(record.name || 'Customer')}</h2><p>${s.isNew?'Unsaved record':`Version ${record.version}`}</p></div><div class="panel-body"><div id="formSummary" class="form-summary">Fields marked * are required. Drafts survive tab navigation; validation is simulated locally.</div><form id="recordForm" class="form-grid" novalidate>${def.fields.map(f=>fieldInput(f,record[f.id],'record')).join('')}</form></div></div></section>`;
     }
 
     function renderMasterDetail(def) {
@@ -916,7 +954,7 @@
 
     function renderAction(def) {
       const s=screenState(def.id);
-      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="action-layout"><div class="panel"><div class="panel-head"><h2>Action parameters</h2><p>${escapeHtml(def.actionId)}</p></div><div class="panel-body"><div id="actionSummary" class="form-summary">This mock action validates inputs and simulates a controlled server-side job.</div><form id="actionForm" class="form-grid" novalidate>${def.fields.map(f=>fieldInput(f,s.actionValues?.[f.id],`action-${def.id}`)).join('')}</form><div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="button primary" data-run-action>Run action</button></div></div></div><div class="panel"><div class="panel-head"><h2>Execution result</h2><p id="actionState">Ready</p></div><div class="panel-body action-result" id="actionResult"><div><div style="font-size:42px;color:var(--line-strong)">⚙</div><strong>No execution yet</strong><p>Complete the parameters and run the action.</p></div></div></div></div></section>`;
+      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="action-layout"><div class="panel"><div class="panel-head"><h2>Action parameters</h2><p>${escapeHtml(def.actionId)}</p></div><div class="panel-body"><div id="actionSummary" class="form-summary">This mock action validates inputs and simulates a controlled server-side job.</div><form id="actionForm" class="form-grid" novalidate>${def.fields.map(f=>fieldInput(f,s.actionValues?.[f.id],`action-${def.id}`)).join('')}</form><div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="button primary" data-run-action ${s.job?.status==='Running'?'disabled':''}>Run action</button></div></div></div><div class="panel"><div class="panel-head"><h2>Execution result</h2><p id="actionState">${s.job?.status||'Ready'}</p></div><div class="panel-body action-result" id="actionResult">${actionResult(s.job)}</div></div></div></section>`;
     }
 
     function findTreeNode(nodes,id,parent=null) { for(const n of nodes){ if(n.id===id)return {...n,parent}; const f=findTreeNode(n.children||[],id,n); if(f)return f;} return null; }
@@ -933,19 +971,21 @@
     }
 
     function renderChart(def) {
-      const s=screenState(def.id), all=db[def.dataSource], data=s.chartMode==='quarter'?all.slice(-3):s.chartMode==='half'?all.slice(-6):all;
+      const s=screenState(def.id), data=chartRows(def);
       const max=Math.max(...data.flatMap(d=>[d.actual,d.target]))*1.12, width=900,height=380,left=62,bottom=44,top=18,right=20,plotW=width-left-right,plotH=height-top-bottom,groupW=plotW/data.length,barW=Math.min(28,groupW*.3);
       const y=v=>top+plotH-(v/max*plotH), ticks=[0,.25,.5,.75,1].map(n=>Math.round(max*n/50000)*50000);
-      const svg=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="chartTitle chartDesc"><title id="chartTitle">Actual and target sales</title><desc id="chartDesc">Grouped bar chart comparing monthly actual sales with target values.</desc>${ticks.map(v=>`<line class="chart-grid" x1="${left}" x2="${width-right}" y1="${y(v)}" y2="${y(v)}"></line><text class="chart-axis" x="${left-10}" y="${y(v)+4}" text-anchor="end">£${Math.round(v/1000)}k</text>`).join('')}${data.map((d,i)=>{const cx=left+i*groupW+groupW/2;return `<rect class="bar" x="${cx-barW-2}" y="${y(d.actual)}" width="${barW}" height="${top+plotH-y(d.actual)}" rx="3"><title>${d.month} actual ${currency.format(d.actual)}</title></rect><rect class="bar secondary" x="${cx+2}" y="${y(d.target)}" width="${barW}" height="${top+plotH-y(d.target)}" rx="3"><title>${d.month} target ${currency.format(d.target)}</title></rect><text class="chart-axis" x="${cx}" y="${height-16}" text-anchor="middle">${d.month}</text>`;}).join('')}</svg>`;
+      const svg=`<svg viewBox="0 0 ${width} ${height}" role="group" aria-labelledby="chartTitle chartDesc"><title id="chartTitle">Actual and target sales</title><desc id="chartDesc">Grouped bar chart comparing monthly actual sales with target values.</desc>${ticks.map(v=>`<line class="chart-grid" x1="${left}" x2="${width-right}" y1="${y(v)}" y2="${y(v)}"></line><text class="chart-axis" x="${left-10}" y="${y(v)+4}" text-anchor="end">£${Math.round(v/1000)}k</text>`).join('')}${data.map((d,i)=>{const cx=left+i*groupW+groupW/2;return `<rect class="bar" tabindex="0" role="img" aria-label="${escapeHtml(d.month)} actual ${currency.format(d.actual)}" x="${cx-barW-2}" y="${y(d.actual)}" width="${barW}" height="${top+plotH-y(d.actual)}" rx="3"><title>${d.month} actual ${currency.format(d.actual)}</title></rect><rect class="bar secondary" tabindex="0" role="img" aria-label="${escapeHtml(d.month)} target ${currency.format(d.target)}" x="${cx+2}" y="${y(d.target)}" width="${barW}" height="${top+plotH-y(d.target)}" rx="3"><title>${d.month} target ${currency.format(d.target)}</title></rect><text class="chart-axis" x="${cx}" y="${height-16}" text-anchor="middle">${d.month}</text>`;}).join('')}</svg>`;
       const actual=data.reduce((n,d)=>n+d.actual,0),target=data.reduce((n,d)=>n+d.target,0);
-      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="stats"><div class="stat"><span>Actual sales</span><strong>${currency.format(actual)}</strong><em>${data.length} periods</em></div><div class="stat"><span>Target</span><strong>${currency.format(target)}</strong><em>Configured plan</em></div><div class="stat"><span>Variance</span><strong>${currency.format(actual-target)}</strong><em>${actual>=target?'Ahead of':'Behind'} plan</em></div><div class="stat"><span>Attainment</span><strong>${Math.round(actual/target*100)}%</strong><em>Current selection</em></div></div><div class="panel"><div class="panel-head"><h2>Actual against target</h2><div class="chart-controls"><label class="field">Period<select data-chart-mode><option value="all" ${s.chartMode==='all'?'selected':''}>Year to date</option><option value="half" ${s.chartMode==='half'?'selected':''}>Last 6 months</option><option value="quarter" ${s.chartMode==='quarter'?'selected':''}>Last 3 months</option></select></label><button class="button" data-command="export">Export data</button></div></div><div class="chart-area">${svg}</div><div class="chart-legend"><span><i class="legend-swatch"></i>Actual sales</span><span><i class="legend-swatch secondary"></i>Target</span><span style="margin-left:auto">Hover or focus chart bars for exact values</span></div></div></section>`;
+      hostEl.innerHTML=`<section class="screen" data-screen="${def.id}">${heading(def)}<div class="stats"><div class="stat"><span>Actual sales</span><strong>${currency.format(actual)}</strong><em>${data.length} periods</em></div><div class="stat"><span>Target</span><strong>${currency.format(target)}</strong><em>Configured plan</em></div><div class="stat"><span>Variance</span><strong>${currency.format(actual-target)}</strong><em>${actual>=target?'Ahead of':'Behind'} plan</em></div><div class="stat"><span>Attainment</span><strong>${Math.round(actual/target*100)}%</strong><em>Current selection</em></div></div><div class="panel"><div class="panel-head"><h2>Actual against target</h2><div class="chart-controls"><label class="field">Period<select data-chart-mode><option value="all" ${s.chartMode==='all'?'selected':''}>Year to date</option><option value="half" ${s.chartMode==='half'?'selected':''}>Last 6 months</option><option value="quarter" ${s.chartMode==='quarter'?'selected':''}>Last 3 months</option></select></label><button class="button" data-command="export">Export data</button></div></div><div class="chart-area">${svg}</div><div class="chart-legend"><span><i class="legend-swatch"></i>Actual sales</span><span><i class="legend-swatch secondary"></i>Target</span><span style="margin-left:auto">Exact values are available on each bar and in the data table</span></div><div class="table-wrap"><table><caption>Sales data for the selected period</caption><thead><tr><th>Month</th><th>Actual</th><th>Target</th></tr></thead><tbody>${data.map(d=>`<tr><th scope="row">${escapeHtml(d.month)}</th><td>${currency.format(d.actual)}</td><td>${currency.format(d.target)}</td></tr>`).join('')}</tbody></table></div></div></section>`;
     }
 
+    function chartRows(def) {const all=db[def.dataSource],mode=screenState(def.id).chartMode;return mode==='quarter'?all.slice(-3):mode==='half'?all.slice(-6):all;}
+
     function collectForm(form) {
-      const result={}; form.querySelectorAll('[data-field]').forEach(el => { result[el.dataset.field]=el.type==='checkbox'?el.checked:el.type==='number'?Number(el.value):el.value; }); return result;
+      const result={}; form.querySelectorAll('[data-field]').forEach(el => { result[el.dataset.field]=el.type==='checkbox'?el.checked:el.type==='number'?(el.value.trim()===''?'':Number(el.value)):el.value; }); return result;
     }
     function validate(fields, values) {
-      const errors=[]; fields.forEach(f=>{const v=values[f.id]; if(f.required&&(v===''||v===null||v===undefined))errors.push(`${f.label} is required.`); if(f.type==='email'&&v&&!/^\S+@\S+\.\S+$/.test(v))errors.push(`${f.label} must be a valid email address.`); if(f.min!==undefined&&Number(v)<f.min)errors.push(`${f.label} must be at least ${f.min}.`); if(f.max!==undefined&&Number(v)>f.max)errors.push(`${f.label} must not exceed ${f.max}.`);}); return errors;
+      const errors=[]; fields.forEach(f=>{const v=values[f.id]; if(f.required&&(v===''||v===null||v===undefined))errors.push(`${f.label} is required.`); if(['number','currency'].includes(f.type)&&v!==''&&v!==null&&v!==undefined&&!Number.isFinite(Number(v)))errors.push(`${f.label} must be a finite number.`); if(f.type==='email'&&v&&!/^\S+@\S+\.\S+$/.test(v))errors.push(`${f.label} must be a valid email address.`); if(f.min!==undefined&&Number(v)<f.min)errors.push(`${f.label} must be at least ${f.min}.`); if(f.max!==undefined&&Number(v)>f.max)errors.push(`${f.label} must not exceed ${f.max}.`);}); return errors;
     }
 
     function openRecordDialog(def, existing) {
@@ -961,11 +1001,16 @@
     }
 
     function showModal(title, body, buttons=[]) {
+      modalFocus=document.activeElement; appContainer.inert=true; modalBackdrop.inert=false;
       modalTitle.textContent=title; modalBody.innerHTML=body; modalFoot.innerHTML='';
       buttons.forEach(b=>{const btn=document.createElement('button');btn.className=`button ${b.primary?'primary':''} ${b.danger?'danger':''}`;btn.textContent=b.label;btn.addEventListener('click',b.action);modalFoot.appendChild(btn);});
       modalBackdrop.classList.add('open'); modalBackdrop.setAttribute('aria-hidden','false'); setTimeout(()=>modalBackdrop.querySelector('input,select,textarea,button')?.focus(),30);
     }
-    function closeModal(){ modalBackdrop.classList.remove('open');modalBackdrop.setAttribute('aria-hidden','true');modalBody.innerHTML='';modalFoot.innerHTML='';state.dialogReturn=null; }
+    function closeModal(){
+      modalBackdrop.classList.remove('open');modalBackdrop.setAttribute('aria-hidden','true');modalBackdrop.inert=true;
+      appContainer.inert=state.signedOut; modalBody.innerHTML='';modalFoot.innerHTML='';state.dialogReturn=null;
+      if(modalFocus?.isConnected&&!state.signedOut)modalFocus.focus();else if(!state.signedOut)hostEl.focus();
+    }
 
     function showLookup(name, fieldId) {
       const rows=db[name]||[]; state.dialogReturn=fieldId;
@@ -979,7 +1024,7 @@
     function exportCsv(def) {
       let cols,rows,name;
       if(def.type==='grid'){cols=visibleColumns(def);rows=filteredRows(def);name=def.id;}
-      else if(def.type==='chart'){cols=[{id:'month',label:'Month'},{id:'actual',label:'Actual'},{id:'target',label:'Target'}];rows=db.sales;name='sales';}
+      else if(def.type==='chart'){cols=[{id:'month',label:'Month'},{id:'actual',label:'Actual'},{id:'target',label:'Target'}];rows=chartRows(def);name=def.dataSource;}
       else if(def.type==='masterDetail'){cols=[{id:'productId',label:'Product ID'},{id:'warehouse',label:'Warehouse'},{id:'onHand',label:'On hand'},{id:'reserved',label:'Reserved'},{id:'reorderAt',label:'Reorder at'}];rows=db.stock.filter(x=>x.productId===state.masterProduct);name='stock';}
       else return;
       const quote=v=>`"${String(v??'').replace(/"/g,'""')}"`; const csv=[cols.map(c=>quote(c.label)).join(','),...rows.map(r=>cols.map(c=>quote(r[c.id])).join(','))].join('\r\n'); download(`${name}-${new Date().toISOString().slice(0,10)}.csv`,csv,'text/csv');toast(`${rows.length} rows exported`);
@@ -989,45 +1034,78 @@
     async function command(name) {
       const tab=state.tabs.find(t=>t.key===state.activeTab), def=tab?metadata[tab.screenId]:null; if(!def)return;
       const selected=state.selected[def.id]||new Set();
-      if(name==='add'){ if(def.type==='grid')openRecordDialog(def,null); else if(def.type==='field'){const s=screenState(def.id);s.isNew=true;s.dirty=true;renderAll();} }
+      if(name==='add'){ if(def.type==='grid')openRecordDialog(def,null); else if(def.type==='field')resolveUnsaved([def.id],()=>{const s=screenState(def.id);s.isNew=true;renderAll();captureDraft();}); }
       if(name==='edit'&&def.type==='grid'){const row=db[def.dataSource].find(r=>r.id===[...selected][0]);if(row)openRecordDialog(def,row);}
       if(name==='delete'){
         if(def.type==='grid'){const ids=[...selected];showModal(`Delete ${ids.length} record${ids.length===1?'':'s'}?`,`<p>This updates the in-memory mocked JSON data source. The action cannot be undone in this session.</p><p><strong>${ids.map(escapeHtml).join(', ')}</strong></p>`,[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:async()=>{for(const id of ids)await api.remove(def.dataSource,id);selected.clear();closeModal();renderScreen();toast(`${ids.length} record${ids.length===1?'':'s'} deleted`);}}]);}
-        else if(def.type==='field'){const s=screenState(def.id),row=db[def.dataSource][s.formIndex];if(row&&confirm(`Delete ${row.name}?`)){await api.remove(def.dataSource,row.id);s.formIndex=0;s.isNew=false;renderScreen();toast('Customer deleted');}}
+        else if(def.type==='field')resolveUnsaved([def.id],()=>{const s=screenState(def.id),row=db[def.dataSource][s.formIndex];if(!row)return;showModal(`Delete ${row.name}?`,'<p>Delete this customer from the in-memory demo data?</p>',[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:async()=>{await api.remove(def.dataSource,row.id);discardDraft(def.id);s.formIndex=0;closeModal();renderScreen();toast('Customer deleted');}}]);});
       }
-      if(name==='refresh'){setStatus('Refreshing DataClass…');await api.wait(350);state.changedRows.clear();renderScreen();setStatus(`${def.caption} refreshed`);toast('Data refreshed');}
+      if(name==='refresh')resolveUnsaved([def.id],()=>{state.changedRows.clear();renderScreen();setStatus(`${def.caption} refreshed`);toast('Data refreshed');});
       if(name==='filter'){screenState(def.id).filterOpen=!screenState(def.id).filterOpen;renderScreen();}
       if(name==='reset'){Object.assign(screenState(def.id),{search:'',status:'',region:'',sort:'',group:'none'});renderScreen();}
       if(name==='columns')showColumns(def);
       if(name==='export')exportCsv(def);
       if(name==='print')window.print();
-      if(name==='save'&&def.type==='field')saveFieldForm(def);
+      if(name==='save'&&def.type==='field'){captureDraft();saveFieldForm(def);}
     }
 
     async function saveFieldForm(def) {
-      const s=screenState(def.id),values=collectForm(document.getElementById('recordForm')),errors=validate(def.fields,values),summary=document.getElementById('formSummary');
-      if(errors.length){summary.className='form-summary error';summary.innerHTML=`<strong>Correct ${errors.length} issue${errors.length===1?'':'s'}:</strong><br>${errors.map(escapeHtml).join('<br>')}`;return;}
-      if(s.isNew){values.id=uid('CUS');values.version=0;}else{const original=db[def.dataSource][s.formIndex];values.id=original.id;values.version=original.version;}
-      setStatus('Saving customer…');const saved=await api.save(def.dataSource,values);s.isNew=false;s.formIndex=db[def.dataSource].findIndex(r=>r.id===saved.id);s.dirty=false;renderAll();toast(`${saved.name} saved`);setStatus('Change committed');
+      const s=screenState(def.id);if(s.saving)return false;
+      const values=structuredClone(s.drafts?.[draftKey(def)] || {});
+      const errors=validate(def.fields,values);
+      if(errors.length){
+        const summary=document.getElementById('formSummary');
+        if(summary){summary.className='form-summary error';summary.innerHTML=errors.map(escapeHtml).join('<br>');}
+        toast(errors.join(' '),'warning');return false;
+      }
+      if(s.isNew){values.id=uid('CUS');values.version=0;}
+      else {const original=db[def.dataSource][s.formIndex];values.id=original.id;values.version=original.version;}
+      s.saving=true;setStatus('Saving customer…');
+      try{
+        const saved=await api.save(def.dataSource,values);discardDraft(def.id);
+        s.formIndex=db[def.dataSource].findIndex(r=>r.id===saved.id);
+        renderAll();toast(`${saved.name} saved`);setStatus('Change committed');return true;
+      }finally{s.saving=false;}
     }
 
+    // UI-07: one operation per screen; asynchronous work owns no DOM references.
+    function actionResult(job) {
+      if(!job)return '<div><strong>No execution yet</strong><p>Complete the parameters and run the action.</p></div>';
+      if(job.status==='Running')return `<div><strong>Execution ${escapeHtml(job.id)}</strong><div class="progress"><span style="width:${job.progress}%"></span></div><p>${escapeHtml(job.message)}</p></div>`;
+      return job.result;
+    }
+    function updateAction(def) {
+      if(state.signedOut||state.tabs.find(t=>t.key===state.activeTab)?.screenId!==def.id)return;
+      const job=screenState(def.id).job;
+      document.getElementById('actionState').textContent=job.status;
+      document.getElementById('actionResult').innerHTML=actionResult(job);
+      document.querySelector('[data-run-action]').disabled=job.status==='Running';
+    }
     async function runAction(def) {
-      const form=document.getElementById('actionForm'),values=collectForm(form),errors=validate(def.fields,values),summary=document.getElementById('actionSummary');
-      if(errors.length){summary.className='form-summary error';summary.innerHTML=`<strong>Action not submitted:</strong><br>${errors.map(escapeHtml).join('<br>')}`;return;}
-      const result=document.getElementById('actionResult'),stateEl=document.getElementById('actionState');stateEl.textContent='Running';result.innerHTML=`<div style="width:min(320px,100%)"><strong>Executing ${escapeHtml(def.actionId)}</strong><div class="progress"><span id="actionProgress" style="width:10%"></span></div><p id="actionProgressText">Validating parameters…</p></div>`;
-      const steps=[[28,'Authorizing action…'],[50,'Opening provider transaction…'],[74,'Applying business rules…'],[92,'Committing result…']];for(const [pct,text] of steps){await api.wait(340);document.getElementById('actionProgress').style.width=pct+'%';document.getElementById('actionProgressText').textContent=text;}
-      await api.wait(300);stateEl.textContent='Succeeded';
-      if(def.actionId==='run-limit-check'){
-        const limit=1000000,pass=values.position<=limit;result.innerHTML=`<div><div class="result-icon" style="color:${pass?'var(--success)':'var(--danger)'}">${pass?'✓':'!'}</div><h2 style="margin:0">${pass?'Within limit':'Limit breached'}</h2><p>${currency.format(values.position)} against ${currency.format(limit)} for ${escapeHtml(values.desk)}.</p><span class="status-chip ${pass?'active':'critical'}">${pass?'PASS':'BREACH'}</span><p style="font-size:11px">Execution ${uid('CHK')} · Correlation demo-${Date.now().toString().slice(-6)}</p></div>`;
-      } else {
-        const affected=db.products.filter(p=>p.active).length;result.innerHTML=`<div><div class="result-icon">✓</div><h2 style="margin:0">Adjustment scheduled</h2><p>${affected} active products in ${escapeHtml(values.region)} will change by ${escapeHtml(values.adjustment)}% on ${escapeHtml(values.effectiveDate)}.</p><span class="status-chip active">COMMITTED</span><p style="font-size:11px">Execution ${uid('ACT')} · Correlation demo-${Date.now().toString().slice(-6)}</p></div>`;
+      const s=screenState(def.id);if(s.job?.status==='Running')return;
+      const values=collectForm(document.getElementById('actionForm')),errors=validate(def.fields,values);
+      if(errors.length){const summary=document.getElementById('actionSummary');summary.className='form-summary error';summary.innerHTML=errors.map(escapeHtml).join('<br>');return;}
+      s.actionValues=structuredClone(values);
+      const epoch=state.sessionEpoch,job=s.job={id:uid('ACT'),status:'Running',progress:10,message:'Validating parameters…',values:structuredClone(values)};
+      updateAction(def);
+      for(const [progress,message] of [[28,'Authorizing action…'],[50,'Opening provider transaction…'],[74,'Applying business rules…'],[92,'Committing result…']]){
+        await api.wait(340);if(epoch!==state.sessionEpoch)return;
+        Object.assign(job,{progress,message});updateAction(def);
       }
-      toast('Action completed');setStatus(`${def.caption} completed`);
+      await api.wait(300);if(epoch!==state.sessionEpoch)return;
+      job.status='Succeeded';
+      if(def.actionId==='run-limit-check'){
+        const pass=values.position<=1000000;
+        job.result=`<div><h2>${pass?'Within limit':'Limit breached'}</h2><p>${currency.format(values.position)} against ${currency.format(1000000)} for ${escapeHtml(values.desk)}.</p><strong>${pass?'PASS':'BREACH'}</strong><p>Execution ${escapeHtml(job.id)} · Simulated result</p></div>`;
+      }else{
+        job.result=`<div><h2>Adjustment scheduled</h2><p>${db.products.filter(p=>p.active).length} active products in ${escapeHtml(values.region)} will change by ${escapeHtml(values.adjustment)}% on ${escapeHtml(values.effectiveDate)}.</p><strong>COMMITTED — simulated</strong><p>Execution ${escapeHtml(job.id)}</p></div>`;
+      }
+      updateAction(def);toast('Action completed');setStatus(`${def.caption} completed`);
     }
 
     function renderMessages(){const messages=db.messages;document.getElementById('messageCount').textContent=messages.filter(m=>m.unread).length;document.getElementById('messageCount').classList.toggle('hidden',!messages.some(m=>m.unread));document.getElementById('messageList').innerHTML=messages.map(m=>`<article class="message ${m.unread?'unread':''}" data-message="${m.id}"><div class="message-icon">${m.type==='warning'?'!':m.type==='success'?'✓':'i'}</div><div><strong>${escapeHtml(m.title)}</strong><p>${escapeHtml(m.text)}</p><time>${escapeHtml(m.time)}</time></div></article>`).join('');}
-    function openDrawer(){renderMessages();const d=document.getElementById('messageDrawer');d.classList.add('open');d.setAttribute('aria-hidden','false');d.querySelector('[data-close-drawer]').focus();}
-    function closeDrawer(){const d=document.getElementById('messageDrawer');d.classList.remove('open');d.setAttribute('aria-hidden','true');document.getElementById('messageButton').focus();}
+    function openDrawer(){modalFocus=document.activeElement;appContainer.inert=true;renderMessages();const d=document.getElementById('messageDrawer');d.inert=false;d.classList.add('open');d.setAttribute('aria-hidden','false');d.querySelector('[data-close-drawer]').focus();}
+    function closeDrawer(){const d=document.getElementById('messageDrawer');d.classList.remove('open');d.setAttribute('aria-hidden','true');d.inert=true;appContainer.inert=false;document.getElementById('messageButton').focus();}
 
     document.addEventListener('click', e => {
       const open=e.target.closest('[data-open-screen]');if(open){openScreen(open.dataset.openScreen);return;}
@@ -1050,25 +1128,26 @@
       if(e.target.closest('[data-save-stock]')){document.querySelectorAll('[data-stock]').forEach(input=>{const item=db.stock.find(x=>x.id===input.dataset.stock);item.onHand=Number(input.value)+item.reserved;});renderScreen();toast('Stock changes committed');return;}
       if(e.target.closest('[data-run-action]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];runAction(def);return;}
       const lookup=e.target.closest('[data-lookup]');if(lookup){showLookup(lookup.dataset.lookup,lookup.dataset.lookupField);return;}
-      const lookupValue=e.target.closest('[data-lookup-value]');if(lookupValue){const field=document.querySelector(`[data-field="${state.dialogReturn}"]`);if(field){field.value=lookupValue.dataset.lookupValue;const active=state.tabs.find(t=>t.key===state.activeTab);if(active){screenState(active.screenId).dirty=true;renderTabs();}}closeModal();toast('Lookup value selected');return;}
+      const lookupValue=e.target.closest('[data-lookup-value]');if(lookupValue){const field=document.querySelector(`[data-field="${state.dialogReturn}"]`);if(field){field.value=lookupValue.dataset.lookupValue;captureDraft();const active=state.tabs.find(t=>t.key===state.activeTab);if(active){screenState(active.screenId).dirty=true;renderTabs();}}closeModal();toast('Lookup value selected');return;}
       if(e.target.closest('[data-modal-close]')){closeModal();return;}
       if(e.target===modalBackdrop){closeModal();return;}
       if(e.target.closest('[data-close-drawer]')||e.target.id==='messageDrawer'){closeDrawer();return;}
     });
 
     document.addEventListener('change', e => {
-      if(e.target.id==='appSelect'){const dirty=state.tabs.some(t=>t.appId===state.appId&&screenState(t.screenId).dirty);if(dirty&&!confirm('Discard unsaved changes and switch application?')){e.target.value=state.appId;return;}state.appId=e.target.value;const defaultId=app().defaultScreen;if(defaultId==='welcome'){state.activeTab=null;renderAll();}else openScreen(defaultId);return;}
+      if(e.target.id==='appSelect'){const next=e.target.value;e.target.value=state.appId;resolveUnsaved(state.tabs.filter(t=>t.appId===state.appId).map(t=>t.screenId),()=>{state.appId=next;const defaultId=app().defaultScreen;if(defaultId==='welcome'){state.activeTab=null;renderAll();}else openScreen(defaultId);});return;}
       if(e.target.matches('[data-select-all]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],set=state.selected[def.id]||new Set();filteredRows(def).forEach(r=>e.target.checked?set.add(r.id):set.delete(r.id));state.selected[def.id]=set;renderScreen();return;}
       if(e.target.matches('[data-grid-status]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).status=e.target.value;renderScreen();return;}
       if(e.target.matches('[data-grid-region]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).region=e.target.value;renderScreen();return;}
       if(e.target.matches('[data-grid-group]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).group=e.target.value;renderScreen();return;}
-      if(e.target.matches('[data-record-select]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],s=screenState(def.id);s.formIndex=Number(e.target.value);s.isNew=false;s.dirty=false;renderScreen();return;}
+      if(e.target.matches('[data-record-select]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId],s=screenState(def.id);const next=Number(e.target.value);e.target.value=s.formIndex;resolveUnsaved([def.id],()=>{s.formIndex=next;s.isNew=false;renderScreen();});return;}
       if(e.target.matches('[data-junction-customer]')){state.junctionCustomer=e.target.value;state.junctionLeft=state.junctionRight=null;renderScreen();return;}
       if(e.target.matches('[data-chart-mode]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).chartMode=e.target.value;renderScreen();return;}
-      if(e.target.matches('#recordForm [data-field]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).dirty=true;renderTabs();}
+      if(e.target.matches('#recordForm [data-field],#actionForm [data-field]'))captureDraft();
     });
 
     document.addEventListener('input', e => {
+      if(e.target.matches('#recordForm [data-field],#actionForm [data-field]'))captureDraft();
       if(e.target.matches('[data-grid-search]')){const def=metadata[state.tabs.find(t=>t.key===state.activeTab).screenId];screenState(def.id).search=e.target.value;const pos=e.target.selectionStart;renderScreen();const n=document.querySelector('[data-grid-search]');n.focus();n.setSelectionRange(pos,pos);}
       if(e.target.matches('[data-pick-search]')){const side=e.target.dataset.pickSearch,q=e.target.value.toLowerCase();document.querySelectorAll(`[data-pick-list="${side}"] .pick-item`).forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)));}
     });
@@ -1080,7 +1159,7 @@
     document.getElementById('helpButton').addEventListener('click',()=>showModal('About this interactive mockup',`<p>This single-file prototype demonstrates the modern metadata-driven GDFramework design.</p><ul><li>Use the application selector to switch between Operations and Risk.</li><li>Open screens from the left navigation; each becomes a closable tab.</li><li>Try grid filtering, sorting, selection, add/edit/delete, grouping, columns, export and print.</li><li>The customer form includes validation and a working account-manager lookup.</li><li>Inventory demonstrates master-detail behavior; Regional hierarchy demonstrates tree-detail.</li><li>Customer products demonstrates a junction editor; Sales demonstrates charts.</li><li>Actions run a simulated server workflow with progress and structured results.</li></ul><p>All data and metadata is embedded as JSON and remains local to this browser page.</p>`,[{label:'Close',primary:true,action:closeModal}]));
     document.getElementById('dataButton').addEventListener('click',()=>showModal('Mocked JSON data sources',`<div style="display:flex;gap:8px;margin-bottom:10px"><button class="button" id="downloadJson">Download current JSON</button><span style="color:var(--muted);align-self:center">Metadata plus current in-memory data</span></div><pre class="json-view" id="jsonView">${escapeHtml(JSON.stringify({...source,dataSources:db},null,2))}</pre>`,[{label:'Close',action:closeModal}]));
     modalBody.addEventListener('click',e=>{if(e.target.id==='downloadJson')download('gdframework-mock-data.json',JSON.stringify({...source,dataSources:db},null,2),'application/json');});
-    document.getElementById('userButton').addEventListener('click',()=>showModal('User session',`<div class="detail-kv"><dt>Signed in as</dt><dd>${escapeHtml(source.session.displayName)}</dd></div><div class="detail-kv"><dt>Role</dt><dd>${escapeHtml(source.session.role)}</dd></div><div class="detail-kv"><dt>Locale</dt><dd>${escapeHtml(source.session.locale)}</dd></div><div class="detail-kv"><dt>Time zone</dt><dd>${escapeHtml(source.session.timeZone)}</dd></div><div class="detail-kv"><dt>Session policy</dt><dd>Authenticated mock session</dd></div>`,[{label:'Sign out',action:()=>{closeModal();toast('Sign-out simulated — local data cleared','warning');}},{label:'Close',primary:true,action:closeModal}]));
+    document.getElementById('userButton').addEventListener('click',()=>showModal('User session',`<div class="detail-kv"><dt>Signed in as</dt><dd>${escapeHtml(source.session.displayName)}</dd></div><div class="detail-kv"><dt>Role</dt><dd>${escapeHtml(source.session.role)}</dd></div><div class="detail-kv"><dt>Locale</dt><dd>${escapeHtml(source.session.locale)}</dd></div><div class="detail-kv"><dt>Time zone</dt><dd>${escapeHtml(source.session.timeZone)}</dd></div><div class="detail-kv"><dt>Session policy</dt><dd>Authenticated mock session</dd></div>`,[{label:'Sign out',action:()=>{closeModal();resolveUnsaved(state.tabs.map(t=>t.screenId),signOut);}},{label:'Close',primary:true,action:closeModal}]));
     document.getElementById('quickSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)));});
 
     const splitter=document.getElementById('splitter');let dragging=false;
@@ -1093,6 +1172,30 @@
     const media=matchMedia('(max-width:760px)');function mobileState(){mobileButton.classList.toggle('hidden',!media.matches);}media.addEventListener('change',mobileState);mobileState();
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modalBackdrop.classList.contains('open'))closeModal();else if(document.getElementById('messageDrawer').classList.contains('open'))closeDrawer();else sidebar.classList.remove('mobile-open');}});
 
+    function signOut() {
+      state.signedOut=true;state.sessionEpoch++;state.tabs=[];state.activeTab=null;state.screens={};state.selected={};
+      state.changedRows.clear();state.expandedTree.clear();state.treeSelection=null;state.masterProduct=null;
+      state.junctionCustomer=state.junctionLeft=state.junctionRight=null;
+      Object.keys(db).forEach(key=>delete db[key]);source.dataSources={};source.session={};source.applications=[];source.screenDefinitions={};source.valueLists={};
+      document.getElementById('mock-datasources').textContent='{}';modalBody.innerHTML='';modalFoot.innerHTML='';
+      document.getElementById('messageList').innerHTML='';document.getElementById('toasts').innerHTML='';
+      appContainer.inert=false;appContainer.innerHTML='<main style="padding:48px"><h1 tabindex="-1" id="signedOutTitle">Signed out</h1><p>The simulated session, drafts, running jobs and in-memory data have been cleared.</p><button class="button primary" id="restartDemo">Start a new demo session</button></main>';
+      document.getElementById('restartDemo').onclick=()=>location.reload();document.getElementById('signedOutTitle').focus();
+    }
+    window.addEventListener('beforeunload',e=>{if(Object.values(state.screens).some(s=>s.dirty||s.saving||s.job?.status==='Running')){e.preventDefault();e.returnValue='';}});
+    document.addEventListener('keydown',e=>{
+      const overlay=modalBackdrop.classList.contains('open')?modalBackdrop:document.getElementById('messageDrawer').classList.contains('open')?document.getElementById('messageDrawer'):null;
+      if(overlay&&e.key==='Tab'){
+        const items=[...overlay.querySelectorAll('button,input,select,textarea,[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);
+        if(items.length){const first=items[0],last=items.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+      }
+      const tab=e.target.closest('[data-tab]');
+      if(tab&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){
+        e.preventDefault();const items=[...tabsEl.querySelectorAll('[data-tab]')],i=items.indexOf(tab);
+        const n=e.key==='Home'?0:e.key==='End'?items.length-1:(i+(e.key==='ArrowRight'?1:-1)+items.length)%items.length;
+        items[n].click();tabsEl.querySelector('[aria-selected="true"]').focus();
+      }
+    });
     const savedTheme=localStorage.getItem('gd-theme');if(savedTheme)document.documentElement.dataset.theme=savedTheme;
     const savedWidth=localStorage.getItem('gd-nav-width');if(savedWidth){document.documentElement.style.setProperty('--nav-width',savedWidth);splitter.setAttribute('aria-valuenow',parseInt(savedWidth));}
     renderMessages();renderAll();setTimeout(()=>document.getElementById('splash').classList.add('done'),720);

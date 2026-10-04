@@ -51,8 +51,13 @@
       .data-grid tr,.permission tr{transition:background-color .13s ease,box-shadow .13s ease}.data-grid tbody tr:hover,.permission tbody tr:hover{box-shadow:inset 3px 0 0 var(--brand)}
       .drop-zone:hover{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
     }
-    @media(max-width:1100px){.workbench{grid-template-columns:210px minmax(360px,1fr)}.workbench>.wb-pane:last-child{position:fixed;z-index:70;right:10px;top:125px;bottom:37px;width:310px;box-shadow:var(--shadow)}.stats{grid-template-columns:repeat(2,1fr)}.context label{display:none}.select{min-width:120px}.topbar .context.version{display:none}}
-    @media(max-width:760px){body{overflow:auto}#app{height:auto;min-height:100vh;grid-template-rows:auto 1fr 27px}.topbar{min-height:62px;padding:9px;flex-wrap:wrap}.brand{min-width:auto}.brand div:last-child{display:none}.topbar .context.app-context{flex:1}.topbar .change-chip,.topbar .environment{display:none}.top-action span{display:none}.shell{display:block}.sidebar{position:fixed;z-index:90;left:0;top:62px;bottom:27px;width:min(280px,88vw);transform:translateX(-102%);transition:transform .18s;box-shadow:var(--shadow)}.sidebar.open{transform:none}.main{min-height:calc(100vh - 89px)}.content{padding:10px}.page-head{padding:8px 10px;min-height:52px}.breadcrumbs{display:none}.stats,.overview-grid,.split-layout,.nav-builder,.form-grid,.diff{grid-template-columns:1fr}.workbench{height:auto;display:block}.workbench>.wb-pane{margin-bottom:10px;min-height:380px}.workbench>.wb-pane:nth-child(2){min-height:560px}.workbench>.wb-pane:last-child{position:static;width:auto;min-height:430px}.issue-summary{grid-template-columns:repeat(2,1fr)}.preview-shell{grid-template-columns:85px 1fr}.page-actions .button:not(.primary){display:none}}
+    @media(max-width:1100px){.workbench{height:auto;grid-template-columns:180px minmax(0,1fr);min-height:0}.workbench>.wb-pane:last-child{position:static;grid-column:1/-1;width:auto;min-height:360px}.workbench>.wb-pane{min-height:460px}.stats{grid-template-columns:repeat(2,1fr)}.context label{display:none}.select{min-width:120px}.topbar .context.version{display:none}}
+    #app{grid-template-rows:auto minmax(0,1fr) 27px}.topbar{min-height:62px;flex-wrap:wrap;gap:8px;padding:8px 12px}.brand{min-width:160px}.select{min-width:130px;max-width:210px}.context{min-width:0}.workbench{grid-template-columns:190px minmax(0,1fr) 280px}.preview-tools{flex-wrap:wrap}.preview-main{overflow:auto}.preview-grid{min-width:410px}.preview-input{height:auto;min-height:25px;padding:4px}.page-head{min-width:0}.page-head h1{min-width:0}
+    @media(max-width:1400px){.context label{display:none}.environment{display:none}.topbar{gap:6px}.top-action{padding:0 8px}.brand{min-width:140px}}
+    @media(max-width:1100px){.workbench{grid-template-columns:180px minmax(0,1fr)}.workbench>.wb-pane{height:520px;min-height:520px}.workbench>.wb-pane:last-child{height:500px;min-height:360px}}
+    @media(max-width:760px){body{overflow:auto}#app{height:auto;min-height:100vh;grid-template-rows:auto 1fr 27px}.topbar{min-height:62px;padding:9px;flex-wrap:wrap}.brand{min-width:auto}.brand div:last-child{display:none}.topbar .context.app-context{flex:1}.topbar .change-chip,.topbar .environment{display:none}.top-action span{display:none}.shell{display:block}.sidebar{position:fixed;z-index:90;left:0;top:var(--top);bottom:27px;width:min(280px,88vw);transform:translateX(-102%);transition:transform .18s;box-shadow:var(--shadow)}.sidebar.open{transform:none}.main{min-height:calc(100vh - 89px)}.content{padding:10px}.page-head{padding:8px 10px;min-height:52px}.breadcrumbs{display:none}.stats,.overview-grid,.split-layout,.nav-builder,.form-grid,.diff{grid-template-columns:1fr}.workbench{height:auto;display:block}.workbench>.wb-pane{margin-bottom:10px;min-height:380px}.workbench>.wb-pane:nth-child(2){min-height:560px}.workbench>.wb-pane:last-child{position:static;width:auto;min-height:430px}.issue-summary{grid-template-columns:repeat(2,1fr)}.preview-shell{grid-template-columns:85px 1fr}.page-actions .button:not(.primary){display:none}}
+    .workbench.inspector-hidden{grid-template-columns:190px minmax(0,1fr)}.workbench.inspector-hidden>.wb-pane:last-child{display:none}
+    @media(max-width:760px){.topbar .context.app-context{flex:1 0 calc(100% - 90px);min-width:0}.topbar .context.app-context .select{width:100%;min-width:0;max-width:none}.topbar .spacer{display:none}.topbar .avatar{margin-left:auto}.workbench.inspector-hidden{display:block}}
   </style>
 </head>
 <body>
@@ -65,11 +70,11 @@
       <div class="context app-context"><label for="applicationSelect">Application</label><select class="select" id="applicationSelect"></select></div>
       <div class="context version"><label for="versionSelect">Version</label><select class="select" id="versionSelect"><option>Draft 2026.09.2</option><option>Published 2026.09.1</option><option>Published 2026.08.4</option></select></div>
       <div class="spacer"></div><span class="change-chip" id="changeChip">● 0 draft changes</span>
-      <button class="top-action" id="undoButton" disabled title="Undo last change">↶ <span>Undo</span></button>
-      <button class="top-action" id="jsonButton" title="View configuration JSON">{ } <span>JSON</span></button>
-      <button class="top-action" id="validateButton">✓ <span>Validate</span></button>
-      <button class="top-action" id="previewButton">▷ <span>Preview</span></button>
-      <button class="top-action primary" id="publishButton">↑ <span>Publish</span></button>
+      <button class="top-action" aria-label="Undo last configuration change" id="undoButton" disabled title="Undo last change">↶ <span>Undo</span></button>
+      <button class="top-action" aria-label="Configuration JSON" id="jsonButton" title="View configuration JSON">{ } <span>JSON</span></button>
+      <button class="top-action" aria-label="Validate configuration" id="validateButton">✓ <span>Validate</span></button>
+      <button class="top-action" aria-label="Preview selected screen" id="previewButton">▷ <span>Preview</span></button>
+      <button class="top-action primary" aria-label="Publish configuration" id="publishButton">↑ <span>Publish</span></button>
       <button class="icon-btn" id="themeButton" aria-label="Toggle theme">◐</button><span class="avatar" title="Jordan Lee — Configurator">JL</span>
     </header>
 
@@ -174,11 +179,189 @@
   }
   </script>
 
+  <script id="admin-fixtures" type="application/json">
+{
+  "datasets": {
+    "orders": [
+      {
+        "id": "ORD-1042",
+        "customer": "Northstar Retail",
+        "region": "UK",
+        "product": "Insight Analytics",
+        "order_date": "2026-09-06",
+        "amount": 48250,
+        "status": "Confirmed",
+        "owner_name": "Maya Chen",
+        "updated_at": "2026-09-06T09:00:00Z"
+      },
+      {
+        "id": "ORD-1041",
+        "customer": "Alpine Systems",
+        "region": "EU",
+        "product": "Operations Core",
+        "order_date": "2026-09-05",
+        "amount": 31500,
+        "status": "Pending",
+        "owner_name": "Alex Smith",
+        "updated_at": "2026-09-05T09:00:00Z"
+      }
+    ],
+    "customers": [
+      {
+        "id": "CUS-001",
+        "name": "Northstar Retail",
+        "segment": "Enterprise",
+        "region": "UK",
+        "email": "ops@northstar.example"
+      }
+    ],
+    "products": [
+      {
+        "id": "PRD-100",
+        "name": "Insight Analytics",
+        "category": "Analytics",
+        "price": 1250
+      }
+    ],
+    "stock": [
+      {
+        "id": "STK-01",
+        "product_id": "PRD-100",
+        "product_name": "Insight Analytics",
+        "warehouse": "London",
+        "on_hand": 120,
+        "reserved": 20,
+        "reorder_at": 30,
+        "available": 100
+      }
+    ],
+    "regions": [
+      {
+        "id": "UK",
+        "name": "United Kingdom",
+        "owner": "Maya Chen",
+        "parent_id": "EMEA"
+      }
+    ],
+    "customer-products": [
+      {
+        "customer_id": "CUS-001",
+        "product_id": "PRD-100"
+      }
+    ],
+    "apply-price-adjustment": [
+      {
+        "execution_id": "ACT-DEMO",
+        "affected_count": 3,
+        "status": "Committed"
+      }
+    ],
+    "sales-summary": [
+      {
+        "month": "Jul",
+        "actual": 240000,
+        "target": 230000
+      },
+      {
+        "month": "Aug",
+        "actual": 285000,
+        "target": 270000
+      },
+      {
+        "month": "Sep",
+        "actual": 310000,
+        "target": 300000
+      }
+    ],
+    "risks": [
+      {
+        "id": "RSK-021",
+        "title": "Manual pricing override",
+        "rating": "High",
+        "owner": "Maya Chen",
+        "next_review": "2026-09-18",
+        "status": "Active"
+      }
+    ],
+    "run-limit-check": [
+      {
+        "check_id": "CHK-DEMO",
+        "outcome": "Pass",
+        "limit": 1000000,
+        "variance": 250000
+      }
+    ]
+  },
+  "approvedSources": [
+    "dbo.vw_orders",
+    "dbo.get_customers",
+    "dbo.vw_products",
+    "dbo.get_stock_by_product",
+    "dbo.apply_price_adjustment",
+    "reporting.vw_sales_summary",
+    "risk.vw_register",
+    "risk.run_limit_check",
+    "metadata.regions",
+    "dbo.customer_products",
+    "metadata.application_summary"
+  ],
+  "reviewers": [
+    {
+      "name": "Jordan Lee",
+      "role": "Author"
+    },
+    {
+      "name": "Priya Raman",
+      "role": "Product"
+    },
+    {
+      "name": "Alex Morgan",
+      "role": "Security"
+    },
+    {
+      "name": "Test Reviewer",
+      "role": "Test"
+    }
+  ],
+  "parameters": {
+    "apply-price-adjustment": {
+      "region": "UK",
+      "adjustment": 2.5,
+      "user_id": "demo-user"
+    },
+    "run-limit-check": {
+      "desk": "LON-RATES",
+      "position": 750000,
+      "user_id": "demo-user"
+    }
+  }
+}
+  </script>
   <script>
   (()=>{
     'use strict';
     const initial=JSON.parse(document.getElementById('admin-metadata').textContent),model=structuredClone(initial);
-    const state={module:'overview',appId:'ops',selectedScreen:'orders',selectedField:'customer',selectedDataClass:'orders',selectedConnection:'ops-db',selectedList:'order-status',selectedReport:'order-export',selectedRole:'operations-editor',inspectorTab:'properties',detailTab:'definition',dirty:0,validated:false,history:[],future:[]};
+    const fixtures=JSON.parse(document.getElementById('admin-fixtures').textContent);
+    const state={module:'overview',appId:'ops',selectedScreen:'orders',selectedField:'customer',selectedDataClass:'orders',selectedConnection:'ops-db',selectedList:'order-status',selectedReport:'order-export',selectedRole:'operations-editor',inspectorTab:'properties',detailTab:'definition',dirty:0,validated:false,validation:null,approvals:{},reviewActor:'Jordan Lee',publicationNote:'',viewVersion:null,inspectorVisible:true,history:[],future:[]};
+    const configKeys=['environment','applications','navigation','screens','dataClasses','connections','valueLists','reports','roles'];
+    // Complete the local catalogue used by the seed screens; no real provider is contacted.
+    model.dataClasses.push(
+      {id:'regions',name:'Regional hierarchy',appId:'ops',kind:'query',connectionId:'system',operation:'view',source:'metadata.regions',parameters:[],resultFields:['id','name','owner','parent_id'],uniqueKey:['id'],timeoutSeconds:15,cacheSeconds:60,deleteMode:'none',policy:'regions.read'},
+      {id:'customer-products',name:'Customer products',appId:'ops',kind:'query',connectionId:'ops-db',operation:'view',source:'dbo.customer_products',parameters:[],resultFields:['customer_id','product_id'],uniqueKey:['customer_id','product_id'],timeoutSeconds:15,cacheSeconds:0,deleteMode:'logical',policy:'associations.read'}
+    );
+    model.dataClasses.find(d=>d.id==='stock').resultFields.push('product_name','available');
+    model.screens.find(s=>s.id==='regions').detailDataClassId='regions';
+    model.screens.forEach(s=>s.fields.forEach(f=>{if(f.type==='currency'&&!f.format)f.format='GBP,0';}));
+    const audit=structuredClone(initial.audit);model.audit=audit;let auditSequence=audit.length;
+    let draftConfig=configuration(),releaseSequence=2;
+    const prior=structuredClone(draftConfig);
+    prior.screens.find(s=>s.id==='orders').fields.find(f=>f.id==='amount').format='GBP,0';
+    prior.screens.find(s=>s.id==='orders').commands=prior.screens.find(s=>s.id==='orders').commands.filter(c=>c.key!=='export');
+    prior.roles.find(r=>r.id==='risk-manager').permissions.risks='RWI--P';
+    const older=structuredClone(prior);older.screens.find(s=>s.id==='inventory').autoRefresh=0;
+    const releases=initial.versions.slice(1).map((v,i)=>({...v,label:v.label.replace(/^Published /,''),status:i===0?'Published':'Superseded',snapshot:freeze(i===0?prior:older),digest:digest(i===0?prior:older),summary:v.summary+' (seeded demonstration snapshot)'}));
+    model.versions=releases;
+    let modalFocus=null;
     const modules=[
       {section:'Workspace',items:[['overview','Overview','⌂']]},
       {section:'Application structure',items:[['applications','Applications','A'],['navigation','Navigation','≡'],['screens','Screen designer','▦']]},
@@ -187,25 +370,173 @@
       {section:'Access and release',items:[['security','Security matrix','◇'],['validation','Validation','✓'],['versions','Versions & publish','↑'],['audit','Audit history','◷']]}
     ];
     const titles={overview:'Overview',applications:'Applications',navigation:'Navigation',screens:'Screen designer',dataclasses:'DataClasses',connections:'Connections',values:'Value lists',reports:'Reports & export',security:'Security matrix',validation:'Validation',versions:'Versions & publish',audit:'Audit history'};
-    const host=document.getElementById('moduleHost'),modal=document.getElementById('modalBackdrop');
+    const host=document.getElementById('moduleHost'),modal=document.getElementById('modalBackdrop');modal.inert=true;
     const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const app=()=>model.applications.find(x=>x.id===state.appId);const screen=()=>model.screens.find(x=>x.id===state.selectedScreen);const dc=()=>model.dataClasses.find(x=>x.id===state.selectedDataClass);const list=()=>model.valueLists.find(x=>x.id===state.selectedList);
     const toast=(t,type='')=>{const e=document.createElement('div');e.className=`toast ${type}`;e.textContent=t;document.getElementById('toasts').append(e);setTimeout(()=>e.remove(),2800)};
     const status=t=>document.getElementById('statusText').textContent=t;
-    function checkpoint(label,fn){state.history.push(JSON.stringify(model));if(state.history.length>30)state.history.shift();state.future=[];fn();state.dirty++;state.validated=false;model.audit.unshift({time:'Just now',actor:'Jordan Lee',action:label,target:state.selectedField?`${state.selectedScreen}.${state.selectedField}`:state.module,detail:'Draft metadata changed',correlation:`cfg-${Date.now().toString().slice(-5)}`});updateChrome();render();}
-    function updateChrome(){document.getElementById('changeChip').textContent=`● ${state.dirty} draft change${state.dirty===1?'':'s'}`;document.getElementById('undoButton').disabled=!state.history.length;const picker=document.getElementById('applicationSelect');picker.innerHTML=model.applications.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');picker.value=state.appId;document.getElementById('draftDigest').textContent=`Digest ${hash(JSON.stringify(model))}`;}
+    function configuration(){return structuredClone(Object.fromEntries(configKeys.map(k=>[k,model[k]])));}
+    function canonical(value){if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';return JSON.stringify(value);}
+    function digest(config=configuration()){return hash(canonical(config));}
+    function freeze(value){if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;}
+    function restore(config){configKeys.forEach(k=>model[k]=structuredClone(config[k]));}
+    function readOnly(){return state.viewVersion!==null;}
+    function invalidate(){state.validated=false;state.validation=null;state.approvals={};}
+    function auditTarget(label){
+      if(/field/i.test(label))return `screens.${state.selectedScreen}.fields.${state.selectedField}`;
+      if(/screen|command/i.test(label))return `screens.${state.selectedScreen}`;
+      if(/DataClass|parameter/i.test(label))return `dataClasses.${state.selectedDataClass}`;
+      if(/connection/i.test(label))return `connections.${state.selectedConnection}`;
+      if(/permission|policy/i.test(label))return `roles.${state.selectedRole}`;
+      if(/navigation/i.test(label))return `navigation.${state.appId}.${state.navSelection||''}`;
+      if(/value|list/i.test(label))return `valueLists.${state.selectedList}`;
+      if(/report/i.test(label))return `reports.${state.selectedReport}`;
+      if(/application/i.test(label))return `applications.${state.appId}`;
+      return model.draft.id;
+    }
+    function appendAudit(action,target,detail,actor='Jordan Lee'){
+      audit.unshift(Object.freeze({time:new Date().toISOString(),actor,action,target,detail,correlation:`cfg-${++auditSequence}`}));
+    }
+    function startNextDraft(config,basedOn){
+      releaseSequence++;model.draft={id:`ver-2026-09-${releaseSequence}`,label:`Draft 2026.09.${releaseSequence}`,basedOn,owner:'Jordan Lee',created:new Date().toISOString(),status:'Draft'};
+      draftConfig=structuredClone(config);state.dirty=0;state.history=[];state.future=[];invalidate();state.publicationNote='';
+    }
+    function selectVersion(id){
+      if(!readOnly())draftConfig=configuration();
+      state.viewVersion=id==='draft'?null:id;
+      const version=releases.find(v=>v.id===state.viewVersion);
+      restore(version?version.snapshot:draftConfig);
+      if(!model.applications.some(a=>a.id===state.appId))state.appId=model.applications[0].id;
+      state.selectedScreen=model.screens.find(s=>s.appId===state.appId)?.id;
+      state.selectedField=screen()?.fields[0]?.id;state.navSelection=null;
+      state.module='versions';render();
+    }
+    function comparison(){
+      const active=releases.find(v=>v.status==='Published');
+      const left=canonical(active?.snapshot||{}),right=canonical(configuration());
+      if(left===right)return '<p>No configuration differences from the active release.</p>';
+      const rows=configKeys.filter(k=>canonical(active?.snapshot[k])!==canonical(model[k]));
+      return rows.map(k=>`<details><summary>${esc(k)} changed</summary><div class="diff"><pre class="code">${esc(JSON.stringify(active?.snapshot[k],null,2))}</pre><pre class="code">${esc(JSON.stringify(model[k],null,2))}</pre></div></details>`).join('');
+    }
+    function recordApproval(role){
+      const actor=fixtures.reviewers.find(r=>r.name===state.reviewActor),serialized=canonical(configuration());
+      if(!state.validated||state.validation?.serialized!==serialized)return toast('Validate the exact candidate first.','warn');
+      if(!actor||actor.name===model.draft.owner||actor.role!==role)return toast('Select an independent checker with the required review role.','warn');
+      state.approvals[role]={actor:actor.name,role,digest:digest(),serialized,time:new Date().toISOString()};
+      appendAudit('Approved candidate',model.draft.id,`${role}; digest ${digest()}`,actor.name);render();toast(`${role} approval recorded`);
+    }
+    function rollbackTo(id){
+      const target=releases.find(v=>v.id===id),active=releases.find(v=>v.status==='Published');
+      if(!target||target.status!=='Superseded'||!active)return toast('Rollback requires a superseded known-good snapshot.','warn');
+      showModal('Rollback active publication',`<p>Reactivate <strong>${esc(target.label)}</strong> (${target.digest}) and mark <strong>${esc(active.label)}</strong> Withdrawn. Existing draft edits remain separate.</p><label class="check"><input id="rollbackConfirm" type="checkbox"> Confirm rollback and withdrawal of the failed version</label>`,[
+        {label:'Cancel',action:closeModal},{label:'Rollback',danger:true,action:()=>{
+          if(!document.getElementById('rollbackConfirm').checked)return toast('Confirm rollback intent.','warn');
+          if(!readOnly())draftConfig=configuration();
+          active.status='Withdrawn';target.status='Published';
+          appendAudit('Rolled back publication',active.id,`Withdrawn; reactivated ${target.id}; digest ${target.digest}`);
+          closeModal();state.viewVersion=target.id;restore(target.snapshot);state.module='versions';render();status('Known-good version reactivated');toast('Rollback completed; failed version withdrawn');
+        }}
+      ]);
+    }
+    function syncTopbar(){
+      const height=Math.ceil(document.querySelector('.topbar').getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--top',height+'px');
+    }
+    const mutationSelector='[data-app-prop],[data-app-option],[data-screen-prop],[data-capability],[data-field-prop],[data-command-policy],[data-dc-prop],[data-dc-array],[data-list-prop],[data-value-prop],[data-report-prop],[data-report-output],[data-report-column],[data-permission],[data-nav-prop],[data-add-app],[data-delete-app],[data-add-screen],[data-add-field],[data-delete-field],[data-duplicate-screen],[data-move-field],[data-manage-commands],[data-add-dc],[data-add-param],[data-delete-param],[data-add-connection],[data-edit-connection],[data-add-list],[data-delete-list],[data-add-value],[data-delete-value],[data-add-report],[data-add-report-column],[data-delete-report-column],[data-add-nav-group],[data-add-nav-item],[data-delete-nav],[data-move-group],[data-move-item],[data-publish],[data-run-validation]';
+    function enhanceUI(root){
+      root.querySelectorAll('select').forEach(el=>{
+        let value;
+        if(el.dataset.appProp)value=app()?.[el.dataset.appProp];
+        if(el.dataset.screenProp)value=screen()?.[el.dataset.screenProp];
+        if(el.dataset.dcProp)value=dc()?.[el.dataset.dcProp];
+        if(el.dataset.fieldProp)value=screen()?.fields.find(f=>f.id===state.selectedField)?.[el.dataset.fieldProp];
+        if(value!==undefined){if(![...el.options].some(o=>o.value===String(value)))el.add(new Option(String(value),String(value)));el.value=String(value);}
+      });
+      root.querySelectorAll('.field').forEach((field,i)=>{
+        const label=field.querySelector('label'),control=field.querySelector('input,select,textarea');
+        if(label&&control&&!label.contains(control)){control.id||=(root.id||'editor')+'-field-'+i;label.htmlFor=control.id;}
+      });
+      root.querySelectorAll('input,select,textarea').forEach((el,i)=>{
+        if(el.labels?.length||el.hasAttribute('aria-label')||el.type==='file')return;
+        const cell=el.closest('td'),row=el.closest('tr'),table=el.closest('table');
+        const column=cell?[...row.children].indexOf(cell):-1;
+        const caption=column>=0?table.querySelectorAll('thead th')[column]?.textContent:'';
+        el.setAttribute('aria-label',caption?`${caption} row ${row.rowIndex}`:el.placeholder||el.dataset.screenSearch&&'Filter screens'||el.dataset.dcSearch&&'Find a DataClass'||'Configuration value '+(i+1));
+      });
+      root.querySelectorAll('[data-add-field]:not(button)').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button');el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}};});
+      if(readOnly())root.querySelectorAll(mutationSelector).forEach(el=>{if('disabled' in el)el.disabled=true;else{el.setAttribute('aria-disabled','true');el.tabIndex=-1;}});
+      const close=document.querySelector('[data-close-modal]');if(close)close.setAttribute('aria-label','Close dialog');
+    }
+    function fixtureRows(d){return structuredClone(fixtures.datasets[d.id]||[]);}
+    function previewValue(f,row){
+      const value=row?.[f.binding];if(value===undefined)return '— (no fixture binding)';
+      if(['number','currency'].includes(f.type)&&!Number.isFinite(Number(value)))return 'Invalid numeric fixture';
+      if(['date','datetime'].includes(f.type)&&(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}/.test(value)||Number.isNaN(Date.parse(value))))return 'Invalid date fixture';
+      if(f.type==='currency')return new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',minimumFractionDigits:f.format?.includes('0.00')?2:0,maximumFractionDigits:2}).format(value);
+      if(f.type==='date')return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value));
+      return String(value);
+    }
+    function testConnection(){
+      const c=structuredClone(model.connections.find(x=>x.id===state.selectedConnection));
+      showModal('Connection fixture test',`<p>This is a local JSON fixture, not a provider connectivity test.</p><h3>${esc(c.name)}</h3><p>Endpoint: ${esc(c.endpoint)}</p><div class="field"><label for="connectionScenario">Fixture scenario</label><select id="connectionScenario"><option value="configured">Configured health</option><option value="timeout">Timeout</option><option value="failure">Authentication failure</option></select></div><div id="connectionResult" aria-live="polite"></div>`,[
+        {label:'Close',action:closeModal},{label:'Run fixture',primary:true,action:()=>{
+          const scenario=document.getElementById('connectionScenario').value;
+          const valid=c.active&&c.encrypted&&c.endpoint?.trim()&&c.secretRef?.trim();
+          document.getElementById('connectionResult').textContent=scenario==='timeout'?'Timed out — fixture':scenario==='failure'?'Authentication failed — fixture':!valid?'Invalid or inactive connection configuration — fixture':`${c.health} — configured fixture; no network connection was attempted.`;
+        }}
+      ]);
+    }
+    function checkpoint(label,fn){
+      if(readOnly()){toast('Published snapshots are read-only. Select the draft to edit.','warn');return;}
+      const target=auditTarget(label);
+      state.history.push({config:configuration(),label,target});if(state.history.length>30)state.history.shift();
+      state.future=[];fn();state.dirty++;invalidate();draftConfig=configuration();
+      appendAudit(label,target,`Draft ${model.draft.id}; demo digest ${digest()}`);updateChrome();render();
+    }
+    function updateChrome(){
+      document.getElementById('changeChip').textContent=readOnly()?'Read-only snapshot':`● ${state.dirty} draft change${state.dirty===1?'':'s'}`;
+      document.getElementById('undoButton').disabled=readOnly()||!state.history.length;
+      const picker=document.getElementById('applicationSelect');picker.innerHTML=model.applications.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');picker.value=state.appId;
+      const versions=document.getElementById('versionSelect');versions.innerHTML=`<option value="draft">${esc(model.draft.label)}</option>`+releases.map(v=>`<option value="${v.id}">${esc(v.status)} ${esc(v.label)}</option>`).join('');
+      versions.value=state.viewVersion||'draft';
+      const sideFoot=document.querySelector('.side-foot');sideFoot.querySelector('strong').textContent=model.draft.label;
+      sideFoot.childNodes.forEach(n=>{if(n.nodeType===3&&n.textContent.includes('Based on'))n.textContent='Based on '+model.draft.basedOn+' ';});
+      document.getElementById('draftDigest').textContent=`Demo digest (FNV-1a) ${digest()}`;
+      document.getElementById('publishButton').disabled=readOnly();document.getElementById('validateButton').disabled=readOnly();
+      syncTopbar();
+    }
     function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16).padStart(8,'0')}
-    function renderSide(){document.getElementById('sideNav').innerHTML=modules.map(g=>`<section class="side-section"><h2>${g.section}</h2>${g.items.map(([id,label,icon])=>`<button class="side-link ${state.module===id?'active':''}" data-module="${id}"><span class="side-icon">${icon}</span><span>${label}</span>${id==='screens'?`<span class="side-count">${model.screens.filter(s=>s.appId===state.appId).length}</span>`:''}${id==='validation'?'<span class="side-count">3</span>':''}</button>`).join('')}</section>`).join('')}
-    function render(){renderSide();document.getElementById('pageTitle').textContent=titles[state.module];document.getElementById('breadcrumbs').textContent=`${app().name} / ${titles[state.module]}`;document.getElementById('pageActions').innerHTML=pageActions();({overview:renderOverview,applications:renderApplications,navigation:renderNavigation,screens:renderScreens,dataclasses:renderDataClasses,connections:renderConnections,values:renderValues,reports:renderReports,security:renderSecurity,validation:renderValidation,versions:renderVersions,audit:renderAudit}[state.module]||renderOverview)();}
+    function renderSide(){document.getElementById('sideNav').innerHTML=modules.map(g=>`<section class="side-section"><h2>${g.section}</h2>${g.items.map(([id,label,icon])=>`<button class="side-link ${state.module===id?'active':''}" data-module="${id}"><span class="side-icon">${icon}</span><span>${label}</span>${id==='screens'?`<span class="side-count">${model.screens.filter(s=>s.appId===state.appId).length}</span>`:''}${id==='validation'?`<span class="side-count">${validationIssues().filter(i=>i.severity==='error').length}</span>`:''}</button>`).join('')}</section>`).join('')}
+    function render(){renderSide();document.getElementById('pageTitle').textContent=titles[state.module];document.getElementById('breadcrumbs').textContent=`${app().name} / ${titles[state.module]}`;document.getElementById('pageActions').innerHTML=pageActions();({overview:renderOverview,applications:renderApplications,navigation:renderNavigation,screens:renderScreens,dataclasses:renderDataClasses,connections:renderConnections,values:renderValues,reports:renderReports,security:renderSecurity,validation:renderValidation,versions:renderVersions,audit:renderAudit}[state.module]||renderOverview)();enhanceUI(host);enhanceUI(document.getElementById('pageActions'));updateChrome();}
     function pageActions(){if(state.module==='screens')return '<button class="button" data-add-screen>＋ Add screen</button><button class="button" data-manage-commands>⚡ Manage commands</button><button class="button primary" data-open-preview>▷ Preview screen</button>';if(state.module==='dataclasses')return '<button class="button" data-add-dc>＋ Add DataClass</button><button class="button primary" data-test-dc>▷ Test query</button>';if(state.module==='reports')return '<button class="button" data-add-report>＋ Add report</button><button class="button primary" data-preview-report>▷ Preview output</button>';if(state.module==='validation')return '<button class="button primary" data-run-validation>✓ Run validation</button>';if(state.module==='versions')return '<button class="button primary" data-publish>↑ Publish draft</button>';return ''}
-    function renderOverview(){const screens=model.screens.filter(s=>s.appId===state.appId),dcs=model.dataClasses.filter(d=>d.appId===state.appId);host.innerHTML=`<div class="stats"><div class="stat"><span>Configured screens</span><strong>${screens.length}</strong><small>All 7 renderer types represented</small></div><div class="stat"><span>DataClasses</span><strong>${dcs.length}</strong><small>${model.connections.length} registered connections</small></div><div class="stat"><span>Validation state</span><strong>${state.validated?'Passed':'Not run'}</strong><small>${state.validated?'Candidate digest verified':'Draft changed since last run'}</small></div><div class="stat"><span>Draft changes</span><strong>${state.dirty}</strong><small>Since published 2026.09.1</small></div></div><div class="overview-grid"><section class="panel"><div class="panel-head"><h2>Configuration workflow</h2><p class="right">Draft 2026.09.2</p></div><div class="panel-body"><ol class="flow-list"><li class="flow-item"><span class="flow-icon">1</span><div><strong>Model the application</strong><span>Applications, navigation, screens, fields, commands and DataClasses</span></div><span class="status good">In progress</span></li><li class="flow-item"><span class="flow-icon">2</span><div><strong>Secure and test</strong><span>Effective policies, field access, provider tests and screen preview</span></div><span class="status warn">Required</span></li><li class="flow-item"><span class="flow-icon">3</span><div><strong>Compile and validate</strong><span>References, types, executable metadata, accessibility and impact</span></div><span class="status ${state.validated?'good':'warn'}">${state.validated?'Passed':'Not run'}</span></li><li class="flow-item"><span class="flow-icon">4</span><div><strong>Approve and publish</strong><span>Maker/checker review, immutable version and atomic activation</span></div><span class="status">Pending</span></li></ol></div></section><section class="panel"><div class="panel-head"><h2>Draft impact</h2><p class="right">Current application</p></div><div class="panel-body"><div class="relation"><div class="relation-box"><strong>2 screens</strong><br><span class="muted">Orders, Risks</span></div><span>→</span><div class="relation-box"><strong>4 roles</strong><br><span class="muted">72 effective users</span></div></div><div class="relation"><div class="relation-box"><strong>2 DataClasses</strong><br><span class="muted">orders, risks</span></div><span>→</span><div class="relation-box"><strong>2 providers</strong><br><span class="muted">SQL Server, Sybase</span></div></div><hr style="border:0;border-top:1px solid var(--line);margin:15px 0"><strong>Publication readiness</strong><div style="height:7px;background:var(--surface-3);border-radius:5px;margin:9px 0"><span style="display:block;width:${state.validated?'86':'62'}%;height:100%;background:var(--brand);border-radius:5px"></span></div><span class="muted">${state.validated?'Validation complete; approval remains.':'Run validation after completing draft changes.'}</span></div></section></div>`}
+    function renderOverview(){const screens=model.screens.filter(s=>s.appId===state.appId),dcs=model.dataClasses.filter(d=>d.appId===state.appId);host.innerHTML=`<div class="stats"><div class="stat"><span>Configured screens</span><strong>${screens.length}</strong><small>All 7 renderer types represented</small></div><div class="stat"><span>DataClasses</span><strong>${dcs.length}</strong><small>${model.connections.length} registered connections</small></div><div class="stat"><span>Validation state</span><strong>${readOnly()?'Snapshot':state.validation?(state.validated?'Passed':'Failed'):'Not run'}</strong><small>${readOnly()?'Immutable selected configuration':state.validated?'Candidate digest verified':'Draft requires validation'}</small></div><div class="stat"><span>Draft changes</span><strong>${state.dirty}</strong><small>Since published 2026.09.1</small></div></div><div class="overview-grid"><section class="panel"><div class="panel-head"><h2>Configuration workflow</h2><p class="right">Draft 2026.09.2</p></div><div class="panel-body"><ol class="flow-list"><li class="flow-item"><span class="flow-icon">1</span><div><strong>Model the application</strong><span>Applications, navigation, screens, fields, commands and DataClasses</span></div><span class="status good">In progress</span></li><li class="flow-item"><span class="flow-icon">2</span><div><strong>Secure and test</strong><span>Effective policies, field access, provider tests and screen preview</span></div><span class="status warn">Required</span></li><li class="flow-item"><span class="flow-icon">3</span><div><strong>Compile and validate</strong><span>References, types, executable metadata, accessibility and impact</span></div><span class="status ${state.validated?'good':'warn'}">${state.validation?(state.validated?'Passed':'Failed'):'Not run'}</span></li><li class="flow-item"><span class="flow-icon">4</span><div><strong>Approve and publish</strong><span>Maker/checker review, immutable version and atomic activation</span></div><span class="status">Pending</span></li></ol></div></section><section class="panel"><div class="panel-head"><h2>Draft impact</h2><p class="right">Current application</p></div><div class="panel-body"><div class="relation"><div class="relation-box"><strong>2 screens</strong><br><span class="muted">Orders, Risks</span></div><span>→</span><div class="relation-box"><strong>4 roles</strong><br><span class="muted">72 effective users</span></div></div><div class="relation"><div class="relation-box"><strong>2 DataClasses</strong><br><span class="muted">orders, risks</span></div><span>→</span><div class="relation-box"><strong>2 providers</strong><br><span class="muted">SQL Server, Sybase</span></div></div><hr style="border:0;border-top:1px solid var(--line);margin:15px 0"><strong>Publication readiness</strong><div style="height:7px;background:var(--surface-3);border-radius:5px;margin:9px 0"><span style="display:block;width:${state.validated?'86':'62'}%;height:100%;background:var(--brand);border-radius:5px"></span></div><span class="muted">${state.validated?'Validation complete; approval remains.':'Run validation after completing draft changes.'}</span></div></section></div>`}
     function renderApplications(){host.innerHTML=`<div class="split-layout"><section class="panel list-panel"><div class="panel-head"><h2>Applications</h2><button class="button small right" data-add-app>＋ Add</button></div>${model.applications.map(a=>`<button class="list-row ${a.id===state.appId?'active':''}" data-select-app="${a.id}"><strong>${esc(a.name)}</strong><small>${esc(a.shortName)} · ${a.active?'Active':'Inactive'} · ${model.screens.filter(s=>s.appId===a.id).length} screens</small></button>`).join('')}</section><section class="panel detail-panel"><div class="panel-head"><h2>${esc(app().name)}</h2><span class="status good">${app().active?'Active':'Inactive'}</span><button class="button small danger right" data-delete-app>Delete</button></div><div class="panel-body"><form class="form-grid" id="applicationForm"><div class="field"><label>Stable application ID</label><input value="${esc(app().id)}" disabled></div><div class="field"><label>Short name</label><input data-app-prop="shortName" value="${esc(app().shortName)}"></div><div class="field wide"><label>Display name</label><input data-app-prop="name" value="${esc(app().name)}"></div><div class="field wide"><label>Description</label><textarea data-app-prop="description">${esc(app().description)}</textarea></div><div class="field"><label>Default screen</label><select data-app-prop="defaultScreen">${model.screens.filter(s=>s.appId===state.appId).map(s=>`<option value="${s.id}" ${app().defaultScreen===s.id?'selected':''}>${esc(s.caption)}</option>`).join('')}</select></div><div class="field"><label>Navigation style</label><select data-app-prop="navigationStyle"><option ${app().navigationStyle==='Grouped'?'selected':''}>Grouped</option><option ${app().navigationStyle==='Tree'?'selected':''}>Tree</option></select></div><div class="field"><label>Owner</label><input data-app-prop="owner" value="${esc(app().owner)}"></div><div class="field"><label>Theme token</label><select data-app-prop="theme"><option>Indigo</option><option>Teal</option><option>Neutral</option></select></div><div class="wide"><div class="section-title">Shell options</div><label class="check"><input type="checkbox" data-app-option="allowPersonalMenus" ${app().options.allowPersonalMenus?'checked':''}> Allow personal navigation shortcuts</label><label class="check"><input type="checkbox" data-app-option="showApplicationCaption" ${app().options.showApplicationCaption?'checked':''}> Show application caption in shell</label><label class="check"><input type="checkbox" data-app-option="rememberLastScreen" ${app().options.rememberLastScreen?'checked':''}> Restore last permitted screen</label><label class="check"><input type="checkbox" data-app-prop="active" ${app().active?'checked':''}> Application is active</label></div></form></div></section></div>`}
     function renderNavigation(){const groups=model.navigation[state.appId]||[];host.innerHTML=`<div class="toolbar"><button class="button" data-add-nav-group>＋ Add group</button><button class="button" data-add-nav-item>＋ Add item</button><span class="divider"></span><button class="button" data-preview-nav>▷ Preview navigation</button><span class="right muted">Use Move controls for accessible deterministic ordering</span></div><div class="nav-builder"><section class="panel"><div class="panel-head"><h2>Navigation structure</h2><p class="right">${groups.reduce((n,g)=>n+g.items.length,0)} items</p></div><div class="panel-body">${groups.map((g,gi)=>`<div><div class="nav-tree-row ${state.navSelection===`group:${g.id}`?'active':''}" data-nav-selection="group:${g.id}"><span>⌄</span><strong class="label">${esc(g.label)}</strong><div class="move-buttons"><button data-move-group="${gi}:-1" aria-label="Move group up">↑</button><button data-move-group="${gi}:1" aria-label="Move group down">↓</button></div></div><div class="nav-children">${g.items.map((it,ii)=>`<div class="nav-tree-row ${state.navSelection===`item:${g.id}:${it.id}`?'active':''}" data-nav-selection="item:${g.id}:${it.id}"><span>${icon(it.icon)}</span><span class="label">${esc(it.label)}</span><div class="move-buttons"><button data-move-item="${g.id}:${ii}:-1" aria-label="Move item up">↑</button><button data-move-item="${g.id}:${ii}:1" aria-label="Move item down">↓</button></div></div>`).join('')}</div></div>`).join('')}</div></section><section class="panel"><div class="panel-head"><h2>Selection properties</h2><button class="button small danger right" data-delete-nav ${state.navSelection?'':'disabled'}>Delete</button></div><div class="panel-body">${navInspector(groups)}</div></section></div>`}
     function navInspector(groups){if(!state.navSelection)return '<div class="muted" style="padding:50px;text-align:center">Select a group or navigation item to edit its properties.</div>';const parts=state.navSelection.split(':');if(parts[0]==='group'){const g=groups.find(x=>x.id===parts[1]);return `<div class="field"><label>Group ID</label><input value="${esc(g.id)}" disabled></div><div class="field"><label>Caption</label><input data-nav-prop="label" data-nav-target="group:${g.id}" value="${esc(g.label)}"></div><div class="field"><label>Sequence</label><input type="number" value="${g.sequence}" disabled><div class="property-help">Sequence is maintained by the move commands.</div></div>`}const g=groups.find(x=>x.id===parts[1]),it=g.items.find(x=>x.id===parts[2]);return `<div class="field"><label>Item ID</label><input value="${esc(it.id)}" disabled></div><div class="field"><label>Caption</label><input data-nav-prop="label" data-nav-target="item:${g.id}:${it.id}" value="${esc(it.label)}"></div><div class="field"><label>Target screen</label><select data-nav-prop="screenId" data-nav-target="item:${g.id}:${it.id}">${model.screens.filter(s=>s.appId===state.appId).map(s=>`<option value="${s.id}" ${it.screenId===s.id?'selected':''}>${esc(s.caption)}</option>`).join('')}</select></div><div class="field"><label>Icon token</label><select data-nav-prop="icon" data-nav-target="item:${g.id}:${it.id}">${['grid','user','table','action','tree','junction','chart','risk'].map(x=>`<option ${it.icon===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="section-title">Resolved target</div><div class="relation-box">${esc(model.screens.find(s=>s.id===it.screenId)?.caption||'Missing screen')}<br><span class="muted">${esc(it.screenId)}</span></div>`}
     function icon(name){return ({grid:'▦',user:'◉',table:'▤',action:'⚙',tree:'⌘',junction:'⇄',chart:'▥',risk:'◇'}[name]||'•')}
-    function renderScreens(){const screens=model.screens.filter(s=>s.appId===state.appId);if(!screens.some(s=>s.id===state.selectedScreen)){state.selectedScreen=screens[0]?.id;state.selectedField=screens[0]?.fields[0]?.id}const s=screen();host.innerHTML=`<div class="toolbar"><button class="button" data-add-field>＋ Add field</button><button class="button" data-duplicate-screen>⧉ Duplicate screen</button><span class="divider"></span><button class="button" data-move-field="-1">↑ Move field</button><button class="button" data-move-field="1">↓ Move field</button><button class="button danger" data-delete-field>Delete field</button><span class="right"><span class="status draft">Draft preview</span></span></div><div class="workbench"><section class="wb-pane"><div class="wb-head"><strong>Screens</strong><span class="right status info">${screens.length}</span></div><div class="wb-scroll"><input class="entity-search" data-screen-search placeholder="Filter screens">${screens.map(x=>`<button class="entity ${x.id===state.selectedScreen?'active':''}" data-select-screen="${x.id}"><span class="entity-icon">${icon(x.icon)}</span><span><strong>${esc(x.caption)}</strong><small>${typeLabel(x.type)} · ${esc(x.id)}</small></span><em>›</em></button>`).join('')}<div class="section-title">Fields</div><div class="tree-indent">${s.fields.map((f,i)=>`<button class="entity ${f.id===state.selectedField?'active':''}" data-select-field="${f.id}"><span class="entity-icon">${i+1}</span><span><strong>${esc(f.caption)}</strong><small>${esc(f.type)} · ${esc(f.binding)}</small></span>${f.required?'<em>*</em>':''}</button>`).join('')}</div><div class="section-title">Commands</div><div class="tree-indent">${s.commands.map(c=>`<button class="entity"><span class="entity-icon">↯</span><span><strong>${esc(c.label)}</strong><small>${esc(c.key)} · ${esc(c.policy)}</small></span></button>`).join('')}</div></div></section><section class="wb-pane"><div class="wb-head"><strong>Live screen canvas</strong><span class="muted">${typeLabel(s.type)}</span><button class="button small right" data-open-preview>Open preview</button></div><div class="wb-scroll" style="padding:0">${screenCanvas(s)}</div></section><section class="wb-pane"><div class="wb-head"><strong>Inspector</strong><span class="right status draft">Unsaved</span></div><div class="tabs"><button class="tab ${state.inspectorTab==='properties'?'active':''}" data-inspector-tab="properties">Properties</button><button class="tab ${state.inspectorTab==='behavior'?'active':''}" data-inspector-tab="behavior">Behavior</button><button class="tab ${state.inspectorTab==='access'?'active':''}" data-inspector-tab="access">Access</button></div><div class="wb-scroll inspector">${screenInspector(s)}</div></section></div>`}
+    function renderScreens(){const screens=model.screens.filter(s=>s.appId===state.appId);if(!screens.some(s=>s.id===state.selectedScreen)){state.selectedScreen=screens[0]?.id;state.selectedField=screens[0]?.fields[0]?.id}const s=screen();host.innerHTML=`<div class="toolbar"><button class="button" data-add-field>＋ Add field</button><button class="button" data-duplicate-screen>⧉ Duplicate screen</button><span class="divider"></span><button class="button" data-move-field="-1">↑ Move field</button><button class="button" data-move-field="1">↓ Move field</button><button class="button danger" data-delete-field>Delete field</button><button class="button" data-toggle-inspector>${state.inspectorVisible?'Hide inspector':'Show inspector'}</button><span class="right"><span class="status draft">${readOnly()?'Immutable preview':'Draft preview'}</span></span></div><div class="workbench ${state.inspectorVisible?'':'inspector-hidden'}"><section class="wb-pane"><div class="wb-head"><strong>Screens</strong><span class="right status info">${screens.length}</span></div><div class="wb-scroll"><input class="entity-search" data-screen-search placeholder="Filter screens">${screens.map(x=>`<button class="entity ${x.id===state.selectedScreen?'active':''}" data-select-screen="${x.id}"><span class="entity-icon">${icon(x.icon)}</span><span><strong>${esc(x.caption)}</strong><small>${typeLabel(x.type)} · ${esc(x.id)}</small></span><em>›</em></button>`).join('')}<div class="section-title">Fields</div><div class="tree-indent">${s.fields.map((f,i)=>`<button class="entity ${f.id===state.selectedField?'active':''}" data-select-field="${f.id}"><span class="entity-icon">${i+1}</span><span><strong>${esc(f.caption)}</strong><small>${esc(f.type)} · ${esc(f.binding)}</small></span>${f.required?'<em>*</em>':''}</button>`).join('')}</div><div class="section-title">Commands</div><div class="tree-indent">${s.commands.map(c=>`<button class="entity"><span class="entity-icon">↯</span><span><strong>${esc(c.label)}</strong><small>${esc(c.key)} · ${esc(c.policy)}</small></span></button>`).join('')}</div></div></section><section class="wb-pane"><div class="wb-head"><strong>Live screen canvas</strong><span class="muted">${typeLabel(s.type)}</span><button class="button small right" data-open-preview>Open preview</button></div><div class="wb-scroll" style="padding:0">${screenCanvas(s)}</div></section><section class="wb-pane"><div class="wb-head"><strong>Inspector</strong><button class="button small" data-toggle-inspector aria-label="Hide inspector">×</button><span class="right status draft">${readOnly()?'Read-only':'Draft'}</span></div><div class="tabs"><button class="tab ${state.inspectorTab==='properties'?'active':''}" data-inspector-tab="properties">Properties</button><button class="tab ${state.inspectorTab==='behavior'?'active':''}" data-inspector-tab="behavior">Behavior</button><button class="tab ${state.inspectorTab==='access'?'active':''}" data-inspector-tab="access">Access</button></div><div class="wb-scroll inspector">${screenInspector(s)}</div></section></div>`}
     function typeLabel(t){return ({grid:'Grid',field:'Field form',masterDetail:'Master-detail',action:'Command / action',treeDetail:'Tree-detail',junction:'Junction editor',chart:'Chart'}[t]||t)}
-    function screenCanvas(s){const samples=[['ORD-1042','Northstar Retail','UK','Insight Analytics','£48,250','Confirmed'],['ORD-1041','Alpine Systems','EU','Operations Core','£31,500','Pending'],['ORD-1040','Harbour & Co','UK','Risk Monitor','£67,800','Confirmed']];let body='';if(s.type==='grid'||s.type==='masterDetail'){body=`<table class="preview-grid"><thead><tr>${s.fields.filter(f=>f.visible).slice(0,6).map(f=>`<th class="preview-field ${f.id===state.selectedField?'active':''}" data-canvas-field="${f.id}">${esc(f.caption)}</th>`).join('')}</tr></thead><tbody>${samples.map(row=>`<tr>${s.fields.filter(f=>f.visible).slice(0,6).map((f,i)=>`<td class="preview-field ${f.id===state.selectedField?'active':''}" data-canvas-field="${f.id}">${esc(row[i]||'Sample value')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}else if(s.type==='field'||s.type==='action'){body=`<div class="preview-form">${s.fields.filter(f=>f.visible).map(f=>`<div class="preview-field ${f.id===state.selectedField?'active':''}" data-canvas-field="${f.id}"><label>${esc(f.caption)}${f.required?' *':''}</label><div class="preview-input"></div></div>`).join('')}</div>`}else if(s.type==='treeDetail'){body='<div style="display:grid;grid-template-columns:140px 1fr;gap:9px"><div class="relation-box">⌄ Global<br>&nbsp;&nbsp;⌄ EMEA<br>&nbsp;&nbsp;&nbsp;&nbsp;United Kingdom<br>&nbsp;&nbsp;&nbsp;&nbsp;European Union</div><div class="relation-box"><strong>United Kingdom</strong><br><span class="muted">Owner · Maya Chen<br>Status · Active</span></div></div>'}else if(s.type==='junction'){body='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px"><div class="relation-box">Available products<br><br>Risk Monitor<br>Data Gateway</div><div style="align-self:center">⇄</div><div class="relation-box">Assigned products<br><br>Operations Core<br>Insight Analytics</div></div>'}else{body='<div style="height:180px;display:flex;align-items:end;gap:13px;padding:20px;border-bottom:1px solid var(--line)"><span style="height:55%;width:32px;background:var(--brand)"></span><span style="height:72%;width:32px;background:var(--brand)"></span><span style="height:64%;width:32px;background:var(--brand)"></span><span style="height:87%;width:32px;background:var(--brand)"></span><span style="height:78%;width:32px;background:var(--brand)"></span></div>'}return `<div class="canvas"><div class="browser-frame"><div class="browser-bar"><i class="browser-dot"></i><i class="browser-dot"></i><i class="browser-dot"></i><span class="browser-url">/apps/${s.appId}/screens/${s.id}</span></div><div class="preview-shell"><aside class="preview-nav"><div class="preview-brand">GD Workspace</div><div class="preview-link">Daily work</div><div class="preview-link active">${esc(s.caption)}</div><div class="preview-link">Other screen</div></aside><main class="preview-main"><div class="preview-title">${esc(s.caption)}</div><div class="preview-sub">${esc(s.description)}</div><div class="preview-tools">${s.commands.map(c=>`<button class="preview-tool">${esc(c.label)}</button>`).join('')}</div>${body}<div class="drop-zone" data-add-field>＋ Add another field</div></main></div></div></div>`}
+    function screenCanvas(s){
+      const d=model.dataClasses.find(d=>d.id===(s.type==='masterDetail'?s.detailDataClassId:s.dataClassId));
+      const samples=s.type==='action'?[fixtures.parameters[s.dataClassId]||{}]:fixtureRows(d||{id:''});
+      const fields=s.fields.filter(f=>f.visible);let body='';
+      if(s.type==='grid'||s.type==='masterDetail'){
+        body=`<table class="preview-grid" style="min-width:${fields.reduce((total,f)=>total+Math.max(30,Number(f.width)||140),0)}px"><thead><tr>${fields.map(f=>`<th style="min-width:${Math.max(30,Number(f.width)||140)}px" class="preview-field ${f.id===state.selectedField?'active':''}" data-canvas-field="${esc(f.id)}">${esc(f.caption)}</th>`).join('')}</tr></thead><tbody>
+          ${samples.map(row=>`<tr>${fields.map(f=>`<td class="preview-field ${f.id===state.selectedField?'active':''}" data-canvas-field="${esc(f.id)}">${esc(previewValue(f,row))}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${Math.max(1,fields.length)}">No registered fixture rows</td></tr>`}
+        </tbody></table>`;
+      }else if(s.type==='field'||s.type==='action'){
+        body=`<div class="preview-form">${fields.map(f=>`<div class="preview-field ${f.id===state.selectedField?'active':''}" data-canvas-field="${esc(f.id)}"><span>${esc(f.caption)}${f.required?' *':''}</span><div class="preview-input">${esc(previewValue(f,samples[0]))}</div></div>`).join('')}</div>`;
+      }else if(s.type==='treeDetail'){
+        body=samples.map(row=>`<div class="relation-box"><strong>${esc(row.parent_id||'Root')} → ${esc(row.name)}</strong>${fields.map(f=>`<p>${esc(f.caption)}: ${esc(previewValue(f,row))}</p>`).join('')}</div>`).join('')||'<p>No registered hierarchy fixture</p>';
+      }else if(s.type==='junction'){
+        body=`<table class="preview-grid"><thead><tr>${fields.map(f=>`<th>${esc(f.caption)}</th>`).join('')}</tr></thead><tbody>${samples.map(row=>`<tr>${fields.map(f=>`<td>${esc(previewValue(f,row))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      }else if(s.type==='chart'){
+        const measures=fields.filter(f=>['currency','number'].includes(f.type));
+        const max=Math.max(1,...samples.flatMap(row=>measures.map(f=>Number(row[f.binding])||0)));
+        body=samples.map(row=>`<div class="relation-box"><strong>${esc(previewValue(fields.find(f=>!measures.includes(f))||{binding:'month',type:'text'},row))}</strong>${measures.map(f=>`<p>${esc(f.caption)}: ${esc(previewValue(f,row))}</p><div style="height:8px;background:var(--surface-3)"><span style="display:block;height:100%;width:${Math.max(0,(Number(row[f.binding])||0)/max*100)}%;background:var(--brand)"></span></div>`).join('')}</div>`).join('');
+      }else body='<p>Unsupported renderer type</p>';
+      return `<div class="canvas"><div class="browser-frame"><div class="browser-bar"><i class="browser-dot"></i><i class="browser-dot"></i><i class="browser-dot"></i><span class="browser-url">/apps/${esc(s.appId)}/screens/${esc(s.id)}</span></div><div class="preview-shell"><aside class="preview-nav"><div class="preview-brand">GD Workspace</div><div class="preview-link active">${esc(s.caption)}</div></aside><main class="preview-main"><div class="preview-title">${esc(s.caption)}</div><div class="preview-sub">${esc(s.description)}</div><div class="preview-tools">${s.commands.map(c=>`<span class="preview-tool">${esc(c.label)}</span>`).join('')}</div>${body}<p class="muted">Typed local fixture preview; not a provider execution result.</p><button class="button small" data-add-field>＋ Add another field</button></main></div></div></div>`;
+    }
     function screenInspector(s){const f=s.fields.find(x=>x.id===state.selectedField)||s.fields[0];if(state.inspectorTab==='behavior')return `<div class="section-title">Screen behavior</div><div class="field"><label>Screen type</label><select data-screen-prop="type">${['grid','field','masterDetail','action','treeDetail','junction','chart'].map(t=>`<option value="${t}" ${s.type===t?'selected':''}>${typeLabel(t)}</option>`).join('')}</select></div><div class="field"><label>Master DataClass</label><select data-screen-prop="dataClassId">${model.dataClasses.filter(d=>d.appId===state.appId).map(d=>`<option value="${d.id}" ${s.dataClassId===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></div><div class="field"><label>Detail DataClass</label><select data-screen-prop="detailDataClassId"><option value="">None</option>${model.dataClasses.filter(d=>d.appId===state.appId).map(d=>`<option value="${d.id}" ${s.detailDataClassId===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></div><div class="field-row"><div class="field"><label>Filter mode</label><select data-screen-prop="filterMode"><option>server</option><option>local</option><option>none</option></select></div><div class="field"><label>Popup mode</label><select data-screen-prop="popupMode"><option>tab</option><option>modal</option><option>panel</option></select></div></div><div class="field"><label>Auto-refresh seconds</label><input type="number" min="0" data-screen-prop="autoRefresh" value="${s.autoRefresh}"><div class="property-help">Zero disables automatic refresh. Dirty screens pause refresh.</div></div><div class="section-title">Capabilities</div>${Object.entries(s.capabilities).map(([k,v])=>`<label class="check"><input type="checkbox" data-capability="${k}" ${v?'checked':''}> ${esc(k)}</label>`).join('')}`;if(state.inspectorTab==='access')return `<div class="section-title">Command policies</div>${s.commands.map(c=>`<div class="field"><label>${esc(c.label)} · ${esc(c.key)}</label><input data-command-policy="${c.key}" value="${esc(c.policy)}"></div>`).join('')}<div class="section-title">Field access</div><p class="property-help">Field-level policies are inherited from the DataClass unless overridden.</p><div class="relation-box">Read policy<br><strong>${esc(dcFor(s)?.policy||'Not resolved')}</strong></div>`;return `<div class="section-title">Screen</div><div class="field"><label>Stable ID</label><input value="${esc(s.id)}" disabled></div><div class="field"><label>Caption</label><input data-screen-prop="caption" value="${esc(s.caption)}"></div><div class="field"><label>Description</label><textarea data-screen-prop="description">${esc(s.description)}</textarea></div><div class="field"><label>Icon token</label><select data-screen-prop="icon">${['grid','user','table','action','tree','junction','chart','risk'].map(i=>`<option ${s.icon===i?'selected':''}>${i}</option>`).join('')}</select></div><div class="section-title">Selected field</div>${f?`<div class="field-row"><div class="field"><label>Field ID</label><input value="${esc(f.id)}" disabled></div><div class="field"><label>Sequence</label><input value="${f.sequence}" disabled></div></div><div class="field"><label>Caption</label><input data-field-prop="caption" value="${esc(f.caption)}"></div><div class="field"><label>Data binding</label><input data-field-prop="binding" value="${esc(f.binding)}"></div><div class="field-row"><div class="field"><label>Control type</label><select data-field-prop="type">${['text','email','number','currency','date','datetime','boolean','select','lookup','textarea'].map(t=>`<option ${f.type===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Width</label><input data-field-prop="width" type="number" value="${f.width}"></div></div><div class="field"><label>Value list</label><select data-field-prop="valueList"><option value="">None</option>${model.valueLists.map(v=>`<option value="${v.id}" ${f.valueList===v.id?'selected':''}>${esc(v.name)}</option>`).join('')}</select></div><div class="field"><label>Format</label><input data-field-prop="format" value="${esc(f.format||'')}"></div><div class="field"><label>Validation expression</label><input data-field-prop="validation" value="${esc(f.validation||'')}"></div><label class="check"><input type="checkbox" data-field-prop="required" ${f.required?'checked':''}> Required</label><label class="check"><input type="checkbox" data-field-prop="visible" ${f.visible?'checked':''}> Visible</label><label class="check"><input type="checkbox" data-field-prop="editable" ${f.editable?'checked':''}> Editable</label>`:'No field selected.'}`}
     const dcFor=s=>model.dataClasses.find(d=>d.id===s.dataClassId);
     function renderDataClasses(){const rows=model.dataClasses.filter(d=>d.appId===state.appId);if(!rows.some(d=>d.id===state.selectedDataClass))state.selectedDataClass=rows[0]?.id;const d=dc();host.innerHTML=`<div class="split-layout"><section class="panel list-panel"><div class="panel-head"><h2>DataClasses</h2><span class="status info">${rows.length}</span></div><div class="list-search"><input data-dc-search placeholder="Find a DataClass"></div>${rows.map(x=>`<button class="list-row ${x.id===state.selectedDataClass?'active':''}" data-select-dc="${x.id}"><strong>${esc(x.name)}</strong><small>${esc(x.kind)} · ${esc(x.connectionId)} · ${esc(x.source)}</small></button>`).join('')}</section><section class="panel detail-panel"><div class="panel-head"><h2>${esc(d.name)}</h2><span class="status ${d.kind==='action'?'warn':'good'}">${esc(d.kind)}</span><button class="button small right" data-test-dc>▷ Test</button></div><div class="detail-tabs">${['definition','parameters','result','update','dependencies'].map(t=>`<button class="detail-tab ${state.detailTab===t?'active':''}" data-detail-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div><div class="panel-body">${dcDetail(d)}</div></section></div>`}
@@ -215,20 +546,143 @@
     function renderValues(){if(!model.valueLists.some(v=>v.id===state.selectedList))state.selectedList=model.valueLists[0].id;const v=list();host.innerHTML=`<div class="split-layout"><section class="panel list-panel"><div class="panel-head"><h2>Value lists & lookups</h2><button class="button small right" data-add-list>＋ Add</button></div>${model.valueLists.map(x=>`<button class="list-row ${x.id===state.selectedList?'active':''}" data-select-list="${x.id}"><strong>${esc(x.name)}</strong><small>${esc(x.mode)} · ${esc(x.id)}</small></button>`).join('')}</section><section class="panel detail-panel"><div class="panel-head"><h2>${esc(v.name)}</h2><span class="status info">${esc(v.mode)}</span><button class="button small danger right" data-delete-list>Delete</button></div><div class="panel-body"><div class="form-grid"><div class="field"><label>Stable ID</label><input value="${esc(v.id)}" disabled></div><div class="field"><label>Name</label><input data-list-prop="name" value="${esc(v.name)}"></div><div class="field"><label>Mode</label><select data-list-prop="mode"><option value="static" ${v.mode==='static'?'selected':''}>Static values</option><option value="dataClass" ${v.mode==='dataClass'?'selected':''}>DataClass lookup</option></select></div></div>${v.mode==='static'?`<div class="toolbar"><button class="button small" data-add-value>＋ Add value</button></div><table class="data-grid"><thead><tr><th>Stored value</th><th>Display label</th><th>Active</th><th></th></tr></thead><tbody>${v.values.map((x,i)=>`<tr><td><input data-value-prop="${i}:value" value="${esc(x.value)}" style="border:1px solid var(--line);border-radius:5px;padding:5px"></td><td><input data-value-prop="${i}:label" value="${esc(x.label)}" style="border:1px solid var(--line);border-radius:5px;padding:5px"></td><td><input type="checkbox" data-value-prop="${i}:active" ${x.active?'checked':''}></td><td><button class="button small danger" data-delete-value="${i}">Delete</button></td></tr>`).join('')}</tbody></table>`:`<div class="form-grid"><div class="field"><label>Lookup DataClass</label><select data-list-prop="dataClassId">${model.dataClasses.map(d=>`<option value="${d.id}" ${v.dataClassId===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></div><div class="field"><label>Key field</label><input data-list-prop="keyField" value="${esc(v.keyField)}"></div><div class="field"><label>Display field</label><input data-list-prop="displayField" value="${esc(v.displayField)}"></div></div>`}</div></section></div>`}
     function renderReports(){const reports=model.reports.filter(r=>r.appId===state.appId);if(!reports.some(r=>r.id===state.selectedReport))state.selectedReport=reports[0]?.id;const r=model.reports.find(x=>x.id===state.selectedReport);if(!r){host.innerHTML='<div class="panel"><div class="panel-body muted">No reports configured for this application. Use Add report to create one.</div></div>';return}host.innerHTML=`<div class="split-layout"><section class="panel list-panel"><div class="panel-head"><h2>Reports</h2><span class="status info">${reports.length}</span></div>${reports.map(x=>`<button class="list-row ${x.id===state.selectedReport?'active':''}" data-select-report="${x.id}"><strong>${esc(x.name)}</strong><small>${esc(x.type)} · ${esc(x.dataClassId)} · ${x.outputs.join(', ')}</small></button>`).join('')}</section><section class="panel detail-panel"><div class="panel-head"><h2>${esc(r.name)}</h2><button class="button small right" data-preview-report>▷ Preview</button></div><div class="panel-body"><div class="form-grid"><div class="field"><label>Stable report ID</label><input value="${esc(r.id)}" disabled></div><div class="field"><label>Display name</label><input data-report-prop="name" value="${esc(r.name)}"></div><div class="field"><label>Report type</label><select data-report-prop="type"><option value="tabular" ${r.type==='tabular'?'selected':''}>Tabular</option><option value="chart-and-table" ${r.type==='chart-and-table'?'selected':''}>Chart and table</option><option value="cross-tab" ${r.type==='cross-tab'?'selected':''}>Cross-tab</option></select></div><div class="field"><label>Source DataClass</label><select data-report-prop="dataClassId">${model.dataClasses.filter(d=>d.appId===state.appId).map(d=>`<option value="${d.id}" ${r.dataClassId===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select></div><div class="field"><label>Page orientation</label><select data-report-prop="orientation"><option ${r.orientation==='portrait'?'selected':''}>portrait</option><option ${r.orientation==='landscape'?'selected':''}>landscape</option></select></div><div class="field"><label>Allowed outputs</label><div>${['xlsx','csv','pdf'].map(o=>`<label class="check"><input type="checkbox" data-report-output="${o}" ${r.outputs.includes(o)?'checked':''}> ${o.toUpperCase()}</label>`).join('')}</div></div></div><div class="toolbar"><strong>Output columns</strong><button class="button small right" data-add-report-column>＋ Add column</button></div><table class="data-grid"><thead><tr><th>Field</th><th>Caption</th><th>Format</th><th></th></tr></thead><tbody>${r.columns.map((c,i)=>`<tr><td><input data-report-column="${i}:field" value="${esc(c.field)}" style="border:1px solid var(--line);border-radius:5px;padding:5px"></td><td><input data-report-column="${i}:caption" value="${esc(c.caption)}" style="border:1px solid var(--line);border-radius:5px;padding:5px"></td><td><input data-report-column="${i}:format" value="${esc(c.format)}" style="border:1px solid var(--line);border-radius:5px;padding:5px"></td><td><button class="button small danger" data-delete-report-column="${i}">Delete</button></td></tr>`).join('')}</tbody></table></div></section></div>`}
     function renderSecurity(){const screens=model.screens.filter(s=>s.appId===state.appId),roles=model.roles.filter(r=>Object.keys(r.permissions).some(id=>screens.some(s=>s.id===id)));if(!roles.some(r=>r.id===state.selectedRole))state.selectedRole=roles[0]?.id;const role=model.roles.find(r=>r.id===state.selectedRole),letters=['R','W','I','D','E','P'],labels=['Read','Write','Insert','Delete','Export','Print'];host.innerHTML=`<div class="toolbar"><div class="role-tabs">${roles.map(r=>`<button class="role-pill ${r.id===state.selectedRole?'active':''}" data-role="${r.id}">${esc(r.name)} · ${r.members}</button>`).join('')}</div><span class="right"><button class="button" data-effective-access>◉ Preview effective access</button></span></div><section class="panel"><div class="panel-head"><h2>${esc(role.name)} permissions</h2><p class="right">${role.members} assigned users · Server-enforced policies</p></div><div class="permission-wrap"><table class="permission"><thead><tr><th>Screen</th>${labels.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${screens.map(s=>{const p=role.permissions[s.id]||'------';return `<tr><td><strong>${esc(s.caption)}</strong><br><span class="muted">${esc(s.id)}</span></td>${letters.map((l,i)=>`<td><input type="checkbox" data-permission="${s.id}:${i}" aria-label="${labels[i]} ${esc(s.caption)}" ${p[i]===l?'checked':''}></td>`).join('')}</tr>`}).join('')}</tbody></table></div></section><div class="panel" style="margin-top:12px"><div class="panel-head"><h2>Security rules</h2></div><div class="panel-body"><div class="form-grid"><div class="relation-box"><strong>Definition filtering</strong><br><span class="muted">Unauthorized screens, fields and commands are omitted from delivered metadata.</span></div><div class="relation-box"><strong>Execution enforcement</strong><br><span class="muted">Every query, change, action, report and admin operation rechecks policy server-side.</span></div></div></div></div>`}
-    function validationIssues(){const issues=[];const s=model.screens.find(x=>x.id==='orders');if(s.fields.some(f=>f.id==='amount'&&!f.format))issues.push({severity:'error',code:'FIELD_FORMAT_REQUIRED',path:'screens.orders.fields.amount',text:'Currency field requires an explicit display and export format.'});if(model.connections.some(c=>c.health==='Warning'))issues.push({severity:'warning',code:'PROVIDER_HEALTH_WARNING',path:'connections.risk-db',text:'Risk Database health check reports degraded response time.'});issues.push({severity:'warning',code:'UNUSED_VALUE_LIST',path:'valueLists.segments',text:'Customer segments is referenced only by a field not present in the initial navigation path.'});issues.push({severity:'info',code:'ACCESS_IMPACT',path:'roles.operations-editor',text:'Export permission change affects 18 effective users.'});return issues}
-    function renderValidation(){const issues=validationIssues(),errors=issues.filter(x=>x.severity==='error').length,warnings=issues.filter(x=>x.severity==='warning').length;host.innerHTML=`<div class="issue-summary"><div class="issue-stat"><span class="muted">Compiler checks</span><strong>${state.validated?'194':'—'}</strong><span class="status ${state.validated?'good':'warn'}">${state.validated?'Completed':'Not run'}</span></div><div class="issue-stat"><span class="muted">Errors</span><strong>${errors}</strong><span class="status ${errors?'bad':'good'}">${errors?'Blocks publish':'Clear'}</span></div><div class="issue-stat"><span class="muted">Warnings</span><strong>${warnings}</strong><span class="status warn">Review required</span></div><div class="issue-stat"><span class="muted">Candidate digest</span><strong style="font-size:13px">${hash(JSON.stringify(model))}</strong><span class="status info">Deterministic</span></div></div><section class="panel" style="position:relative"><div class="panel-head"><h2>Validation results</h2><p class="right">References · types · security · provider · accessibility · compatibility</p></div>${issues.map(i=>`<article class="issue"><span class="issue-icon ${i.severity}">${i.severity==='error'?'×':i.severity==='warning'?'!':'i'}</span><span class="status ${i.severity==='error'?'bad':i.severity==='warning'?'warn':'info'}">${i.severity}</span><div><strong>${esc(i.code)}</strong><p>${esc(i.text)}</p><code>${esc(i.path)}</code></div><button class="button small" data-fix-issue="${esc(i.code)}">Open</button></article>`).join('')}${state.compiling?'<div class="compile-overlay"><div><div class="spinner"></div><p>Compiling immutable metadata bundle…</p></div></div>':''}</section>`}
-    function renderVersions(){host.innerHTML=`<div class="overview-grid"><section class="panel"><div class="panel-head"><h2>Version history</h2><button class="button small right" data-compare>Compare selected</button></div><div class="panel-body"><div class="timeline">${model.versions.map((v,i)=>`<div class="timeline-item"><strong>${esc(v.label)} <span class="status ${v.status.toLowerCase()}">${esc(v.status)}</span></strong><span>${esc(v.date)} · ${esc(v.author)} · ${esc(v.digest)}</span><br><span>${esc(v.summary)}</span>${i>0?`<div style="margin-top:6px"><button class="button small" data-view-version="${v.id}">View</button> <button class="button small" data-rollback="${v.id}">Rollback to this version</button></div>`:''}</div>`).join('')}</div></div></section><section class="panel"><div class="panel-head"><h2>Publication checklist</h2></div><div class="panel-body"><label class="check"><input type="checkbox" checked disabled> Metadata source and digest recorded</label><label class="check"><input type="checkbox" ${state.validated?'checked':''} disabled> Compiler validation passed</label><label class="check"><input type="checkbox" checked disabled> Impact analysis generated</label><label class="check"><input type="checkbox" id="productApproval"> Product owner approval</label><label class="check"><input type="checkbox" id="securityApproval"> Security approval for policy changes</label><label class="check"><input type="checkbox" id="testApproval"> Test evidence accepted</label><hr style="border:0;border-top:1px solid var(--line);margin:14px 0"><div class="field"><label>Publication note</label><textarea id="publishNote" placeholder="Describe the business purpose and approved changes"></textarea></div><button class="button primary" data-publish style="width:100%">↑ Publish immutable version</button></div></section></div><section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Draft compared with 2026.09.1</h2></div><div class="panel-body"><div class="diff"><div class="diff-col"><div class="diff-head">Published 2026.09.1</div><div class="diff-line remove">- orders.amount format: GBP,0</div><div class="diff-line">  orders.export: not configured</div><div class="diff-line">  risks.export: risk-manager denied</div></div><div class="diff-col"><div class="diff-head">Draft 2026.09.2</div><div class="diff-line add">+ orders.amount format: GBP,0.00</div><div class="diff-line add">+ orders.export: command configured</div><div class="diff-line add">+ risks.export: risk-manager allowed</div></div></div></div></section>`}
-    function renderAudit(){host.innerHTML=`<div class="toolbar"><div class="field" style="margin:0;min-width:260px"><input data-audit-search placeholder="Filter actor, action, target or correlation"></div><button class="button">Export audit</button><span class="right muted">Append-only configuration activity</span></div><section class="panel"><div class="table-wrap"><table class="data-grid"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th><th>Correlation</th></tr></thead><tbody id="auditRows">${model.audit.map(a=>auditRow(a)).join('')}</tbody></table></div></section>`}
+    function validationIssues(){
+      const issues=[],add=(path,text,code='INVALID_REFERENCE',severity='error')=>issues.push({severity,code,path,text});
+      const ids=rows=>new Set(rows.map(x=>x.id)),appIds=ids(model.applications),dcIds=ids(model.dataClasses),connectionIds=ids(model.connections),listIds=ids(model.valueLists);
+      for(const [name,rows] of [['applications',model.applications],['screens',model.screens],['dataClasses',model.dataClasses],['connections',model.connections],['valueLists',model.valueLists],['reports',model.reports],['roles',model.roles]]){
+        if(ids(rows).size!==rows.length)add(name,'Stable IDs must be unique.','DUPLICATE_ID');
+      }
+      for(const d of model.dataClasses){
+        if(!appIds.has(d.appId)||!connectionIds.has(d.connectionId))add(`dataClasses.${d.id}`,'Application or connection does not exist.');
+        if(!['query','action'].includes(d.kind)||!['view','procedure','table','adapter'].includes(d.operation))add(`dataClasses.${d.id}`,'Invalid kind or operation.','INVALID_TYPE');
+        if(d.kind==='action'&&d.operation!=='procedure')add(`dataClasses.${d.id}`,'Action requires an approved procedure.','INVALID_TYPE');
+        if(!fixtures.approvedSources.includes(d.source))add(`dataClasses.${d.id}.source`,'Source is not in the local approved catalogue.','UNAPPROVED_SOURCE');
+        if(!Number.isFinite(d.timeoutSeconds)||d.timeoutSeconds<=0||!Number.isFinite(d.cacheSeconds)||d.cacheSeconds<0)add(`dataClasses.${d.id}`,'Timeout/cache values are invalid.','INVALID_NUMBER');
+      }
+      for(const s of model.screens){
+        const d=dcFor(s),detail=model.dataClasses.find(x=>x.id===s.detailDataClassId);
+        if(!appIds.has(s.appId)||!dcIds.has(s.dataClassId))add(`screens.${s.id}`,'Application or master DataClass does not exist.');
+        if(s.detailDataClassId&&!detail)add(`screens.${s.id}.detailDataClassId`,'Detail DataClass does not exist.');
+        if(!['grid','field','masterDetail','action','treeDetail','junction','chart'].includes(s.type))add(`screens.${s.id}.type`,'Unsupported screen type.','INVALID_TYPE');
+        if(new Set(s.fields.map(f=>f.id)).size!==s.fields.length)add(`screens.${s.id}.fields`,'Field IDs must be unique.','DUPLICATE_ID');
+        const bindings=new Set(d?.kind==='action'?d.parameters.map(p=>p.name.replace(/^@/,'')):[...(d?.resultFields||[]),...(detail?.resultFields||[])]);
+        for(const f of s.fields){
+          const path=`screens.${s.id}.fields.${f.id}`;
+          if(!bindings.has(f.binding))add(path,'Binding is absent from the declared schema/parameters.');
+          if(f.valueList&&!listIds.has(f.valueList))add(path,'Value list does not exist.');
+          if(f.type==='currency'&&!f.format)add(path,'Currency field requires an explicit format.','FIELD_FORMAT_REQUIRED');
+          if(!['text','email','number','currency','date','datetime','boolean','select','lookup','textarea'].includes(f.type))add(path,'Unsupported control type.','INVALID_TYPE');
+          if(!f.caption?.trim())add(path,'An accessible caption is required.','CAPTION_REQUIRED');
+        }
+      }
+      for(const a of model.applications){
+        if(!model.screens.some(s=>s.id===a.defaultScreen&&s.appId===a.id))add(`applications.${a.id}.defaultScreen`,'Default screen is missing or belongs to another application.');
+        for(const g of model.navigation[a.id]||[])for(const it of g.items)if(!model.screens.some(s=>s.id===it.screenId&&s.appId===a.id))add(`navigation.${a.id}.${it.id}`,'Navigation target is invalid.');
+      }
+      for(const v of model.valueLists)if(v.mode==='dataClass'&&!dcIds.has(v.dataClassId))add(`valueLists.${v.id}`,'Lookup DataClass is missing.');
+      for(const r of model.reports){
+        const d=model.dataClasses.find(x=>x.id===r.dataClassId);
+        if(!d)add(`reports.${r.id}`,'Report DataClass is missing.');
+        for(const c of r.columns)if(!d?.resultFields.includes(c.field))add(`reports.${r.id}.${c.field}`,'Output field is absent from result schema.');
+      }
+      for(const c of model.connections)if(c.health==='Warning')add(`connections.${c.id}`,'Fixture simulates degraded provider health.','PROVIDER_HEALTH_WARNING','warning');
+      return issues;
+    }
+    function renderValidation(){const issues=validationIssues(),errors=issues.filter(x=>x.severity==='error').length,warnings=issues.filter(x=>x.severity==='warning').length;host.innerHTML=`<div class="issue-summary"><div class="issue-stat"><span class="muted">Compiler checks</span><strong>${state.validation?'Completed':'—'}</strong><span class="status ${state.validated?'good':'warn'}">${state.validation?(state.validated?'Passed':'Failed'):'Not run'}</span></div><div class="issue-stat"><span class="muted">Errors</span><strong>${errors}</strong><span class="status ${errors?'bad':'good'}">${errors?'Blocks publish':'Clear'}</span></div><div class="issue-stat"><span class="muted">Warnings</span><strong>${warnings}</strong><span class="status warn">Review required</span></div><div class="issue-stat"><span class="muted">Candidate digest</span><strong style="font-size:13px">${digest()}</strong><span class="status info">Demo fingerprint</span></div></div><section class="panel" style="position:relative"><div class="panel-head"><h2>Validation results</h2><p class="right">References · types · security · provider · accessibility · compatibility</p></div>${issues.map(i=>`<article class="issue"><span class="issue-icon ${i.severity}">${i.severity==='error'?'×':i.severity==='warning'?'!':'i'}</span><span class="status ${i.severity==='error'?'bad':i.severity==='warning'?'warn':'info'}">${i.severity}</span><div><strong>${esc(i.code)}</strong><p>${esc(i.text)}</p><code>${esc(i.path)}</code></div><button class="button small" data-fix-issue="${esc(i.code)}">Open</button></article>`).join('')}${state.compiling?'<div class="compile-overlay"><div><div class="spinner"></div><p>Compiling immutable metadata bundle…</p></div></div>':''}</section>`}
+    function renderVersions(){
+      const current=state.viewVersion?releases.find(v=>v.id===state.viewVersion):null;
+      host.innerHTML=`<div class="overview-grid"><section class="panel"><div class="panel-head"><h2>Version history</h2><button class="button small right" data-compare>Compare selected</button></div><div class="panel-body"><div class="timeline">
+        <div class="timeline-item"><strong>${esc(model.draft.label)}</strong><span>Author ${esc(model.draft.owner)} · ${digest(draftConfig)}</span><div><button class="button small" data-select-draft>Open draft</button></div></div>
+        ${releases.map(v=>`<div class="timeline-item"><strong>${esc(v.label)} <span class="status ${v.status==='Published'?'good':'warn'}">${esc(v.status)}</span></strong><span>${esc(v.date)} · ${esc(v.author)} · ${v.digest}</span><p>${esc(v.summary)}</p><div><button class="button small" data-view-version="${v.id}">View snapshot</button> <button class="button small" data-clone-version="${v.id}">Clone into draft</button> ${v.status==='Superseded'?`<button class="button small danger" data-rollback="${v.id}">Rollback to this version</button>`:''}</div></div>`).join('')}
+      </div></div></section><section class="panel"><div class="panel-head"><h2>${current?'Immutable snapshot':'Publication checklist'}</h2></div><div class="panel-body">
+        ${current?`<p>Read-only ${esc(current.status)} configuration. Snapshot digest ${current.digest}. Withdrawn versions cannot execute or be republished; clone and reapprove a new draft.</p>`:`
+          <p>Validation: <strong>${state.validation?(state.validated?'Passed':'Failed'):'Not run'}</strong> · demo digest ${digest()}</p>
+          <div class="field"><label for="reviewActor">Simulated actor</label><select id="reviewActor">${fixtures.reviewers.map(r=>`<option value="${esc(r.name)}" ${r.name===state.reviewActor?'selected':''}>${esc(r.name)} — ${r.role}</option>`).join('')}</select></div>
+          <p class="muted">Demo identities only. Each checker must be different from draft author ${esc(model.draft.owner)} and hold the indicated review role.</p>
+          ${['Product','Security','Test'].map(role=>{const a=state.approvals[role];return `<div class="relation-box" style="margin-bottom:8px"><strong>${role} approval</strong><p>${a?`${esc(a.actor)} · ${a.digest} · ${esc(a.time)}`:'Not recorded'}</p><button class="button small" data-approve="${role}" ${!state.validated?'disabled':''}>Record ${role.toLowerCase()} approval</button></div>`;}).join('')}
+          <div class="field"><label for="publishNote">Publication note</label><textarea id="publishNote" placeholder="Business purpose and accepted warnings">${esc(state.publicationNote)}</textarea></div>
+          <button class="button primary" data-publish>Publish immutable version</button>
+        `}
+      </div></section></div><section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Selected configuration compared with active release</h2></div><div class="panel-body">${comparison()}</div></section>`;
+    }
+    function renderAudit(){host.innerHTML=`<div class="toolbar"><div class="field" style="margin:0;min-width:260px"><input data-audit-search placeholder="Filter actor, action, target or correlation"></div><button class="button" data-export-audit>Export audit</button><span class="right muted">Append-only configuration activity</span></div><section class="panel"><div class="table-wrap"><table class="data-grid"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th><th>Correlation</th></tr></thead><tbody id="auditRows">${model.audit.map(a=>auditRow(a)).join('')}</tbody></table></div></section>`}
     const auditRow=a=>`<tr><td>${esc(a.time)}</td><td><strong>${esc(a.actor)}</strong></td><td>${esc(a.action)}</td><td><code>${esc(a.target)}</code></td><td>${esc(a.detail)}</td><td><code>${esc(a.correlation)}</code></td></tr>`;
-    function showModal(title,body,buttons=[]){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;const foot=document.getElementById('modalFoot');foot.innerHTML='';buttons.forEach(b=>{const x=document.createElement('button');x.className=`button ${b.primary?'primary':''} ${b.danger?'danger':''}`;x.textContent=b.label;x.onclick=b.action;foot.append(x)});modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>modal.querySelector('input,select,textarea,button')?.focus(),30)}
-    function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.getElementById('modalBody').innerHTML='';document.getElementById('modalFoot').innerHTML=''}
+    function showModal(title,body,buttons=[]){
+      modalFocus=document.activeElement;document.getElementById('app').inert=true;modal.inert=false;
+      document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;
+      const foot=document.getElementById('modalFoot');foot.innerHTML='';
+      buttons.forEach(b=>{const x=document.createElement('button');x.className=`button ${b.primary?'primary':''} ${b.danger?'danger':''}`;x.textContent=b.label;x.onclick=b.action;foot.append(x)});
+      enhanceUI(document.getElementById('modalBody'));modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+      modal.querySelector('input:not(:disabled),select:not(:disabled),textarea:not(:disabled),button')?.focus();
+    }
+    function closeModal(){
+      modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.inert=true;
+      document.getElementById('app').inert=false;document.getElementById('modalBody').innerHTML='';document.getElementById('modalFoot').innerHTML='';
+      if(modalFocus?.isConnected)modalFocus.focus();else document.getElementById('pageTitle').focus();
+    }
     function addField(){showModal('Add screen field',`<form id="addFieldForm" class="form-grid"><div class="field"><label>Stable field ID</label><input id="newFieldId" required placeholder="e.g. reference"></div><div class="field"><label>Caption</label><input id="newFieldCaption" required placeholder="Reference"></div><div class="field"><label>Data binding</label><input id="newFieldBinding" required placeholder="reference"></div><div class="field"><label>Control type</label><select id="newFieldType"><option>text</option><option>number</option><option>currency</option><option>date</option><option>select</option><option>lookup</option><option>boolean</option></select></div></form>`,[{label:'Cancel',action:closeModal},{label:'Add field',primary:true,action:()=>{const id=document.getElementById('newFieldId').value.trim(),caption=document.getElementById('newFieldCaption').value.trim(),binding=document.getElementById('newFieldBinding').value.trim();if(!id||!caption||!binding)return toast('Complete all required values','warn');if(screen().fields.some(f=>f.id===id))return toast('Field ID already exists','warn');const type=document.getElementById('newFieldType').value;closeModal();checkpoint('Added field',()=>{screen().fields.push({id,caption,binding,type,required:false,visible:true,editable:true,width:140,sequence:(screen().fields.length+1)*10});state.selectedField=id})}}])}
-    function testDataClass(){const d=dc();showModal(`Test ${d.name}`,`<div id="testState"><div class="spinner"></div><p style="text-align:center">Executing against ${esc(d.connectionId)} with safe sample parameters…</p></div>`,[{label:'Close',action:closeModal}]);setTimeout(()=>{const el=document.getElementById('testState');if(el)el.innerHTML=`<div class="status good">Query succeeded</div><h3>Execution summary</h3><div class="detail-kv">Provider <strong>${esc(model.connections.find(c=>c.id===d.connectionId)?.provider)}</strong></div><p>15 rows returned in 184 ms · schema matched ${d.resultFields.length} declared fields.</p><pre class="code">${esc(JSON.stringify(Object.fromEntries(d.resultFields.slice(0,5).map((f,i)=>[f,['sample','value',42,1250.5,'active'][i]])),null,2))}</pre>`},650)}
-    function runValidation(){state.module='validation';state.compiling=true;render();status('Compiling metadata…');setTimeout(()=>{state.compiling=false;state.validated=true;render();updateChrome();status('Validation completed');toast('194 checks completed')},950)}
-    function publish(){if(!state.validated){toast('Run validation before publication','warn');state.module='validation';render();return}showModal('Publish Draft 2026.09.2',`<p>Publication creates an immutable version and atomically activates it for <strong>${esc(app().name)}</strong>.</p><div class="relation-box"><strong>Candidate digest</strong><br><code>${hash(JSON.stringify(model))}</code></div><p class="muted">Active users will receive a version-change notification. Dirty screens will not be force-reloaded.</p><label class="check"><input id="confirmPublish" type="checkbox"> I confirm required approvals and evidence are recorded.</label>`,[{label:'Cancel',action:closeModal},{label:'Publish',primary:true,action:()=>{if(!document.getElementById('confirmPublish').checked)return toast('Confirm publication authority','warn');document.getElementById('modalBody').innerHTML='<div class="spinner"></div><p style="text-align:center">Publishing immutable metadata version…</p>';document.getElementById('modalFoot').innerHTML='';setTimeout(()=>{model.versions[0].status='Published';model.versions[0].label='Published 2026.09.2';state.dirty=0;state.history=[];closeModal();updateChrome();render();toast('Version 2026.09.2 published');status('Publication completed')},1050)}}])}
+    function testDataClass(){
+      const d=structuredClone(dc()),c=model.connections.find(x=>x.id===d.connectionId);
+      showModal(`Fixture test — ${d.name}`,`<p>Local typed JSON fixture only. No database or action is executed.</p><p>${esc(d.kind)} · ${esc(d.operation)} · ${esc(d.source)}</p><div class="field"><label for="testScenario">Fixture scenario</label><select id="testScenario"><option value="configured">Configured result</option><option value="empty">Empty result</option><option value="timeout">Timeout</option><option value="failure">Provider failure</option></select></div><div id="testState" aria-live="polite">Choose a scenario and run the fixture.</div>`,[
+        {label:'Close',action:closeModal},{label:'Run fixture',primary:true,action:()=>{
+          const scenario=document.getElementById('testScenario').value,el=document.getElementById('testState');
+          const diagnostic=validationIssues().find(i=>i.severity==='error'&&i.path.startsWith('dataClasses.'+d.id));
+          if(diagnostic||!c){el.textContent=diagnostic?.text||'Connection is missing.';return;}
+          if(scenario==='timeout'||scenario==='failure'){el.textContent=scenario==='timeout'?'Timed out — no successful result asserted.':'Provider failure — no successful result asserted.';return;}
+          if(scenario==='configured'&&!fixtures.datasets[d.id]){el.textContent='No JSON fixture is registered for this DataClass.';return;}
+          const rows=scenario==='empty'?[]:fixtureRows(d),missing=rows.flatMap(row=>d.resultFields.filter(f=>!(f in row)));
+          if(missing.length){el.textContent='Fixture schema mismatch: '+[...new Set(missing)].join(', ');return;}
+          el.innerHTML=`<strong>${rows.length} fixture row(s) · ${c.health==='Warning'?'degraded configured health':'local success'}</strong><pre class="code">${esc(JSON.stringify(rows,null,2))}</pre>`;
+        }}
+      ]);
+    }
+    function runValidation(){
+      if(readOnly())return toast('Select the draft to validate.','warn');
+      const config=configuration(),serialized=canonical(config),candidate=digest(config);
+      state.module='validation';state.compiling=true;state.validated=false;render();status('Validating local metadata…');
+      setTimeout(()=>{
+        state.compiling=false;
+        if(canonical(configuration())!==serialized){invalidate();render();return toast('Candidate changed; rerun validation.','warn');}
+        const issues=validationIssues();state.validation={digest:candidate,serialized,issues,time:new Date().toISOString()};
+        state.validated=!issues.some(i=>i.severity==='error');
+        appendAudit(state.validated?'Validation passed':'Validation failed',model.draft.id,`Digest ${candidate}; ${issues.filter(i=>i.severity==='error').length} errors`);
+        render();status('Validation completed');toast(state.validated?'Candidate passed validation':'Blocking errors prevent publication',state.validated?'':'warn');
+      },350);
+    }
+    function publish(){
+      if(readOnly())return toast('Select the draft to publish.','warn');
+      const serialized=canonical(configuration()),candidate=digest();
+      if(!state.validated||state.validation?.serialized!==serialized||validationIssues().some(i=>i.severity==='error')){
+        state.module='validation';render();return toast('Publication blocked: validate this exact candidate and resolve errors.','warn');
+      }
+      if(!['Product','Security','Test'].every(role=>state.approvals[role]?.serialized===serialized))return toast('Publication blocked: all three digest-bound checker approvals are required.','warn');
+      if(!state.publicationNote.trim())return toast('Add a publication note including accepted warnings.','warn');
+      const config=freeze(configuration()),approvals=freeze(structuredClone(state.approvals)),note=state.publicationNote;
+      showModal(`Publish ${model.draft.label}`,`<p>Atomically activate this complete demonstration workspace bundle for ${model.applications.length} applications.</p><p>Demo digest <code>${candidate}</code>. All three approvals match this exact configuration.</p><label class="check"><input id="confirmPublish" type="checkbox"> Confirm activation of the approved candidate</label>`,[
+        {label:'Cancel',action:closeModal},{label:'Publish',primary:true,action:()=>{
+          if(!document.getElementById('confirmPublish').checked)return toast('Confirm activation.','warn');
+          if(canonical(configuration())!==serialized||state.validation?.serialized!==serialized)return toast('Candidate changed; revalidate and reapprove.','warn');
+          releases.filter(v=>v.status==='Published').forEach(v=>v.status='Superseded');
+          const release={id:model.draft.id,label:model.draft.label.replace(/^Draft /,''),status:'Published',author:model.draft.owner,date:new Date().toISOString(),digest:candidate,snapshot:config,approvals,summary:note};
+          releases.unshift(release);appendAudit('Published version',release.id,`Activated digest ${candidate}; checker approvals recorded`);
+          startNextDraft(config,release.id);state.viewVersion=release.id;restore(release.snapshot);
+          closeModal();state.module='versions';render();status('Publication completed');toast('Immutable version published; a fresh draft is available.');
+        }}
+      ]);
+    }
     function preview(){const s=screen();showModal(`Preview — ${s.caption}`,`<div style="background:var(--surface-2);padding:10px;border-radius:8px"><div class="browser-frame">${screenCanvas(s).replace('<div class="canvas">','').replace(/<\/div>$/,'')}</div></div>`,[{label:'Close',action:closeModal},{label:'Open screen designer',primary:true,action:()=>{closeModal();state.module='screens';render()}}])}
     function valueOf(el){return el.type==='checkbox'?el.checked:el.type==='number'?Number(el.value):el.value}
     document.addEventListener('click',e=>{
+      if(e.target.closest('[data-toggle-inspector]')){state.inspectorVisible=!state.inspectorVisible;render();return;}
+      if(e.target.closest('[data-select-draft]')){selectVersion('draft');return;}
+      const approve=e.target.closest('[data-approve]');if(approve){recordApproval(approve.dataset.approve);return;}
+      const clone=e.target.closest('[data-clone-version]');if(clone){
+        const v=releases.find(x=>x.id===clone.dataset.cloneVersion);
+        showModal('Clone immutable snapshot',`<p>Replace the current draft with ${esc(v.label)}? Release history and audit remain intact.</p>`,[{label:'Cancel',action:closeModal},{label:'Clone draft',primary:true,action:()=>{
+          startNextDraft(v.snapshot,v.id);state.viewVersion=null;restore(draftConfig);state.dirty=1;
+          appendAudit('Cloned version into new draft',model.draft.id,`Source ${v.id}; fresh validation and approval required`);closeModal();render();
+        }}]);return;
+      }
       const m=e.target.closest('[data-module]');if(m){state.module=m.dataset.module;render();document.getElementById('sidebar').classList.remove('open');return}
       if(e.target.closest('[data-add-app]')){showModal('Add application',`<form class="form-grid"><div class="field"><label>Stable application ID</label><input id="newAppId" placeholder="e.g. finance"></div><div class="field"><label>Short name</label><input id="newAppShort" placeholder="FIN"></div><div class="field wide"><label>Display name</label><input id="newAppName" placeholder="Finance Hub"></div></form>`,[{label:'Cancel',action:closeModal},{label:'Create application',primary:true,action:()=>{const id=document.getElementById('newAppId').value.trim(),name=document.getElementById('newAppName').value.trim(),shortName=document.getElementById('newAppShort').value.trim();if(!id||!name||!shortName)return toast('Complete all application fields','warn');if(model.applications.some(a=>a.id===id))return toast('Application ID already exists','warn');closeModal();checkpoint('Created application',()=>{model.applications.push({id,name,shortName,description:'New metadata-driven application',active:true,defaultScreen:`${id}-home`,navigationStyle:'Grouped',theme:'Indigo',owner:'Unassigned',options:{allowPersonalMenus:false,showApplicationCaption:true,rememberLastScreen:false}});model.navigation[id]=[{id:'main',label:'Main',sequence:10,items:[{id:`nav-${id}-home`,label:'Home',screenId:`${id}-home`,icon:'grid',sequence:10}]}];model.dataClasses.push({id:`${id}-home`,name:`${name} home`,appId:id,kind:'query',connectionId:'system',operation:'view',source:'metadata.application_summary',uniqueKey:['id'],cacheSeconds:60,timeoutSeconds:15,insertable:false,updateable:false,deleteMode:'none',parameters:[],resultFields:['id'],policy:`${id}.read`});model.screens.push({id:`${id}-home`,appId:id,caption:'Home',description:'New application home screen.',type:'grid',dataClassId:`${id}-home`,icon:'grid',filterMode:'server',popupMode:'tab',autoRefresh:0,capabilities:{insert:false,update:false,delete:false,refresh:true,filter:true,export:false,print:false,personalize:true},fields:[{id:'id',caption:'ID',binding:'id',type:'text',required:true,visible:true,editable:false,width:110,sequence:10}],commands:[{key:'refresh',label:'Refresh',policy:`${id}.read`} ]});state.appId=id;state.selectedScreen=`${id}-home`;state.selectedField='id';state.selectedDataClass=`${id}-home`});}}]);return}
       if(e.target.closest('[data-delete-app]')){if(model.applications.length<=1)return toast('At least one application is required','warn');const doomed=app();showModal('Delete application draft',`<p>Delete <strong>${esc(doomed.name)}</strong> and its navigation from this draft?</p><p class="muted">Its ${model.screens.filter(s=>s.appId===doomed.id).length} screens remain available for impact review until publication.</p>`,[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:()=>{closeModal();checkpoint('Deleted application',()=>{model.applications=model.applications.filter(a=>a.id!==doomed.id);delete model.navigation[doomed.id];state.appId=model.applications[0].id;state.selectedScreen=model.screens.find(s=>s.appId===state.appId)?.id})}}]);return}
@@ -246,8 +700,8 @@
       if(e.target.closest('[data-add-nav-group]')){showModal('Add navigation group',`<div class="field"><label>Group caption</label><input id="newGroupLabel" placeholder="Administration"></div>`,[{label:'Cancel',action:closeModal},{label:'Add group',primary:true,action:()=>{const label=document.getElementById('newGroupLabel').value.trim();if(!label)return toast('Group caption is required','warn');const id=`group-${Date.now().toString().slice(-5)}`;closeModal();checkpoint('Added navigation group',()=>{model.navigation[state.appId].push({id,label,sequence:(model.navigation[state.appId].length+1)*10,items:[]});state.navSelection=`group:${id}`})}}]);return}
       if(e.target.closest('[data-add-nav-item]')){const groups=model.navigation[state.appId];if(!groups.length)return toast('Add a navigation group first','warn');showModal('Add navigation item',`<form class="form-grid"><div class="field"><label>Group</label><select id="newNavGroup">${groups.map(g=>`<option value="${g.id}">${esc(g.label)}</option>`).join('')}</select></div><div class="field"><label>Caption</label><input id="newNavLabel" placeholder="New screen"></div><div class="field"><label>Target screen</label><select id="newNavScreen">${model.screens.filter(s=>s.appId===state.appId).map(s=>`<option value="${s.id}">${esc(s.caption)}</option>`).join('')}</select></div><div class="field"><label>Icon</label><select id="newNavIcon">${['grid','user','table','action','tree','junction','chart','risk'].map(x=>`<option>${x}</option>`).join('')}</select></div></form>`,[{label:'Cancel',action:closeModal},{label:'Add item',primary:true,action:()=>{const gid=document.getElementById('newNavGroup').value,label=document.getElementById('newNavLabel').value.trim(),screenId=document.getElementById('newNavScreen').value,iconToken=document.getElementById('newNavIcon').value;if(!label)return toast('Item caption is required','warn');const id=`nav-${Date.now().toString().slice(-5)}`;closeModal();checkpoint('Added navigation item',()=>{const g=groups.find(x=>x.id===gid);g.items.push({id,label,screenId,icon:iconToken,sequence:(g.items.length+1)*10});state.navSelection=`item:${gid}:${id}`})}}]);return}
       if(e.target.closest('[data-delete-nav]')){if(!state.navSelection)return;const parts=state.navSelection.split(':');checkpoint('Deleted navigation entry',()=>{if(parts[0]==='group')model.navigation[state.appId]=model.navigation[state.appId].filter(g=>g.id!==parts[1]);else{const g=model.navigation[state.appId].find(x=>x.id===parts[1]);g.items=g.items.filter(i=>i.id!==parts[2])}state.navSelection=null});return}
-      if(e.target.closest('[data-compare]')){showModal('Version comparison',`<div class="diff"><div class="diff-col"><div class="diff-head">Published 2026.09.1</div><div class="diff-line remove">- orders.amount: GBP,0</div><div class="diff-line">  no orders.export command</div></div><div class="diff-col"><div class="diff-head">Draft 2026.09.2</div><div class="diff-line add">+ orders.amount: GBP,0.00</div><div class="diff-line add">+ orders.export command</div></div></div>`,[{label:'Close',primary:true,action:closeModal}]);return}
-      const vv=e.target.closest('[data-view-version]');if(vv){const v=model.versions.find(x=>x.id===vv.dataset.viewVersion);showModal(v.label,`<div class="detail-kv"><span>Status</span><strong>${esc(v.status)}</strong></div><div class="detail-kv"><span>Author</span><strong>${esc(v.author)}</strong></div><div class="detail-kv"><span>Created</span><strong>${esc(v.date)}</strong></div><div class="detail-kv"><span>Digest</span><code>${esc(v.digest)}</code></div><p>${esc(v.summary)}</p>`,[{label:'Close',primary:true,action:closeModal}]);return}
+      if(e.target.closest('[data-compare]')){showModal('Actual configuration comparison',comparison(),[{label:'Close',action:closeModal}]);return;}
+      const vv=e.target.closest('[data-view-version]');if(vv){selectVersion(vv.dataset.viewVersion);return;}
       const a=e.target.closest('[data-select-app]');if(a){state.appId=a.dataset.selectApp;state.selectedScreen=model.screens.find(s=>s.appId===state.appId)?.id;state.selectedDataClass=model.dataClasses.find(d=>d.appId===state.appId)?.id;render();updateChrome();return}
       const ss=e.target.closest('[data-select-screen]');if(ss){state.selectedScreen=ss.dataset.selectScreen;state.selectedField=screen().fields[0]?.id;render();return}
       const sf=e.target.closest('[data-select-field],[data-canvas-field]');if(sf){state.selectedField=sf.dataset.selectField||sf.dataset.canvasField;render();return}
@@ -269,14 +723,15 @@
       const rp=e.target.closest('[data-role]');if(rp)return;
       const delp=e.target.closest('[data-delete-param]');if(delp){checkpoint('Deleted parameter',()=>dc().parameters.splice(Number(delp.dataset.deleteParam),1));return}
       if(e.target.closest('[data-add-param]')){checkpoint('Added parameter',()=>dc().parameters.push({name:'@new_parameter',type:'string',source:'request',required:false}));return}
-      if(e.target.closest('[data-test-connection]')){const c=model.connections.find(x=>x.id===state.selectedConnection);showModal('Connection test',`<div class="spinner"></div><p style="text-align:center">Testing ${esc(c.name)}…</p>`,[{label:'Close',action:closeModal}]);setTimeout(()=>{document.getElementById('modalBody').innerHTML=`<div class="status good">Healthy</div><h3>${esc(c.name)}</h3><p>TLS connection established in 74 ms. Authentication succeeded using <code>${esc(c.secretRef)}</code>.</p><p class="muted">No credential value was exposed to this tool.</p>`},650);return}
+      if(e.target.closest('[data-test-connection]')){testConnection();return;}
       const dv=e.target.closest('[data-delete-value]');if(dv){checkpoint('Deleted value-list item',()=>list().values.splice(Number(dv.dataset.deleteValue),1));return}if(e.target.closest('[data-add-value]')){checkpoint('Added value-list item',()=>list().values.push({value:'New',label:'New value',active:true}));return}
       const issue=e.target.closest('[data-fix-issue]');if(issue){if(issue.dataset.fixIssue==='FIELD_FORMAT_REQUIRED'){state.module='screens';state.appId='ops';state.selectedScreen='orders';state.selectedField='amount';state.inspectorTab='properties';render()}else if(issue.dataset.fixIssue==='PROVIDER_HEALTH_WARNING'){state.module='connections';state.selectedConnection='risk-db';render()}else{state.module='values';state.selectedList='segments';render()}return}
-      const rollback=e.target.closest('[data-rollback]');if(rollback){showModal('Create rollback publication',`<p>This creates a new immutable version using the configuration from <strong>${esc(model.versions.find(v=>v.id===rollback.dataset.rollback).label)}</strong>. It does not rewrite history.</p><label class="check"><input id="rollbackConfirm" type="checkbox"> I understand this will require validation and approval.</label>`,[{label:'Cancel',action:closeModal},{label:'Create draft',primary:true,action:()=>{if(!document.getElementById('rollbackConfirm').checked)return toast('Confirm rollback intent','warn');closeModal();state.dirty++;updateChrome();toast('Rollback draft created')}}]);return}
+      const rollback=e.target.closest('[data-rollback]');if(rollback){rollbackTo(rollback.dataset.rollback);return;}
       if(e.target.closest('[data-effective-access]')){const role=model.roles.find(r=>r.id===state.selectedRole);showModal('Effective access preview',`<h3>${esc(role.name)}</h3><p>Representative subject: <strong>alex.smith@example.test</strong></p>${model.screens.filter(s=>s.appId===state.appId).map(s=>{const p=role.permissions[s.id]||'------';return `<div class="detail-kv"><strong>${esc(s.caption)}</strong><span>${p==='------'?'Hidden':`Read ${p[0]==='R'?'yes':'no'} · Write ${p[1]==='W'?'yes':'no'} · Export ${p[4]==='E'?'yes':'no'}`}</span></div>`}).join('')}<p class="muted">The runtime API independently rechecks these permissions.</p>`,[{label:'Close',primary:true,action:closeModal}]);return}
       if(e.target.closest('[data-close-modal]')||e.target===modal){closeModal();return}
     });
     document.addEventListener('change',e=>{
+      if(e.target.id==='reviewActor'){state.reviewActor=e.target.value;return;}
       if(e.target.id==='applicationSelect'){state.appId=e.target.value;state.selectedScreen=model.screens.find(s=>s.appId===state.appId)?.id;state.selectedDataClass=model.dataClasses.find(d=>d.appId===state.appId)?.id;render();updateChrome();return}
       if(e.target.matches('[data-app-prop]')){const p=e.target.dataset.appProp;checkpoint('Updated application',()=>app()[p]=valueOf(e.target));return}if(e.target.matches('[data-app-option]')){checkpoint('Updated application option',()=>app().options[e.target.dataset.appOption]=e.target.checked);return}
       if(e.target.matches('[data-screen-prop]')){const p=e.target.dataset.screenProp;checkpoint('Updated screen',()=>screen()[p]=valueOf(e.target));return}if(e.target.matches('[data-capability]')){checkpoint('Updated screen capability',()=>screen().capabilities[e.target.dataset.capability]=e.target.checked);return}
@@ -289,15 +744,36 @@
       if(e.target.matches('[data-permission]')){const [sid,i]=e.target.dataset.permission.split(':'),role=model.roles.find(r=>r.id===state.selectedRole),letters=['R','W','I','D','E','P'],chars=(role.permissions[sid]||'------').split('');checkpoint('Updated role permission',()=>{chars[Number(i)]=e.target.checked?letters[Number(i)]:'-';role.permissions[sid]=chars.join('')});return}
       if(e.target.matches('[data-nav-prop]')){const [type,gid,iid]=e.target.dataset.navTarget.split(':'),g=model.navigation[state.appId].find(x=>x.id===gid),target=type==='group'?g:g.items.find(x=>x.id===iid);checkpoint('Updated navigation',()=>target[e.target.dataset.navProp]=e.target.value);return}
     });
-    document.addEventListener('input',e=>{if(e.target.matches('[data-screen-search]')){const q=e.target.value.toLowerCase();document.querySelectorAll('[data-select-screen]').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)))}if(e.target.matches('[data-dc-search]')){const q=e.target.value.toLowerCase();document.querySelectorAll('[data-select-dc]').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)))}if(e.target.matches('[data-audit-search]')){const q=e.target.value.toLowerCase();document.querySelectorAll('#auditRows tr').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)))}});
-    document.getElementById('undoButton').onclick=()=>{if(!state.history.length)return;state.future.push(JSON.stringify(model));const prev=JSON.parse(state.history.pop());Object.keys(model).forEach(k=>delete model[k]);Object.assign(model,prev);state.dirty=Math.max(0,state.dirty-1);state.validated=false;updateChrome();render();toast('Last change undone')};
-    document.getElementById('jsonButton').onclick=()=>showModal('Draft configuration JSON',`<div class="toolbar"><button class="button small" id="downloadJson">⇩ Download JSON</button><label class="button small" for="importJson">⇧ Import JSON</label><input id="importJson" type="file" accept="application/json" class="hidden"></div><pre class="json">${esc(JSON.stringify(model,null,2))}</pre>`,[{label:'Close',action:closeModal}]);
+    document.addEventListener('input',e=>{if(e.target.id==='publishNote')state.publicationNote=e.target.value;if(e.target.matches('[data-screen-search]')){const q=e.target.value.toLowerCase();document.querySelectorAll('[data-select-screen]').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)))}if(e.target.matches('[data-dc-search]')){const q=e.target.value.toLowerCase();document.querySelectorAll('[data-select-dc]').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)))}if(e.target.matches('[data-audit-search]')){const q=e.target.value.toLowerCase();document.querySelectorAll('#auditRows tr').forEach(x=>x.classList.toggle('hidden',!x.textContent.toLowerCase().includes(q)))}});
+    document.getElementById('undoButton').onclick=()=>{
+      if(readOnly()||!state.history.length)return;
+      const entry=state.history.pop();state.future.push(configuration());restore(entry.config);draftConfig=configuration();
+      state.dirty=Math.max(0,state.dirty-1);invalidate();
+      appendAudit('Undid configuration change',entry.target,`Compensates "${entry.label}"; digest ${digest()}`);
+      render();toast('Change undone; audit history preserved');
+    };
+    document.getElementById('jsonButton').onclick=()=>showModal(readOnly()?'Immutable configuration JSON':'Draft configuration JSON',`<div class="toolbar"><button class="button small" id="downloadJson">⇩ Download JSON</button><label class="button small" for="importJson">⇧ Import JSON</label><input id="importJson" ${readOnly()?'disabled':''} type="file" accept="application/json" class="hidden"></div><pre class="json">${esc(JSON.stringify(model,null,2))}</pre>`,[{label:'Close',action:closeModal}]);
     document.getElementById('modalBody').addEventListener('click',e=>{if(e.target.id==='downloadJson'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(model,null,2)],{type:'application/json'}));a.download='gd-metadata-draft-2026.09.2.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Draft JSON downloaded')}});
-    document.getElementById('modalBody').addEventListener('change',e=>{if(e.target.id==='importJson'){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const data=JSON.parse(r.result);closeModal();checkpoint('Imported JSON draft',()=>{Object.keys(model).forEach(k=>delete model[k]);Object.assign(model,data)});toast('JSON imported and marked for validation')}catch{toast('JSON file is not valid','warn')}};r.readAsText(file)}});
-    document.getElementById('versionSelect').onchange=e=>{state.module='versions';render();toast(e.target.value.startsWith('Draft')?'Draft configuration selected':`${e.target.value} opened as an immutable snapshot`)};
+    document.getElementById('modalBody').addEventListener('change',e=>{if(e.target.id==='importJson'){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const data=JSON.parse(r.result);if(!configKeys.every(k=>data[k])||!Array.isArray(data.applications)||!Array.isArray(data.screens)||!Array.isArray(data.dataClasses))throw Error('Invalid configuration shape');closeModal();checkpoint('Imported JSON draft',()=>restore(data));toast('JSON imported and marked for validation')}catch{toast('JSON file is not valid','warn')}};r.readAsText(file)}});
+    document.getElementById('versionSelect').onchange=e=>selectVersion(e.target.value);
     document.getElementById('validateButton').onclick=runValidation;document.getElementById('previewButton').onclick=preview;document.getElementById('publishButton').onclick=publish;document.getElementById('themeButton').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('gd-admin-theme',t)};
     document.getElementById('mobileMenu').onclick=()=>document.getElementById('sidebar').classList.toggle('open');const media=matchMedia('(max-width:760px)');function mediaState(){document.getElementById('mobileMenu').classList.toggle('hidden',!media.matches)}media.addEventListener('change',mediaState);mediaState();
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.classList.contains('open'))closeModal();else document.getElementById('sidebar').classList.remove('open')}});
+    document.addEventListener('click',e=>{
+      if(e.target.closest('[data-export-audit]')){
+        const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(audit,null,2)],{type:'application/json'}));a.download='gd-studio-audit.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
+      }
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Tab'||!modal.classList.contains('open'))return;
+      const controls=[...modal.querySelectorAll('button,input,select,textarea,[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);
+      const first=controls[0],last=controls.at(-1);
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+    });
+    document.addEventListener('click',e=>{if(readOnly()&&e.target.closest(mutationSelector)){e.preventDefault();e.stopImmediatePropagation();toast('Immutable snapshot: open a draft to edit.','warn');}},true);
+    new ResizeObserver(syncTopbar).observe(document.querySelector('.topbar'));
+    document.getElementById('pageTitle').tabIndex=-1;
     document.getElementById('applicationSelect').innerHTML=model.applications.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');const savedTheme=localStorage.getItem('gd-admin-theme');if(savedTheme)document.documentElement.dataset.theme=savedTheme;render();updateChrome();
   })();
   </script>
