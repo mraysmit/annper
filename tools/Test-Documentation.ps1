@@ -136,6 +136,16 @@ $designIds = [regex]::Matches($designRaw, '(?m)^\|\s*(WDES-\d+)\s*\|') | ForEach
 $allIds = @($requirementIds) + @($nfrIds) + @($defectIds) + @($designIds)
 foreach ($duplicate in $allIds | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate controlled ID: $($duplicate.Name)" }
 
+# Active acceptance scenarios must not require a withdrawn/not-applicable NFR.
+$notApplicableNfrIds = [regex]::Matches($specRaw, '(?m)^\|\s*(NFR-[A-Z0-9-]+)\s*\|[^\r\n]*NOT APPLICABLE[^\r\n]*$') | ForEach-Object { $_.Groups[1].Value }
+foreach ($scenario in [regex]::Matches($specRaw, '(?m)^\|\s*(FR-ACC-\d+)\s*\|[^\r\n]*$')) {
+    foreach ($id in $notApplicableNfrIds) {
+        if ($scenario.Value -match ('\b' + [regex]::Escape($id) + '\b')) {
+            $errors += "$($scenario.Groups[1].Value) cites not-applicable requirement $id; keep it outside active acceptance"
+        }
+    }
+}
+
 foreach ($family in @(@{Name='D';Pattern='(?m)^\|\s*(D-\d{3})\s*\|'}, @{Name='R';Pattern='(?m)^\|\s*(R-\d{3})\s*\|'}, @{Name='EV';Pattern='(?m)^\|\s*(EV-\d{3}A?)\s*\|'}, @{Name='CMP';Pattern='(?m)^\|\s*(CMP-\d{3})\s*\|'}, @{Name='DEP';Pattern='(?m)^\|\s*(DEP-\d{3})\s*\|'})) {
     $ids = [regex]::Matches($masterRaw, $family.Pattern) | ForEach-Object { $_.Groups[1].Value }
     foreach ($duplicate in $ids | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate $($family.Name) register ID: $($duplicate.Name)" }
@@ -170,7 +180,15 @@ if ($controlRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- EN
         $regeneratedBlock = if ($regenerated -match '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') { $Matches[1] } else { '' }
         if (($traceBlock -replace "`r`n", "`n") -ne $regeneratedBlock) { $errors += 'DOCUMENT_CONTROL.md section 8 is stale; run tools/Build-ControlledArtifacts.ps1' }
     } finally {
-        if (Test-Path -LiteralPath $scratch) { Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction SilentlyContinue }
+        if (Test-Path -LiteralPath $scratch) {
+            $scratchTarget = (Resolve-Path -LiteralPath $scratch).ProviderPath
+            $scratchTempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+            if (-not $scratchTarget.StartsWith($scratchTempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+                [IO.Path]::GetFileName($scratchTarget) -notmatch '^gdf-trace-[a-f0-9]{32}$') {
+                throw "Refusing to remove an unexpected traceability scratch path: $scratchTarget"
+            }
+            Remove-Item -LiteralPath $scratchTarget -Recurse -Force
+        }
     }
 }
 
@@ -184,11 +202,11 @@ $gateBlock = if ($masterRaw -match '(?s)## \d+\. Quality gates(.*?)## \d+\.') { 
 foreach ($id in $evIds) { if ($gateBlock -notmatch [regex]::Escape($id)) { $errors += "Quality gates do not reference evidence package $id" } }
 # Decisions the design is not required to cite, with the reason. Every other D-* row must appear in the design.
 $designCitationExempt = @{
-    'D-006' = 'compatibility duration is a programme/consumer decision; the design only requires the adapter to be time-bounded (WDES-015)'
+    'D-006' = 'closed: not applicable; no legacy consumer or compatibility adapter exists'
     'D-009' = 'canonical legacy source is a Phase 0 provenance decision with no design content'
-    'D-010' = 'database schema policy governs legacy databases the design accesses unchanged (design section 28.3)'
+    'D-010' = 'application database schema policy is decided per authored application; no legacy database exists'
     'D-011' = 'defect disposition policy is exercised in the functional specification section 31, not the design'
-    'D-012' = 'routing unit selection is an operations decision; the design fixes only the routing rules (section 28.4)'
+    'D-012' = 'closed: not applicable; no side-by-side deployment exists to route between'
 }
 foreach ($id in ([regex]::Matches($masterRaw, '(?m)^\|\s*(D-\d{3})\s*\|') | ForEach-Object { $_.Groups[1].Value })) {
     if ($designCitationExempt.ContainsKey($id)) { continue }
@@ -201,8 +219,14 @@ $identityPath = Join-Path $ProjectRoot 'baseline\legacy-source-manifest.sha256'
 $expectedIdentity = ((Get-Content -LiteralPath $identityPath -Raw).Trim() -split '\s+')[0]
 $actualIdentity = (Get-FileHash -LiteralPath $checksumPath -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actualIdentity -ne $expectedIdentity) { $errors += "Checksum manifest identity mismatch: expected $expectedIdentity; actual $actualIdentity" }
-foreach ($doc in @($SpecPath, $MasterPath, $ControlPath)) {
-    if ((Get-Content -LiteralPath $doc -Raw) -notmatch [regex]::Escape($actualIdentity)) { $errors += "$([IO.Path]::GetFileName($doc)) does not record the current manifest identity $actualIdentity" }
+foreach ($doc in @($SpecPath, $DesignPath, $MasterPath, $ControlPath)) {
+    $documentRaw = Get-Content -LiteralPath $doc -Raw
+    $firstSection = [regex]::Match($documentRaw, '(?m)^##\s')
+    $documentHeader = if ($firstSection.Success) { $documentRaw.Substring(0, $firstSection.Index) } else { $documentRaw }
+    $manifestHeader = [regex]::Match($documentHeader, '(?m)^(?:\*\*)?Legacy checksum-manifest SHA-256:(?:\*\*)?\s*`([a-f0-9]{64})`')
+    if (-not $manifestHeader.Success -or $manifestHeader.Groups[1].Value -ne $actualIdentity) {
+        $errors += "$([IO.Path]::GetFileName($doc)) header does not record the current manifest identity $actualIdentity"
+    }
 }
 
 # ---- legacy source references (only when the evidence tree is reachable)

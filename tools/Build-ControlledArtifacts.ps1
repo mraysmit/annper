@@ -113,7 +113,7 @@ $sourceMap = @{
     'CTL'='Complete custom-control API, defaults, persistence, events, and internal support state; Shell and generic-form custom-control integration'
     'AGG'='Aggregation engine'
     'LIMIT'='Limit-processing server'
-    'META'='Functional specification §28 reconstructed metadata schema; deployed row population (EV-001) and physical DDL confirmation (EV-001A) tracked separately'
+    'META'='Functional specification §28 reconstructed metadata schema; configured instances are authored (D-015) and the platform physical schema is decided under D-013'
     'PROJ'='Project membership/build variants'
     'DEP'='Functional specification §38 and project references'
     'CMD'='Command parser and option constants'
@@ -179,7 +179,7 @@ foreach ($line in Get-Content -LiteralPath $DesignPath) {
     $lineNumber++
     if ($line -match '^## (\d+\. .+)$') { $section = $Matches[1]; continue }
     if ($line -match '^\|\s*(WDES-\d+)\s*\|') {
-        $rows += [pscustomobject]@{Id=$Matches[1];Spec="Design $section";Line=$lineNumber;Classification='Design verification requirement';Source='Modern web system design §33; satisfies lines cite FR/NFR IDs';Runtime='Verified against the implemented platform';Test="AT-$($Matches[1])";Phase='Phase 2 foundation; verified at Gate C/D';Status='Design verification pending'}
+        $rows += [pscustomobject]@{Id=$Matches[1];Spec="Design $section";Line=$lineNumber;Classification='Design verification requirement';Source='Modern web system design §33; satisfies lines cite FR/NFR IDs';Runtime='Required modern-platform verification; implementation evidence pending';Test="AT-$($Matches[1])";Phase='Phase 2 contracts; Phase 3 first slice; Phase 4 expansion; applicable gates C–F';Status='Design verification pending'}
     }
 }
 

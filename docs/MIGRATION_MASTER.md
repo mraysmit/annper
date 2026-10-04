@@ -1,13 +1,13 @@
 # GDFramework Rebuild Master Plan and Design
 
 **Status:** Controlled working baseline  
-**Version:** 0.9  
-**Date:** 13 September 2026  
+**Version:** 0.10  
+**Date:** 4 October 2026  
 **Owner:** Migration technical lead  
 **Reference source baseline:** `${LEGACY_SOURCE_ROOT}`; see [section 23 Legacy baseline](#23-legacy-baseline). Nothing else exists: no deployed instance, metadata database, user, or consumer  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
-**Functional baseline:** [GDFramework Functional Specification 0.10](GDFramework%20Functional%20Specification.md)  
-**Target design:** [GDFramework Modern Web System Design 0.6](MODERN_WEB_SYSTEM_DESIGN.md)  
+**Functional baseline:** [GDFramework Functional Specification 0.11](GDFramework%20Functional%20Specification.md)  
+**Target design:** [GDFramework Modern Web System Design 0.7](MODERN_WEB_SYSTEM_DESIGN.md)  
 **Document control:** [DOCUMENT_CONTROL.md](DOCUMENT_CONTROL.md)  
 **Consolidates:** the former legacy-baseline, evidence-acquisition, component-inventory, dependency-inventory, provider-matrix, public-API-catalogue, dataset-catalogue, and ADR documents (now sections 23–30); and the superseded 0.1 design/plan drafts (deleted from the working tree; last present in git history at commit bb1991a)
 
@@ -23,6 +23,7 @@
 | 0.7 | 2026-09-10 | D-017 desktop-bound behavior reinterpretation registered and added to Phase 6 entry; D-014 and D-015 timing aligned between sections 13 and 17; Phase 0 target-date rationale corrected; Phase 0 activity 9 reworded as maintenance; section 6.1 clarified as registers within the four documents; risk status vocabulary defined; DEF range extended to DEF-038; Gate D cites NFR-PERF-003; section 19.1 measurement window defined; D-001 owns the browser support matrix; Phase 0 target date and estimation due date removed so the plan carries no delivery dates |
 | 0.8 | 2026-09-10 | Premise corrected: the legacy system is not deployed anywhere and no metadata, users, or consumers exist, so the document becomes a rebuild plan. Coexistence, pilot, cutover, retirement, compatibility, and evidence-acquisition content removed; sections 1, 2, 3.4, 4.3, 5, 6.1, 8.3, 11–22, 23.5, 24, 25–29, and Appendix A rewritten or trimmed in place so that section numbers cited by the other documents remain valid. Phases reduced to 0–5 and gates to A–F; D-006 and D-012 closed; D-001 moved to Gate C; D-015 adopted (authoring first); D-018..D-020 registered; risks that assumed a deployed instance closed; penetration test placed at Phase 5 exit; section 3.5 records the prototypes as reference implementations and adopts their sample application as the first application |
 | 0.9 | 2026-09-13 | Design-review reconciliation: coordinate scope in D-017, Gate C deferral consistency, Phase 3 threat-model work, test-layer mapping, and baseline references; historical phase references retained in change history |
+| 0.10 | 2026-10-04 | Quality/coherence review: default DataClass caching preserved; operation-outcome recovery, durable post-commit effects, scoped metadata caching, protected authoring, and withdrawal admission aligned with the design; D-021 registers pending dual-source scope and atomic execution evidence; obsolete deployed-evidence obligations removed. No decisions or dispositions approved by these edits. |
 
 ## 1. Document purpose and authority
 
@@ -55,8 +56,8 @@ working tree and remain in git history (last present at commit bb1991a).
 
 | Area | Status |
 |---|---|
-| Consolidated plan | Controlled working baseline 0.9 |
-| Functional reference baseline | Version 0.10; framework, generic UI, custom controls, and metadata schema contract documented from source; no deployment-specific rows exist or will exist |
+| Consolidated plan | Controlled working baseline 0.10 |
+| Functional reference baseline | Version 0.11; framework, generic UI, custom controls, and metadata schema contract documented from source; no deployment-specific rows exist or will exist |
 | Requirement traceability | All functional/defect IDs inventoried; test mapping generated; rows that assumed a deployed legacy instance are marked not applicable |
 | Phase 0 | Started: Git repository and controlled artifacts established; canonical source copies not yet chosen (D-009) |
 | Replacement code | Not started |
@@ -435,8 +436,13 @@ not depend on COM, ADO recordsets, provider implementations, or a UI toolkit.
   provider, timeout, cancellation, and unexpected failures.
 - Dates, time zones, decimals, binary values, strings, enumerations, and nulls
   have defined serialization rules.
-- Dataset and field identifiers come from validated metadata; callers cannot
-  inject arbitrary SQL fragments.
+- Runtime dataset and field identifiers come from validated metadata; callers
+  cannot submit SQL for execution. The separately authorized authoring boundary
+  accepts untrusted query definitions as data, with digest-bound approval and
+  separate non-production preview (design section 11.4; WDES-004, WDES-019).
+- Mutations carry a stable idempotency key and input digest and have durable
+  operation status. An unknown outcome is not a failure or permission to replay
+  under a new key (design sections 8.2 and 14.6; WDES-020).
 - UI command identity uses stable semantic keys rather than caption or position.
 
 ### 8.2 Core conceptual contracts
@@ -448,8 +454,9 @@ not depend on COM, ADO recordsets, provider implementations, or a UI toolkit.
 | `DatasetParameter` | Name, type, value, validation, and required/optional status |
 | `DatasetQuery` | Dataset identity, parameters, paging, sort, and refresh/consistency option |
 | `DatasetResult` | Schema, rows, continuation information, and version/concurrency values |
-| `ChangeSet` | Dataset identity and ordered insert/update/delete changes |
-| `ChangeResult` | Overall outcome plus per-row success, conflict, validation, and generated-key data |
+| `ChangeSet` | Dataset identity, definition version, stable idempotency key, and ordered insert/update/delete changes |
+| `ChangeResult` | Operation ID, proven or unresolved business outcome, reconciliation and post-commit-effect status, plus authorized per-row conflict, validation, generated-key, and committed data |
+| `OperationStatus` | Authorized lookup by operation ID or original key; read-only recovery without executing the mutation again |
 | `SystemMessage` | Typed application/system message with audience and validity window |
 | `Problem` | Stable error code, safe message, correlation ID, and optional field details |
 
@@ -515,19 +522,33 @@ dispositions approved under D-011; see DEF-001 credentials).
 A `ChangeSet` is validated before any write:
 
 1. Authenticate and authorize the subject.
-2. Resolve the dataset and update policy.
+2. Resolve the dataset, publication state, and update policy; reject new
+   execution under Withdrawn or Retired definitions (design section 11.2).
 3. Validate fields, types, required values, keys, and audit/concurrency values.
-4. Begin the required transaction.
+4. Admit or recover the keyed operation without duplicate execution, then begin
+   the required transaction in the qualified provider atomicity domain.
 5. Execute inserts, updates, and deletes with typed parameters.
 6. Apply optimistic concurrency rules.
-7. Commit only if the change-set policy is satisfied.
-8. Return generated keys, reconciled stamps, and accurate per-row outcomes.
+7. Commit only if the change-set policy is satisfied; persist durable
+   invalidation/message intents atomically or by a proven crash-recoverable
+   equivalent (design section 14.6; WDES-021).
+8. Return the operation ID, proven business outcome, effect status, generated
+   keys, reconciled stamps, and accurate per-row outcomes.
 
-Unexpected failure rolls back the transaction and returns a failure result.
-Partial success is allowed only for a use case explicitly designed, documented,
-and approved to permit it (policy intent; binding only through DEF-*
-dispositions approved under D-011; see DEF-016 concealed failures and
-DEF-012/DEF-013 stale state).
+Report failure only when rejection or rollback is proven. A lost reply, timeout,
+or interrupted commit can leave the outcome unknown: retain the original
+operation identity, block replay of that unresolved change set, and reconcile
+through status and provider evidence. Closing the UI or signing out does not
+cancel a server operation already admitted. A committed business transaction
+with pending effects stays committed; recover effects, not the mutation.
+
+FR-DC-004 dual-source routing is a Gate B scope decision under D-021. If admitted,
+the provider pair must demonstrate a shared transaction or coordinated atomic
+commit/recovery protocol before dependent implementation or publication. Two
+independent sequential commits, or compensation afterward, do not satisfy
+rollback. Pending or unsupported configurations fail closed, without silently
+retiring the capability. Partial success or a non-atomic alternative requires
+an explicit approved behavior change and relevant D-011 dispositions.
 
 ### 9.5 Caching
 
@@ -535,12 +556,24 @@ DEF-012/DEF-013 stale state).
 - Keys include dataset version, application/security scope, and every
   result-affecting parameter.
 - Entries have explicit lifetime and invalidation rules.
-- Writes publish invalidation only after commit.
+- Writes persist recoverable invalidation intents at commit and publish them
+  afterward; readers verify freshness or bypass stale entries while delivery
+  is delayed (design section 14.6).
 - Forced refresh bypasses lookup but does not weaken authorization.
 - Cross-user and cross-application isolation is tested.
 
-The first vertical slice may operate without caching. Caching is added after
-parity is proven and measured need is demonstrated.
+FR-DC-009 caches a successful valid DataClass load by default. The first slice
+must preserve this policy using a bounded, security-scoped cache with expiry,
+invalidation, and proven freshness; an explicitly authored always-refresh
+policy follows FR-DC-010. Missing safety proof blocks the definition rather
+than silently changing its default. A distributed cache is optional and remains
+subject to D-014; a bounded server-local cache is sufficient where qualified.
+
+Shared internal compiled bundles are distinct from authorization-filtered
+definition responses. The latter are private and keyed by subject or proven
+equivalent policy scope, application/group, definition digest, policy revision,
+and all response-affecting context. Every cache hit and 304 response rechecks
+current authorization and publication state (design section 14.7; WDES-023).
 
 ## 10. Security, errors, and observability
 
@@ -602,7 +635,7 @@ Health checks distinguish host health from individual provider availability.
 | Provider integration | Exercise real serialization, commands, parameters, transactions, failures, and cleanup |
 | Conformance | Run requests and workflows against the expected outcomes recorded in the functional specification and its approved dispositions |
 | UI/control behavior | Verify public control contracts, persisted defaults, events, keyboard behavior, and shell/generic-form integration |
-| Security | Reject impersonation, unauthorized access, identifier injection, raw SQL, and secret leakage |
+| Security | Reject impersonation, unauthorized execution, identifier injection, runtime SQL submission, and secret leakage; verify protected authoring, digest-bound approval, scoped caches/304 responses, and withdrawal admission |
 | Operational | Verify startup validation, health, timeout, cancellation, retry, recovery, deployment, and rollback |
 | Performance | Measure agreed dataset sizes, concurrent users, latency, memory, exports, and long-running operations |
 
@@ -628,6 +661,12 @@ Representative characterization shall include:
 - Dynamic/disconnected predicates and user/application scope.
 - Insert with generated key.
 - Single- and multi-row update.
+- Duplicate/concurrent submissions, lost commit replies, durable status after
+  restart, expiry of deduplication keys, and UI recovery without replay.
+- Crash after commit but before invalidation/message delivery; retry and
+  deduplication of effects, with safe cache reads during backlog.
+- Dual-source atomic commit and participant recovery for every provider pair
+  admitted under D-021; unsupported pairs fail before execution.
 - Physical and logical delete.
 - Optimistic concurrency conflict.
 - Stored procedure and action dataset.
@@ -636,6 +675,8 @@ Representative characterization shall include:
 - Null, date, decimal, binary, Unicode, escaping, and ordering cases.
 - Generic UI toolbar, panel, splitter, navigation, filtering, grouping, search,
   CRUD, reporting, export, print, and popup/docking behavior.
+- Metadata rollback with open screens, queued work, admitted transactions,
+  multi-step jobs, operation reconciliation, and output downloads.
 
 The layer mapping to modern design section 29 is: Characterization to
 Conformance; UI/control behavior to Component and Screen renderer; Operational
@@ -718,7 +759,7 @@ reinterpretations by the Product/domain owner. **Gate:** B.
 3. Record a D-017 decision for every functional specification section 32.1
    row.
 4. Decide scope for dormant, unfinished, PLM, aggregation, and limit features
-   (D-020) and for extension contracts (D-019).
+   (D-020), extension contracts (D-019), and dual-source writes (D-021).
 5. Adopt the reference application from the runtime prototype (section 3.5)
    as the first application and complete its definition: screens, DataClasses,
    roles, reports, and acceptance scenarios, with a named owner.
@@ -739,6 +780,8 @@ reinterpretations by the Product/domain owner. **Gate:** B.
 - Every DEF-001..DEF-038 row carries a Decision other than Pending with
   Approvers and Approval date.
 - Every section 32.1 row carries a D-017 decision.
+- D-021 records whether dual-source writes are in scope, without treating an
+  unqualified provider pair as supported.
 - First application scope approved by the Product/domain owner.
 - Null, date, decimal, Unicode, generated-key, concurrency, event,
   persistence, and failure behavior are specified as expected outcomes.
@@ -757,6 +800,8 @@ the Operations owner (workstream G). **Gate:** C.
 - Gate C decision rule met: D-001, D-004 (first provider), D-005, D-008, and
   D-013 decided and not deferred; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016 decided or
   explicitly deferred with a documented safe default.
+- If the first slice includes dual-source writes, D-021's provider-qualified
+  atomic execution and recovery strategy is approved and not deferred.
 - Supported SDK, build image, CI, and test environment are available.
 
 **Activities**
@@ -767,7 +812,8 @@ the Operations owner (workstream G). **Gate:** C.
 3. Run the D-001 accessibility and performance spike (design section 32).
 4. Scaffold only approved solution projects.
 5. Enforce dependency and architecture rules.
-6. Define versioned query, result, change-set, problem, and session contracts.
+6. Define versioned query, result, change-set, operation-status, problem, and
+   session contracts, including unknown outcomes and recoverable effects.
 7. Add correlation, structured logging, startup validation, health checks, and
    secret injection.
 8. Create test projects and reusable integration fixtures.
@@ -815,6 +861,8 @@ owner (workstream F) and the Product/domain owner (workstream E). **Gate:** D.
   and secured query and change, matching the runtime prototype's layout.
 - The minimum authoring path needed to define those screens (D-015).
 - The first provider adapter and the metadata store (D-013).
+- Default DataClass caching (FR-DC-009), durable operation recovery, and
+  crash-recoverable invalidation/message intents (WDES-020, WDES-021).
 - Structured telemetry and health.
 
 **Activities**
@@ -823,7 +871,8 @@ owner (workstream F) and the Product/domain owner (workstream E). **Gate:** D.
 2. Implement exact connection resolution for the first provider.
 3. Implement parameterized query execution and typed result serialization.
 4. Implement authorization for the slice's DataClasses, screens, and commands.
-5. Implement atomic change-set execution and conflict reporting.
+5. Implement atomic change-set execution, conflict reporting, stable operation
+   identity/status, unknown-outcome UI recovery, and durable post-commit effects.
 6. Implement the shell, navigation, generic grid and field screens, and
    command bar in the selected framework.
 7. Verify conformance with the characterization fixtures and approved
@@ -831,6 +880,8 @@ owner (workstream F) and the Product/domain owner (workstream E). **Gate:** D.
 8. Add operational metrics and correlated failure diagnostics.
 9. Complete slice threat-model work and accessibility acceptance cases; record
    security-owner review before Gate D, extending the approved Gate C boundaries.
+10. Verify default DataClass caching, authorization-filtered metadata caches,
+    digest-bound authoring approval, and withdrawal admission/recovery rules.
 
 **Deliverables**
 
@@ -843,6 +894,10 @@ owner (workstream F) and the Product/domain owner (workstream E). **Gate:** D.
 - Slice behavior matches the fixtures; every difference is an approved
   disposition.
 - Writes are atomic and return accurate outcomes (NFR-REL-001, NFR-PERF-003).
+- Lost replies, restart, duplicate requests, and crash after commit pass the
+  WDES-020/WDES-021 recovery tests; the business write is never blindly replayed.
+- Protected authoring, publication-state enforcement, and policy-scoped cache
+  hits/304 responses pass WDES-019, WDES-022, and WDES-023 for slice workflows.
 - Impersonation, injection, raw database access, and unknown-connection
   fallback fail safely (NFR-SEC-001, NFR-SEC-002, NFR-SEC-003).
 - The slice screens pass keyboard and screen-reader checks (NFR-ACC-001).
@@ -865,11 +920,15 @@ UI/workflow owner; each provider by the Database owner. **Gate:** E.
   recorded before any application database design the group needs.
 - D-014 decided before the first group that needs durable jobs.
 - D-018 decided before group 1 (format tokens).
+- Where D-021 admits dual-source writes, its atomic execution/recovery strategy
+  is approved for each provider pair before the dependent capability group is
+  implemented or its definitions are published (Gate C instead for the first slice).
 
 **Capability groups**
 
 1. Core dataset reads, dynamic parameters, refresh, and format tokens.
-2. Inserts, updates, deletes, generated keys, audit stamps, and concurrency.
+2. Inserts, updates, deletes, generated keys, audit stamps, concurrency, and
+   provider-qualified dual-source writes only where D-021 admits them.
 3. Complete metadata authoring, validation, versioning, publication, and
    rollback (design section 11).
 4. Menus, security, personalization, user settings, and system messages.
@@ -992,7 +1051,7 @@ vertical slice and the D-001 framework decision sits at Gate C.
 | R-005 | Unsafe behavior reproduced as parity; security defects survive | Critical | Security owner | Active | A DEF-* row classified as a security defect is proposed with Decision "Preserve" | 2026-09-30 | Apply the defect register and security gate; see [defect dispositions](GDFramework%20Functional%20Specification.md#31-legacy-defects-and-compatibility-decisions). |
 | R-006 | Specification ambiguity discovered late changes a delivered workflow | High | Product/domain owner | Open | A capability group exit finds a requirement whose expected outcome was never decided | 2026-09-30 | Phase 1 exit requires every `RUNTIME-VERIFY` and `DOCUMENT CONFLICT` row resolved; unresolved rows block Gate B. |
 | R-007 | Authoring accepts executable or unsafe definitions | High | Migration technical lead | Open | An authored definition passes validation while containing raw SQL fragments, unregistered helpers, or credentials | 2026-09-30 | Compiler validation rules in section 9.1 and design section 11.3; security tests in design section 29. |
-| R-008 | Cache changes cause leakage or stale results | Critical | Migration technical lead | Open | A cache isolation or invalidation test fails | 2026-09-30 | Disable initially, define complete scoped keys, and test isolation/invalidation. |
+| R-008 | Cache changes cause leakage or stale results | Critical | Migration technical lead | Open | A cache isolation or invalidation test fails | 2026-09-30 | Preserve FR-DC-009's default only with proven bounded keys, current-policy checks, and crash-recoverable invalidation/freshness; reject unsafe definitions and test isolation/invalidation. |
 | R-009 | Framework chosen without the spike; accessibility or performance shortfall found late | High | UI/workflow owner | Controlled | A D-001 ADR is proposed without the design section 32 spike evidence | 2026-09-30 | Gate C requires the spike results in the D-001 ADR. |
 | R-010 | Compatibility becomes permanent | — | — | Closed: not applicable | No compatibility layer exists | — | Closed on 2026-09-10 when the premise was corrected. |
 | R-011 | No realistic test data creates false confidence | High | Test/quality owner | Open | Gate D approaches without volume-realistic synthetic data at the section 44 profiles | 2026-09-30 | Generate synthetic data sets at the measurement profiles for the first application and keep them under version control. |
@@ -1039,6 +1098,7 @@ identifier stays stable.
 | D-018 | Format token model: define the technology-neutral display and output format tokens and the mapping from the legacy VBA-format semantics (FR-ELEM-008). | Migration technical lead | Phase 4 entry, before capability group 1 | Open | None raised (add as section 30.N) |
 | D-019 | Extension contract scope: decide which of the legacy helper contracts (validation, function, simple service, database helper; functional specification section 24 and FR-EXT-DB-001) become registered adapter contracts in the rebuild, and which are retired. | Migration technical lead | Phase 4 entry, before capability group 8 | Open | None raised (add as section 30.N) |
 | D-020 | PLM, aggregation, and limit-processing scope: decide whether any of the specialist components in functional specification sections 27 and 43 (FR-PLM-001, FR-PLM-006, FR-AGG-*, FR-LIMIT-*) is in scope for the rebuild; the default is out of scope. | Product/domain owner | Gate B | Open; default out of scope | None raised (add as section 30.N) |
+| D-021 | Dual-source writes (FR-DC-004): decide functional scope, then qualify each admitted provider pair's routing, shared transaction or coordinated atomic commit, durable operation identity, participant-outcome proof, and recovery. Pending/unsupported definitions fail closed. A non-atomic alternative requires an approved behavior change; compensation is not atomic rollback. | Product/domain owner with Database owner and Migration technical lead; Security/Operations review | Gate B for scope; Gate C for strategy if needed by the first slice, otherwise before dependent Phase 4 implementation or publication | Open | None raised (add as section 30.N) |
 
 The first provider is the *output* of D-004, not an input to it; the SQL Server
 candidate listed in section 29 is unapproved and carries no default status
@@ -1081,7 +1141,7 @@ criterion requires.
 - Every row DEF-001..DEF-038 in functional specification section 31 carries a
   Decision other than Pending, with Approvers and Approval date filled.
 - Every functional specification section 32.1 row carries a D-017 decision,
-  and D-020 is recorded.
+  and D-020 and D-021's dual-source scope decision are recorded.
 - Every `RUNTIME-VERIFY` and `DOCUMENT CONFLICT` row is resolved by reading or
   by a recorded decision.
 - The first application's scope, owner, and acceptance scenarios are approved.
@@ -1095,6 +1155,8 @@ criterion requires.
   browser support matrix.
 - D-002, D-003, D-007, D-014, D-015 (approval model), and D-016 decided or
   explicitly deferred with a documented safe default, each with an ADR.
+- If the first slice includes dual-source writes, D-021's provider-qualified
+  atomic execution and recovery strategy is approved and not deferred.
 - Public contracts expose no infrastructure objects.
 - Security and operations owners approve their boundaries.
 
@@ -1103,6 +1165,10 @@ criterion requires.
 - Conformance, integration, security, accessibility, recovery, and cleanup
   tests pass for the slice.
 - NFR-REL-001 met for the slice: writes are atomic and accurately reported.
+- WDES-020/WDES-021 lost-reply, duplicate, restart, and post-commit crash tests
+  pass for the slice, including truthful status and recovery without replay.
+- WDES-019/WDES-022/WDES-023 authoring, withdrawal, and authorization-filtered
+  cache/304 tests pass for the slice; FR-DC-009 default caching is preserved.
 - NFR-PERF-003 met for the slice's write path at the section 44
   interactive-change profile.
 - NFR-SEC-001, NFR-SEC-002, and NFR-SEC-003 pass for the slice: impersonation,
@@ -1119,6 +1185,8 @@ criterion requires.
   first application.
 - D-004 decided for every selected provider, and every selected provider has
   real integration evidence (section 29; design WDES-011; NFR-REL-002 soak).
+- Every in-scope dual-source provider pair has D-021 approval and WDES-024
+  atomic commit/failure/recovery evidence; unqualified pairs remain blocked.
 - NFR-PERF-001, NFR-PERF-002, NFR-PERF-003, NFR-PERF-004, and NFR-SCALE-001
   met at the section 44 measurement profiles in load tests.
 - The section 28 catalogue is complete for the first application.
@@ -1205,6 +1273,9 @@ This master is ready to govern implementation when:
   an ADR record link in section 17. D-010 is required before the first
   application database design, D-018 before Phase 4 group 1, D-019 before
   Phase 4 group 8, and D-020 at Gate B.
+- D-021 scope is recorded at Gate B. Its atomic execution/recovery strategy is
+  approved at Gate C if the first slice depends on it, otherwise before any
+  dependent Phase 4 implementation or publication.
 - Authentication, authorization, audit, and secret responsibilities are
   approved.
 - Provider integration environments exist for the first slice.
@@ -1230,6 +1301,8 @@ The first controlled planning review shall answer:
    should the web platform reinterpret, and is Detach needed at all (D-017)?
 5. Are any of the PLM, aggregation, limit-processing, or helper-extension
    capabilities in scope (D-019, D-020)?
+   Are dual-source writes required, and which provider pairs need atomicity
+   qualification (D-021)?
 6. Which identity provider and deployment boundaries are available (D-003,
    D-005)?
 7. Which database providers do the authored applications need (D-004)?
@@ -1287,10 +1360,12 @@ version.
   disagree.
 - The retained GUI executable aligns with an older build manifest, not enough to
   identify the active standard source.
-- External OCXs, helpers, database metadata, registration state, and production
-  deployment manifests remain incomplete.
-- Current hashes identify the reviewed files only; deployed binary hashes must
-  be added when collected.
+- External OCXs and helper contracts are documented only to the extent visible
+  in retained source and documents; no installed runtime is an evidence oracle.
+- Database rows, registration state, production deployment manifests, and
+  deployed binary hashes do not exist and will not be collected. Current hashes
+  identify the reviewed reference files only; sections 23.5 and 24 govern the
+  resulting permanent limitations and product decisions.
 
 ### 23.5 Accepted baseline limitations
 
@@ -1456,9 +1531,14 @@ first application in Phase 1 and its slice screens in Phase 3.
 
 Each authored DataClass receives a stable catalogue ID and records its
 provider/connection, operation text or procedure, parameter contract, result
-schema, ordering/paging, cache/invalidation, security scope, update policy,
-keys/stamps, consumers within the application, data classification,
+schema, ordering/paging, cache/invalidation/freshness, security and policy scope,
+update policy, operation identity/status and durable effects, keys/stamps,
+consumers within the application, data classification,
 representative fixture, requirement IDs, and acceptance-test IDs.
+
+An admitted dual-source record also declares both targets, parameter/key/stamp
+mappings, atomicity domain, qualified provider pair, recovery contract, and
+D-021 approval. A routing flag alone cannot enable an unqualified pair.
 
 No authored screen or business action may be declared completely specified
 until all referenced DataClasses and database objects have catalogue records.
@@ -1484,6 +1564,14 @@ resistance, null/empty distinction, Unicode, date/time zone, decimal precision,
 binary data, deterministic ordering, row limits, stored procedure, generated
 key, optimistic concurrency, commit/rollback, cancellation, timeout, reconnect,
 resource cleanup, safe diagnostics, and representative performance tests.
+
+Mutation-capable providers additionally prove duplicate fencing, outcome
+linkage to the business transaction, restart/lost-reply reconciliation, expired
+key rejection, and durable post-commit effects/freshness. A separately committed
+central status row is not proof of the business outcome. Each admitted
+dual-source pair must also pass real participant failure and coordinated
+commit/rollback recovery tests under D-021; approval of each provider alone
+does not qualify the pair (design sections 14.6 and 29; WDES-020/WDES-021/WDES-024).
 
 ## 30. Architecture decision records
 

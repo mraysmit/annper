@@ -1,11 +1,12 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.6  
-**Date:** 13 September 2026  
+**Status:** Controlled working design baseline 0.7  
+**Date:** 4 October 2026  
 **Owner:** Migration technical lead  
+**Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
-**Functional authority:** [GD Framework Functional Specification 0.10](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.9](MIGRATION_MASTER.md)  
+**Functional authority:** [GD Framework Functional Specification 0.11](GDFramework%20Functional%20Specification.md)  
+**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.10](MIGRATION_MASTER.md)  
 **Technology status:** Web direction is selected (D-001, MIGRATION_MASTER.md section 17); framework and product selections remain deferred to ADRs
 
 **Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
@@ -20,6 +21,7 @@
 | 0.4 | 2026-09-10 | Section 7.7 desktop-bound behavior reinterpretation under D-017; compatibility major version limited to DataClass and key-set changes with field-level compatibility; preference scope restored to FR-CUSTOM-008; arbitrary-depth navigation made conditional on FR-NAV-008; version state machine gains Superseded and Withdrawn with a rollback path; field-type mapping table; message-dialog contract; auto-refresh pause tied to DEF-038; vocabulary and endpoint candidate labelling; Satisfies lines for sections 6 and 33; browser support matrix assigned to the D-001 ADR; personalization persistence timing noted against DEF-003 |
 | 0.5 | 2026-09-10 | Premise corrected: no deployed legacy instance, metadata, users, or consumers exist. Compatibility adapter, legacy callers, side-by-side routing, cutover, and retirement removed (sections 5, 6, 28, 29, 33, 36); WDES-014 and WDES-015 withdrawn; metadata lifecycle starts at Draft and web authoring is a first-release capability (D-015); section 28 restated as delivery sequencing; Appendix C restated as configuration to be authored; D-018..D-020 added to section 34; NFR-COMP-001 citations removed; prototypes recorded as the reference implementations of the layouts and of the authoring workflow |
 | 0.6 | 2026-09-13 | Design-review corrections: explicit pending layout scope, safe mutations and keys, authored capabilities, messages, startup and security, lifecycle, preference identity, gate alignment, and citations; no pending product or defect decision approved |
+| 0.7 | 2026-10-04 | Coherence review: preserve default DataClass caching; register pending D-021 dual-source scope; define uncertain-save reconciliation, durable post-commit effects, protected authoring, filtered-definition cache isolation, and withdrawal admission rules; record source-manifest identity and new verification requirements. No product, defect, or technology approval implied |
 
 ## 1. Purpose and authority
 
@@ -73,8 +75,10 @@ The design covers:
   Office on an end-user computer;
 - allowing the browser to connect directly to a database, file share, helper
   DLL, or service credential;
-- accepting arbitrary SQL, provider names, connection strings, type names, or
-  executable code from a browser request;
+- accepting SQL, provider implementation types, connection strings, or
+  executable instructions through runtime business requests; protected metadata
+  authoring is a distinct control-plane contract under section 11.4, not a way
+  to execute caller-supplied instructions;
 - reproducing dormant, unfinished, source-only, or historical PLM features
   without an approved scope decision (D-019, D-020);
 - selecting a programming language, UI framework, database product, cloud,
@@ -336,7 +340,8 @@ refresh or incompatible metadata publication, or a security/session
 revocation), the shell:
 
 1. blocks the action and presents Save, Discard, and Cancel, offering Save
-   only when the screen is saveable and the user is authorized to save;
+   only when the screen is saveable and the user is authorized to save; an
+   unresolved write outcome is not saveable (sections 8.2 and 14.6);
 2. on Save, runs the Appendix A.2 sequence and continues the action only if
    the change set commits; a validation failure, conflict, or unknown outcome
    returns to the screen with the action cancelled;
@@ -345,6 +350,10 @@ revocation), the shell:
 4. for a revocation or expiry, where waiting for the user is not permitted,
    gives the safest notice available and discards the draft (section 19); and
 5. never persists the draft durably on the client as a side effect.
+
+Discard or sign-out releases the local draft, not an already admitted server
+operation. For an uncertain save, explain that the operation may still commit;
+durable server reconciliation continues even after the screen or session closes.
 
 Every other section that invokes the "unsaved-change protocol" refers to this
 definition.
@@ -465,7 +474,12 @@ stateDiagram-v2
     Validating --> Saving: valid
     Saving --> Ready: committed and reconciled
     Saving --> Conflict: concurrency conflict
-    Saving --> Editing: validation/provider failure
+    Saving --> Editing: rejected or confirmed rollback
+    Saving --> OutcomeUnknown: uncertain execution or lost acknowledgement
+    OutcomeUnknown --> Ready: confirmed commit and reconciled
+    OutcomeUnknown --> Editing: confirmed not committed
+    OutcomeUnknown --> Closing: discard local draft only
+    OutcomeUnknown --> Forbidden: access revoked
     Conflict --> LoadingData: reload
     Conflict --> Editing: permitted resolution
     Conflict --> Closing: discard
@@ -479,14 +493,23 @@ stateDiagram-v2
 ```
 
 The renderer shall expose explicit loading, empty, ready, editing, validating,
-saving, refreshing, conflict, forbidden, configuration-error, data-error, and
-unreachable (blocked-with-retry, section 7.6) states. In the diagram, *empty*
+saving, outcome-unknown, refreshing, conflict, forbidden, configuration-error,
+data-error, and unreachable (blocked-with-retry, section 7.6) states. In the diagram, *empty*
 is the Ready state with zero rows, and *unreachable* is an overlay that any
 state entering a request (LoadingDefinition, LoadingData, Refreshing,
 Validating with server rules, Saving) can enter and leave without changing the
 underlying state. A dirty Editing or Conflict state leaves through the
 unsaved-change protocol (section 7.4). Controls are enabled from capability and
 state, not ad hoc event order.
+
+When a write's execution or acknowledgement is uncertain, OutcomeUnknown takes
+precedence over the generic unreachable overlay. Retain the original operation
+identity, idempotency key, input digest, and draft in memory. Disable Save, Add,
+Delete, and action replay for that unresolved change set; offer Check status,
+support correlation, and local-draft close choices instead. Status checks never
+execute the mutation. Resolve to Ready only after a proven commit and authorized
+value reconciliation, or to Editing after proof that no changes committed.
+An indeterminate status remains blocked; it is not permission to use a new key.
 
 ### 8.3 Screen type mapping
 
@@ -495,7 +518,7 @@ state, not ad hoc event order.
 | 1 Grid | Virtualized data grid page | Typed columns, paging/virtualization, selection, editing, sorting, grouping, filtering, context commands, personalization, export, refresh, and change highlighting |
 | 2 Field | Responsive record form | Label/control/help/error association, ordered focus, defaults, lookup, validation, record navigation where configured, and CRUD commands |
 | 3 Master-detail | Coordinated master region and detail grid/form | Stable master selection, detail parameter propagation, child refresh, parent/child insert-update-delete, dirty-state coordination, and transactional policy |
-| 4 Command/action | Parameter form and action result view | Typed inputs, confirmation, idempotency where required, server execution, progress, cancellation semantics, and structured result |
+| 4 Command/action | Parameter form and action result view | Typed inputs, confirmation, idempotency for every mutation, server execution, progress, cancellation semantics, and structured result |
 | 5 Tree/detail | Accessible hierarchical browser with detail panel | Lazy/eager loading policy, selection-driven detail query, expansion state, keyboard support, and key overrides |
 | 6 Junction insert | Dual-list or searchable association editor | Available/selected sets, duplicate prevention, bulk association, validation, and atomic insertion |
 | 7 Chart | Accessible chart with data table | Metadata-defined series/category/format, filtering, resize, text summary/table alternative, image/export policy, and no information conveyed only by color |
@@ -657,7 +680,7 @@ equivalent.
 
 | State | Owner | Persistence |
 |---|---|---|
-| Published definitions and capability hints | Server; cached by client by version | Browser cache with version/ETag; never authoritative for access |
+| Published definitions and capability hints | Server; filtered for the current subject | Private, subject/application/policy-version-scoped reuse under section 14.7; never a shared public response or authority for access |
 | Authentication/session | Identity and API edge | Session credential carrier (cookie or bearer token) is decided by the D-005 security ADR; the client shall treat the credential as opaque, short-lived, and rotated, and shall never parse, store beyond the ADR-defined scope, or forward it. This row is the authority for sections 7.6 and 15.3 |
 | Current route/application/tab | Web client | URL plus optional session restoration |
 | Query criteria, sort, page, selection | Screen instance | URL only when safe; otherwise memory/session state |
@@ -673,6 +696,8 @@ equivalent.
 - A later query supersedes an earlier query for the same purpose; stale
   responses are ignored by request ID.
 - Saves use single-flight behavior per change set.
+- Every mutation has an idempotency key, preserved across transport retries and
+  status checks; unresolved writes use OutcomeUnknown, never read-style retry.
 - Navigation and metadata publication changes do not silently destroy drafts.
 - Retry is automatic only for safe idempotent reads or operations with an
   explicit idempotency key and known outcome.
@@ -748,8 +773,28 @@ stateDiagram-v2
   version is within their metadata compatibility range (section 11.5).
 - Rollback reactivates the superseded known-good immutable version and marks
   the failed version Withdrawn; it does not edit history, and a withdrawn
-  version cannot be republished without a new approval.
+  version must be cloned into a new draft and pass validation and approval before
+  publication. The original withdrawn version remains non-executable.
 - Every API result records the metadata version that governed it.
+
+**Withdrawal and retirement admission rule.** Publication state overrides
+structural compatibility. No new query, change, action, report, or job execution
+may be admitted under a Withdrawn or Retired definition, even if its IDs and
+types still match. Check state on every execution admission and before returning
+a definition or conditional-cache response. Rollback changes publication state
+atomically; notification delivery is not the enforcement boundary.
+Admission records the publication-state revision and is serialized with
+withdrawal, so concurrent requests have an auditable before/after boundary.
+
+Open affected screens stop new execution and expose re-validation against the
+active known-good definition or the unsaved-change protocol. Save is unavailable
+under the withdrawn definition. Queued work is blocked before starting; running
+multi-step work rechecks admission before each new execution step. Transactions
+already admitted before withdrawal may complete under their recorded definition
+and must report their real outcome; withdrawal does not pretend to undo them.
+Unknown operations remain reconcilable through read-only status checks, and
+completed outputs are subject to current access and withdrawal policy at download.
+The distinction between admitted work and new work is audited and tested.
 
 ### 11.3 Compilation and validation
 
@@ -807,6 +852,28 @@ applications, navigation, screens, fields, commands, DataClasses, connections,
 value lists, reports, security, validation results, version history, draft
 comparison, impact analysis, publication checklist, and rollback.
 
+**Control-plane input boundary.** Runtime query/change/action/report requests
+contain stable approved IDs and typed values, never executable definitions.
+Separately authorized administration APIs may accept untrusted draft DataClass
+query templates and procedure references as definition data. Provider selection
+is limited to server-registered catalogue IDs approved under D-004; arbitrary
+driver types, class names, executable paths, connection strings, and secret
+values remain prohibited on both boundaries. Connection drafts contain logical
+IDs and validated secret references only.
+
+Draft submission and structural validation never execute submitted SQL. Parse
+templates, validate identifiers against the connection owner's object catalogue,
+bind values, and reject unsupported statements and unsafe substitution. Any
+executable integration outside this model requires D-019. Executable query,
+action, connection, and security changes require maker/checker approval bound to
+the exact immutable candidate digest; edits invalidate that approval. Preview
+execution is a separate authorized request in a nonproduction environment using
+bounded, least-privilege provider credentials and representative policies.
+Publication is the only route from a draft to runtime execution eligibility.
+Audit author, reviewer, digest, diagnostics, and publication identity without
+logging secrets. D-005 and D-015 select the authority/approval mechanisms, not
+exceptions to these boundaries.
+
 ### 11.5 Metadata compatibility range
 
 Every published definition has two version attributes:
@@ -836,6 +903,11 @@ a change set whose declared metadata version is outside the current compatible
 range. The compiler computes and publishes the range with each version so
 sections 12.6, 13.1, 16, and Appendix A.3 can evaluate it without client-side
 inference.
+
+Compatibility is not execution authority. Section 11.2's publication-state
+admission rule and current authorization are checked first. A Superseded version
+may support compatible held state; a Withdrawn or Retired version cannot be used
+to start new execution merely because this structural test passes.
 
 ## 12. Application services
 
@@ -880,6 +952,8 @@ Executes only registered action definitions. Actions declare input/output
 schemas, policy, timeout, transaction behavior, idempotency, side effects,
 confirmation level, synchronous/asynchronous mode, and adapter. Arbitrary
 procedure names or helper identifiers from browser requests are rejected.
+Mutating actions use the operation identity, uncertain-outcome, and durable
+effects protocol in section 14.6; a reconnect cannot submit them as fresh work.
 
 ### 12.6 Preference service
 
@@ -908,6 +982,9 @@ documents, and workbook-compatible files without desktop Office automation.
 Small exports may stream synchronously; large outputs are durable jobs. The
 service rechecks authorization at generation and download time and applies field
 security, locale, formatting, row limits, classification, retention, and audit.
+Generated output remains linked to its definition; business downloads fail
+closed when that definition is Withdrawn or Retired (section 11.2). Retaining a
+file for audit does not make it downloadable by a business user.
 
 ### 12.9 Administration service
 
@@ -941,7 +1018,7 @@ Every request carries or receives:
 - authenticated session context at the host;
 - application context where required;
 - metadata version or compatibility range (section 11.5) where state depends on it;
-- idempotency key for retryable commands/changes where applicable; and
+- idempotency key for every mutation, including mutating commands/actions; and
 - conditional version token for cache/concurrency operations.
 
 ### 13.2 Logical endpoints
@@ -960,6 +1037,9 @@ DataClass.
 | `POST /api/v1/datasets/{datasetId}/query` | Typed query with parameters, filters, sort, paging, and refresh policy |
 | `POST /api/v1/datasets/{datasetId}/changes` | Atomic authorized insert/update/delete change set |
 | `POST /api/v1/datasets/{datasetId}/validate` | Optional authoritative preflight validation without commit |
+| `GET /api/v1/operations` | Bounded, currently authorized recent/unresolved operation list so the subject can recover operation IDs after reopening or signing in |
+| `GET /api/v1/operations/{operationId}` | Read the currently authorized execution/reconciliation status; never replay work |
+| `POST /api/v1/operations/status` | Resolve status using the original idempotency key when the acceptance response or operation ID was lost; read-only despite POST |
 | `GET /api/v1/lookups/{lookupId}` | Paged secured value-list/lookup query |
 | `POST /api/v1/actions/{actionId}/executions` | Execute or enqueue a registered action |
 | `POST /api/v1/reports/{reportId}/jobs` | Create report/print/export work |
@@ -970,8 +1050,8 @@ DataClass.
 | `GET /api/v1/messages` | Current/paged message inbox |
 | `GET /api/v1/messages/stream` | Live message and invalidation channel (candidate shape; the D-002 ADR may replace it with a WebSocket endpoint) |
 | `POST /api/v1/messages/{messageId}/acknowledgement` | Record required acknowledgement/read action |
-| `POST /api/v1/admin/metadata/drafts` | Create a draft version and its validation job |
-| `POST /api/v1/admin/metadata/versions/{versionId}/publish` | Approve/publish an immutable version |
+| `POST /api/v1/admin/metadata/drafts` | Submit control-plane definition data under section 11.4 and start non-executing validation |
+| `POST /api/v1/admin/metadata/versions/{versionId}/publish` | Publish an immutable candidate only after its separate digest-bound approval requirements are met |
 | `GET /api/v1/health/live` | Process liveness only |
 | `GET /api/v1/health/ready` | Readiness of required platform dependencies, access restricted as appropriate |
 
@@ -1037,13 +1117,22 @@ Each change identifies operation, stable client row token, key, original
 version, changed field values, and optional relationship context. The response
 contains:
 
-- overall `committed`, `rejected`, `conflict`, `failed`, or `unknown` outcome;
+- overall `inProgress`, `committed`, `rejected`, `conflict`, `failed`, or `unknown` outcome;
 - one result per input row using the client row token;
 - generated keys and authoritative values after commit;
 - field and row validation problems;
 - concurrency conflicts without exposing unauthorized current values;
 - transaction/reconciliation status; and
 - correlation ID.
+
+The request envelope also identifies application, screen/definition context,
+and idempotency key. Acceptance and result envelopes include a stable operation
+ID, business outcome, reconciliation state, and post-commit-effects state
+(`pending`, `complete`, or `attention`). Status retrieval is authorized by the
+current subject/application policy; an operation ID or key is not an access
+credential. Withhold result fields the caller can no longer read while retaining
+safe outcome/correlation information. Section 14.6 defines deduplication and
+recovery; status lookup cannot submit a new change.
 
 An HTTP success code does not mean the business change committed; clients use
 the structured outcome. Conversely, expected validation and conflict results
@@ -1068,7 +1157,8 @@ by the Metadata compiler for the Metadata runtime; DataClass remains the name
 of the metadata entity. A target `DatasetDefinition` preserves:
 
 - stable ID/name and source type;
-- read connection and optional write connection;
+- read connection, optional write connection, and explicit single-target or
+  dual-source routing intent (`dc_defn_write_to_both` lineage; D-021);
 - query, procedure, function, XML, service, or adapter operation identity;
 - typed ordered parameters and dynamic bindings;
 - result fields and key/order expectations;
@@ -1162,11 +1252,11 @@ sequenceDiagram
     alt all required changes succeed
         A->>D: Commit
         D-->>A: committed
-        A->>M: publish invalidation after commit
-        A-->>B: committed + reconciled rows
+        A->>M: deliver durably recorded post-commit effects
+        A-->>B: committed + reconciled rows + effects status
     else validation/conflict/provider failure
         A->>D: Roll back
-        A-->>B: structured failure/conflict
+        A-->>B: structured failure/conflict after proven rollback
     end
 ```
 
@@ -1175,6 +1265,60 @@ value comparison. Zero affected rows on an expected update/delete is a conflict
 or missing-row result, never silent success. If a provider failure leaves commit
 outcome unknown, the API returns `unknown`, prevents unsafe automatic retry, and
 records reconciliation work.
+
+**Operation identity and recovery.** Before executing a mutation, durably reserve
+the idempotency key within trusted subject/application and operation/DataClass
+scope, together with an immutable normalized input digest and operation ID.
+The same key and digest identifies the same operation; a changed digest is
+rejected. Concurrent duplicate submissions cannot execute twice. Each selected
+provider must prove a durable outcome/fencing strategy linked to the business
+transaction, including commit followed by a lost acknowledgement. A central
+record updated independently of the business transaction is not sufficient proof.
+The D-004 provider ADR records the strategy; unsupported mutations fail closed.
+
+Expose in-progress and indeterminate reconciliation separately from proven
+committed, rejected, conflict, or rolled-back outcomes. Retries/status checks
+reuse the original key; they never allocate fresh keys or replay an unknown
+transaction. An operations worker or named support owner resolves uncertainty
+from provider-backed evidence, not from the presence/absence of a UI response.
+Retain the deduplication/fencing record through the reconciliation and supported
+retry window; after retention expires, reject reuse of an expired key rather
+than treating it as a new mutation. Expiry rejection requires durable tombstone
+or verifiable issuance/expiry evidence; deleting the only record cannot make an
+old key new. Unresolved operations cannot expire out of recovery. Record
+retention and escalation policy in the provider/operations ADR. Server recovery
+survives browser close, sign-out,
+host restart, and withdrawal of the original definition (status-only access).
+After reopening/sign-in, the subject retrieves a bounded authorized operation
+list; no durable browser draft/key storage is required to find unresolved work.
+
+**Dual-source writes (FR-DC-004).** D-021 records scope at Gate B and selects a
+provider-qualified execution/recovery strategy at Gate C if required by the
+first slice, otherwise before dependent Phase 4 implementation or publication.
+An admitted dual-source definition declares
+both logical targets, the mutation/key mapping for each, its atomicity domain,
+and coordinator capability. Use one provably shared transaction where possible,
+or a coordinated atomic protocol with durable participant outcomes and recovery.
+Two independent commits, sequential best-effort writes, or compensation described
+as rollback do not satisfy the default atomic change-set guarantee. Participant
+failure must produce a proven all-target rollback or an explicit `unknown`
+outcome with durable reconciliation; never claim success for a partial commit.
+Compilation blocks dual-source definitions while the scope decision or capability
+proof is missing. This gate neither retires FR-DC-004 nor approves D-021. Any
+alternative non-atomic workflow requires a separately approved behavior change.
+
+**Durable post-commit effects.** Record required invalidation/message intents
+with stable event IDs and operation lineage atomically with the business changes,
+or through a provider-qualified equivalent that can reconstruct every committed
+intent after a crash. Deliver only after proven commit, with durable pending
+state, bounded retries, deduplication, and support escalation. A lost event
+delivery does not cause the business mutation to be replayed. Confirmed business
+commit remains `committed` with effects `pending` or `attention`; never report
+rollback solely because publication failed. Cache readers validate a committed
+generation watermark or bypass a potentially stale entry while pending effects
+make the declared freshness bound unprovable. The provider ADR records this
+proof before the DataClass is cache-eligible. The first slice may use a database
+outbox/poller without a distributed broker; D-014 chooses any later broker.
 
 Before commit, a single-row update/delete affecting more than one target row
 fails the entire atomic change set and triggers rollback (FR-DML-006,
@@ -1200,9 +1344,28 @@ These changes remain pending approval of their D-011 dispositions.
 
 ### 14.7 Caching and refresh
 
-Metadata bundles are strongly versioned and may be cached broadly because they
-are immutable after publication. Data caches are optional and disabled by
-default for a new DataClass until scope and invalidation are proven.
+Unfiltered immutable compiler bundles may be shared internally by application
+and definition digest; they are not public Definition service responses.
+Authorization-filtered shell/navigation/screen definitions and capability hints
+are private. Their cache key and ETag include subject (or a proven equivalent
+policy scope), application/group, definition digest, current policy revision,
+locale, and every response-affecting preference/scope. Reauthorize cache hits
+and conditional responses before returning content or 304. Never place these
+responses in shared browser/proxy caches; sensitive definitions are no-store,
+and permitted private client reuse is cleared on subject/application change or
+revocation. Policy revisions invalidate filtered entries independently of
+metadata publication. Test two differently entitled subjects using the same
+definition digest, including conditional requests.
+
+Preserve FR-DC-009: a successfully loaded DataClass is cached and reused while
+valid by default. The compiler must first prove bounded storage, complete
+security/parameter scope, lifetime, and invalidation/freshness rules; missing
+proof blocks the definition rather than silently changing its default. An
+explicit always-refresh policy follows FR-DC-010. Cache eviction/expiry makes
+an entry invalid and triggers reload. A distributed cache is optional; bounded
+server-local immutable caches may implement the initial slice and are never
+authoritative business state. Initialization is the explicit startup-load policy
+below, not an exception to default caching.
 
 Initialization DataClasses loaded during startup (section 7.6) retain their
 results in a bounded server-side initialization cache under the application,
@@ -1213,7 +1376,10 @@ query may reuse a valid scoped result or reload after invalidation or expiry.
 
 A data cache key includes DataClass/definition version, application, every
 result-affecting parameter/filter/sort/page, locale when formatting is server
-side, and security/data-scope fingerprint. Writes invalidate only after commit.
+side, current policy revision, and security/data-scope fingerprint. Cache hits
+recheck current authorization and publication state before returning data.
+Writes invalidate only after commit under the durable-effects protocol in
+section 14.6.
 Forced refresh bypasses lookup but cannot weaken authorization. Auto-refresh
 pauses while the screen is dirty, hidden, disconnected, or saving and resumes
 under an explicit screen policy. This is an intentional difference from the
@@ -1478,6 +1644,9 @@ Retries require a classified transient failure and idempotent operation. Poison
 jobs stop after a bounded attempt policy and alert support. Workers renew leases;
 expired leases are reclaimed only when duplicate execution is safe or guarded
 by idempotency. Job output access is reauthorized at read/download time.
+Withdrawal is also checked at execution admission and each new job step under
+section 11.2. Cancellation or lease recovery never replays an unresolved mutation;
+the operation ledger and reconciliation protocol survive job failure.
 
 ## 22. Error handling and user feedback
 
@@ -1561,7 +1730,8 @@ through controlled change to the specification.
 - Static client assets are content-hashed and cacheable.
 - APIs and workers hold no required local session state so instances can be
   added to meet NFR-SCALE-001 and NFR-AVAIL-001.
-- Metadata bundles are immutable and cache efficiently by digest.
+- Internal metadata bundles are immutable and cache efficiently by digest;
+  filtered responses remain private and policy-scoped under section 14.7.
 - Queries use server paging/continuation and result limits.
 - Grids virtualize rendering but do not claim all rows are loaded.
 - Large exports/reports/actions move to jobs.
@@ -1577,7 +1747,8 @@ through controlled change to the specification.
 - Cancellation propagates where the underlying dependency supports it.
 - Circuit breakers apply only to classified dependency failures and do not hide
   authorization or validation errors.
-- Retries use jitter and only for safe/idempotent operations.
+- Retries use jitter and only for safe/idempotent operations; uncertain
+  mutations use status/reconciliation under section 14.6, never fresh replay.
 - Cache loss affects performance, not correctness.
 - A metadata publication is atomic and rollbackable.
 - Graceful shutdown stops new work, drains bounded in-flight work, and releases
@@ -1596,8 +1767,10 @@ durability policies aligned to job/output retention.
 
 Backups cover metadata versions, publication state, role mappings managed by
 the platform, preferences, messages, job state, audit references, and required
-configuration. Restore exercises prove the stated RTO/RPO and include integrity
-checks, secret/identity reattachment, cache rebuild, and active-version
+configuration, operation/fencing records, and pending effect intents. Restore
+exercises prove the stated RTO/RPO and include integrity checks, provider-outcome
+reconciliation before admitting retries, secret/identity reattachment, cache
+rebuild, and active-version
 verification. Application-database recovery remains governed by each owning
 system but its objectives and dependencies are recorded.
 
@@ -1712,17 +1885,17 @@ prohibited. This rule is normative here and in MIGRATION_MASTER.md section
 
 | Test layer | Required coverage |
 |---|---|
-| Metadata compiler | Every entity/field/option/enum, defaults, nulls, relationships, cycles, invalid references, unsafe input, deterministic digest, publication compatibility |
+| Metadata compiler | Every entity/field/option/enum, defaults, nulls, relationships, cycles, invalid references, unsafe input, deterministic digest, publication compatibility; default-cache eligibility and dual-source capability gates |
 | Component | Keyboard, focus, semantics, validation, responsive states, toolbar, splitter, dropdown, lookup, navigation, grid, dialog, status, message |
-| Screen renderer | All seven screen types, every field type, command/state lifecycle, dirty/close, empty/loading/error/forbidden/conflict states |
+| Screen renderer | All seven screen types, every field type, command/state lifecycle, dirty/close, empty/loading/error/forbidden/conflict states; OutcomeUnknown blocks fresh mutation and preserves status-only reconciliation |
 | Contract | API schemas, versions, typed values, nulls, errors, pagination, idempotency, conditional versions, backward compatibility |
-| Provider integration | Single-row counts of zero/one/multiple, unknown counts and trigger/procedure counts, concurrent key allocation and exhaustion; real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider |
-| Security | Authentication, cross-user/application isolation, field/row-scope/command policies (section 15.2), injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation |
+| Provider integration | Single-row counts of zero/one/multiple, unknown counts and trigger/procedure counts, concurrent key allocation and exhaustion; duplicate submissions and durable outcome lookup; all-target commit/rollback and participant recovery for each D-021-admitted pair; real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider |
+| Security | Authentication, cross-user/application isolation, field/row-scope/command policies (section 15.2), injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation; authoring-versus-execution inputs, digest-bound approvals, policy-scoped definition caches/304 responses, and withdrawn/retired admission |
 | Conformance | Workflows and requests against the expected outcomes recorded in the functional specification and its approved dispositions and decisions |
 | Workflow | Startup, application switch, navigation, query, criteria/filter, CRUD, master-detail, action, refresh, preferences, report/export/print, messages, shutdown |
 | Accessibility | Automated checks plus manual keyboard, screen reader, zoom/reflow, contrast, dialogs, grids, trees, charts, and error handling |
 | Performance | NFR profiles, cold/warm cache, concurrency, large exports, long jobs, browser responsiveness, provider pool limits |
-| Reliability | Multi-row fail-safe rollback, allocator restart/rollback gaps and idempotent retry; failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, and the NFR-REL-002 repeated cancellation/timeout/failure soak |
+| Reliability | Multi-row fail-safe rollback, allocator restart/rollback gaps and idempotent retry; lost acceptance/commit replies and status recovery, expired-key rejection, crash after commit before event delivery, duplicate events, invalidation backlog, withdrawal with open/queued/in-flight work; failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, and the NFR-REL-002 repeated cancellation/timeout/failure soak |
 | Deployment | Clean build, package promotion, configuration validation, migration, health, rolling update, rollback, backup/restore |
 
 The master section 11 and this table describe one strategy: Characterization
@@ -1752,6 +1925,10 @@ screen configuration error, provider outage, pool exhaustion, slow query,
 transaction outcome unknown, queue backlog, failed/poison job, extension
 failure, message lag, export cleanup, secret rotation, access revocation,
 incident data handling, and restore.
+Unknown-operation and pending-effects runbooks name escalation owners, evidence
+sources, retention windows, and resolution criteria; support must not replay a
+mutation to discover whether it committed. Withdrawal runbooks distinguish
+blocked new work from already admitted transactions and retained audit outputs.
 
 ### 30.3 Service-level indicators
 
@@ -1806,7 +1983,7 @@ security, and data boundaries is not sufficient evidence.
 | WDES-001 | One compiled metadata version shall deterministically produce shell, navigation, screen, dataset, policy, report, and localization bundles with a reproducible digest. |
 | WDES-002 | The browser shall render all seven screen types and mapped custom-control behaviors without ActiveX, COM, installed Office, or direct database access. |
 | WDES-003 | All application, screen, field, row, command, report, action, and administrative authorization shall be rechecked by the server. |
-| WDES-004 | No public request shall accept executable SQL, connection strings, provider types, class names, scripts, markup, or secrets from the browser. |
+| WDES-004 | Runtime business requests shall contain approved IDs and typed values, never executable SQL/definitions, connection strings, implementation types, class names, scripts, markup, or secrets. Protected authoring submissions are untrusted definition data under section 11.4 and cannot execute on submission; connection strings, arbitrary implementation types, executable paths, and secret values are prohibited on both boundaries. |
 | WDES-005 | Query and change contracts shall preserve nulls, types, decimal precision, date/time semantics, row identity, key generation, concurrency, and accurate transaction outcomes. |
 | WDES-006 | Every published command shall use a stable semantic key independent of caption, icon, position, and localization. |
 | WDES-007 | A metadata publication shall be immutable, atomic within its publication scope, attributable, observable, and rollbackable to a known-good version. |
@@ -1819,6 +1996,12 @@ security, and data boundaries is not sufficient evidence.
 | WDES-016 | A broken screen, provider, report, extension, or metadata unit shall fail within its defined boundary and shall not crash or disclose data through the common shell. |
 | WDES-017 | Sign-out, expiry, and subject/application switching shall clear or re-scope all sensitive client state, caches, message channels, and drafts according to the unsaved-change protocol. |
 | WDES-018 | Deployment artifacts shall be reproducible, immutable, version-compatible, scanned, promoted between environments, health-checked, and rollbackable. |
+| WDES-019 | Privileged authoring shall validate templates/catalogue references without execution, bind maker/checker approval to the exact candidate digest, invalidate approval on edits, and isolate authorized nonproduction preview from publication and runtime execution. |
+| WDES-020 | Every mutation shall have durable scoped operation identity and input-digest deduplication, a provider-proven outcome/fencing strategy, authorized status lookup, and an OutcomeUnknown client state that cannot replay uncertain work as a fresh mutation. |
+| WDES-021 | Required post-commit effects shall survive crashes, retry with stable event identity, and preserve accurate committed business outcomes; pending invalidation shall not allow cache reuse outside its proven freshness bound. |
+| WDES-022 | Withdrawn/Retired definitions shall block new execution regardless of structural compatibility; open screens, queued work, admitted transactions, status recovery, and output downloads shall follow the explicit withdrawal protocol. |
+| WDES-023 | Filtered definitions/capability hints and conditional responses shall be authorized and scoped by subject/policy, application, version, and response-affecting context; shared internal compiler caching shall never expose another subject's filtered response. |
+| WDES-024 | Dual-source definitions shall remain blocked until D-021 scope and provider-qualified atomicity/recovery are approved and tested; independent commits or compensation shall not be reported as an atomic rollback. |
 
 ## 34. Decisions required before implementation
 
@@ -1842,6 +2025,7 @@ and 30) rather than hidden assumptions:
 | Format token model | D-018 | Technology-neutral display and output format tokens and their mapping from the legacy VBA-format semantics (FR-ELEM-008) |
 | Extension contract scope | D-019 | Which legacy helper contracts (section 20.1; spec §24) become registered adapter contracts and which are retired |
 | Specialist component scope | D-020 | Whether any PLM, aggregation, or limit-processing capability (sections 20.3–20.4; spec §§27, 43) is in scope; default out of scope |
+| Dual-source write scope and execution | D-021 | Gate B scope decision for FR-DC-004; atomicity domain, coordinator/provider capabilities, durable participant outcomes, and recovery proof before any admitted dual-source capability is implemented or published |
 
 None of these decisions may weaken the logical boundaries, functional
 requirements, or acceptance floors without controlled approval.
@@ -1853,7 +2037,10 @@ Implementation may begin with a vertical slice when:
 1. the selected slice's application metadata is authored and its referenced
    database objects are catalogued;
 2. its reference behavior is specified with characterization fixtures, and its
-   defect dispositions and D-017 decisions are approved;
+   defect dispositions and D-017 decisions are approved; D-021 scope is recorded
+   at Gate B and, if the first slice admits dual-source writes, its execution/recovery
+   strategy is approved and provider-qualified at Gate C (before dependent
+   Phase 4 implementation/publication if admitted only in later groups);
 3. Gate C is passed: D-001, D-004 (first provider), D-005, D-008, and D-013
    are decided; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016
    are decided or explicitly deferred with a documented safe default, each
@@ -1929,13 +2116,16 @@ sequenceDiagram
 4. Server authenticates, authorizes, resolves current compatible metadata,
    validates all rows/fields/helpers, and produces a typed mutation plan.
 5. Provider executes the plan in the required transaction.
-6. On success, generated keys and authoritative stamps reconcile (candidate
+6. On a proven business commit, generated keys and authoritative stamps reconcile (candidate
    DEF-013, pending D-011 approval) into the
-   browser, dirty state clears, and post-commit invalidation/messages publish.
+   browser, dirty state clears, and durably recorded post-commit effects deliver.
+   Pending/failed effect delivery does not change the committed business outcome.
 7. On validation failure, draft values remain and fields/rows receive errors.
 8. On conflict, the UI offers only approved reload/compare/resolution actions.
 9. On rollback or unknown outcome, the UI states that result precisely and does
    not claim success or retry unsafely.
+10. For uncertainty, enter OutcomeUnknown and resolve the original operation by
+    ID/key through status-only requests; server recovery continues if the UI closes.
 
 ### A.3 Metadata publication
 
@@ -1952,7 +2142,9 @@ sequenceDiagram
    11.5) until saved/closed or safely migrated; outside the range they must
    discard or re-validate.
 8. Failure triggers controlled rollback to the previous immutable version and
-   correlated incident evidence.
+   correlated incident evidence. The failed definition becomes non-executable
+   under section 11.2 even if structurally compatible; notify affected screens
+   and block queued/new work without misreporting already admitted outcomes.
 
 ### A.4 Large export
 
