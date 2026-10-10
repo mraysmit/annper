@@ -1,15 +1,15 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.7  
-**Date:** 4 October 2026  
+**Status:** Controlled working design baseline 0.8  
+**Date:** 10 October 2026  
 **Owner:** Migration technical lead  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
-**Functional authority:** [GD Framework Functional Specification 0.11](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.10](MIGRATION_MASTER.md)  
-**Technology status:** Web direction is selected (D-001, MIGRATION_MASTER.md section 17); framework and product selections remain deferred to ADRs
+**Functional authority:** [GD Framework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
+**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.11](GDF_MIGRATION_MASTER.md)  
+**Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 17)
 
-**Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
+**Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
 
 ## Change history
 
@@ -22,6 +22,7 @@
 | 0.5 | 2026-09-10 | Premise corrected: no deployed legacy instance, metadata, users, or consumers exist. Compatibility adapter, legacy callers, side-by-side routing, cutover, and retirement removed (sections 5, 6, 28, 29, 33, 36); WDES-014 and WDES-015 withdrawn; metadata lifecycle starts at Draft and web authoring is a first-release capability (D-015); section 28 restated as delivery sequencing; Appendix C restated as configuration to be authored; D-018..D-020 added to section 34; NFR-COMP-001 citations removed; prototypes recorded as the reference implementations of the layouts and of the authoring workflow |
 | 0.6 | 2026-09-13 | Design-review corrections: explicit pending layout scope, safe mutations and keys, authored capabilities, messages, startup and security, lifecycle, preference identity, gate alignment, and citations; no pending product or defect decision approved |
 | 0.7 | 2026-10-04 | Coherence review: preserve default DataClass caching; register pending D-021 dual-source scope; define uncertain-save reconciliation, durable post-commit effects, protected authoring, filtered-definition cache isolation, and withdrawal admission rules; record source-manifest identity and new verification requirements. No product, defect, or technology approval implied |
+| 0.8 | 2026-10-10 | Owner decisions recorded. D-017 approved: section 7.7 and 8.5 reinterpretations, Detach and Reattach, two-level navigation, and legacy control scope are requirements, not candidates. D-011 approved with every DEF-* row decided, so the DEF-003, DEF-005, DEF-012, DEF-013, and DEF-038 behaviors are binding. D-020 decided: aggregation, limit processing, and PLM are out of scope. D-005 decided: OpenID Connect with a server-side session and an HttpOnly cookie (sections 10.1, 15.1, 15.3). D-013 and D-004 decided in direction: engine-agnostic, configurable platform store and providers (new section 11.6). WDES-025 and WDES-026 added. The stack stays technology-neutral; D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged |
 
 ## 1. Purpose and authority
 
@@ -40,8 +41,8 @@ the generic model has an explicitly approved extension point.
 This document governs target-system structure. The functional specification
 remains normative for observable behavior and functional scope. If this design and
 a functional requirement conflict, the functional requirement prevails until
-an approved decision changes it. Legacy defects are not automatically preserved;
-their outcomes are controlled by the defect disposition table (DEF-001..DEF-038) in [functional specification section 31](GDFramework%20Functional%20Specification.md#31-legacy-defects-and-compatibility-decisions) under policy decision D-011.
+an approved decision changes it. Legacy defects are not preserved: every row of
+the defect disposition table (DEF-001..DEF-038) in [functional specification section 31](GDFramework%20Functional%20Specification.md#31-legacy-defects-and-compatibility-decisions) was decided as Fix or Retire under policy decision D-011 on 10 October 2026, and those dispositions bind this design.
 
 ## 2. Design scope
 
@@ -65,8 +66,9 @@ The design covers:
   defensive handling of executable legacy metadata;
 - asynchronous messages, long-running jobs, external adapters, observability,
   recovery, deployment, and testing;
-- Aggregator and Limit Server behavior only where decision D-020 brings those
-  modules into scope.
+- no Aggregator, Limit Server, or PLM behavior: decision D-020 placed those
+  modules out of scope, and sections 20.3 and 20.4 are retained only to state
+  what reopening that scope would require.
 
 ### 2.2 Excluded unless separately approved
 
@@ -80,9 +82,12 @@ The design covers:
   authoring is a distinct control-plane contract under section 11.4, not a way
   to execute caller-supplied instructions;
 - reproducing dormant, unfinished, source-only, or historical PLM features
-  without an approved scope decision (D-019, D-020);
+  without an approved scope decision (D-019; D-020 has excluded PLM,
+  aggregation, and limit processing);
 - selecting a programming language, UI framework, database product, cloud,
-  container platform, or identity vendor in this baseline.
+  container platform, or identity vendor in this baseline. The design fixes
+  protocols and boundaries (for example OpenID Connect under D-005) and leaves
+  every product behind them replaceable.
 
 ## 3. Design outcomes
 
@@ -125,7 +130,10 @@ The system shall provide the following outcomes:
 - **Progressive delivery:** provider, workflow, and application coverage is
   expanded behind measurable gates rather than by a single release.
 - **Replaceable infrastructure:** contracts and application rules do not depend
-  on a UI framework, database driver, COM, ADO, or hosting vendor.
+  on a UI framework, database driver, COM, ADO, or hosting vendor. The
+  platform's own store and every application data source are reached through
+  adapters chosen by configuration, never by code that assumes one database
+  product (D-013, D-004; section 11.6).
 - **Observable operation:** an outcome that cannot be correlated, audited, and
   supported is incomplete.
 
@@ -187,7 +195,7 @@ flowchart LR
 | Metadata compiler | Validates authored definitions, resolves references and options, produces immutable runtime bundles, and calculates compatibility diagnostics | On demand and during publication; deterministic output |
 | Job worker | Exports, reports, large queries, scheduled work, external calls, and retryable processing | Scaled to NFR-SCALE-001 and NFR-PERF-004 with durable queue and leases |
 | Provider adapter | Typed query/change execution and dialect translation for each approved data source (one adapter per provider) | Hosted with API or workers; bounded connection pools |
-| Metadata store | Versioned definitions, role mappings, personalization, messages, jobs, audit pointers, and publication state | Transactional database with backup and migration controls |
+| Metadata store | Versioned definitions, role mappings, personalization, messages, jobs, audit pointers, and publication state | Transactional database reached only through the platform store adapter (section 11.6); the engine is a deployment configuration choice among qualified engines, with backup and migration controls |
 | Distributed cache | Optional immutable metadata and query result caches, invalidation, and short-lived coordination | Non-authoritative; safe to discard and rebuild |
 | Object storage | Generated report/export files and large immutable artifacts | Encrypted, lifecycle-controlled, access by short-lived authorization |
 | Telemetry platform | Structured logs, traces, metrics, alerts, dashboards, and audit export | Separate access boundary and retention policy |
@@ -295,17 +303,17 @@ variants:
 
 - ordered groups and terminal items;
 - icons with text alternatives or decorative semantics;
-- two-level Outlook-style grouping where configured;
-- arbitrary-depth trees only where recorded decision D-017 requires them
-  (FR-NAV-008); the default authored model is the two-level one;
+- two-level grouping (groups and terminal items) as the authored model.
+  Decision D-017 does not require a standard-Windows-menu mode or an
+  arbitrary-depth submenu hierarchy, so neither is built (FR-NAV-008);
 - expand/collapse, initial expansion, selection, keyboard arrows, Home/End,
   type-ahead, and Enter/Space activation;
-- application-owned items and user-defined shortcuts; consistent personal menus
-  across navigation modes remain a candidate DEF-005 disposition pending D-011;
+- application-owned items and user-defined shortcuts, with personal menus
+  shown consistently in every presentation variant (DEF-005, Fix);
 - authorized drag/reorder or explicit Move controls for personal menus;
 - optimistic personalization updates with rollback on failure, persisted at
-  the time of change rather than at shutdown (the stronger form of the DEF-003
-  fix; FR-NAV-USER-007 and FR-SHUT-003 change only in timing);
+  the time of change rather than at shutdown (DEF-003, Fix, in its stronger
+  form; FR-NAV-USER-007 and FR-SHUT-003 change only in timing);
 - refresh when publication, authorization, or relevant system messages change.
 
 Only terminal items with an authorized screen target are activatable. Missing,
@@ -385,9 +393,9 @@ Startup proceeds as follows:
    message channel; and
 8. render the first usable state with loading placeholders and retryable errors.
 
-Sign-out and session expiry clear the session credential (whatever carrier
-the D-005 security ADR selects; see section 10.1), user-specific caches,
-in-memory rows, draft edits, message channels, and sensitive diagnostics. Browser unload is not
+Sign-out and session expiry end the server-side session and clear its cookie
+(D-005; sections 10.1 and 15.1), user-specific caches, in-memory rows, draft
+edits, message channels, and sensitive diagnostics. Browser unload is not
 trusted to persist changes. Dirty work must be explicitly saved; a best-effort
 navigation warning is a usability aid, not a transaction mechanism.
 
@@ -401,17 +409,18 @@ for later replay.
 Functional specification section 32.1 lists verified legacy behaviors whose
 literal form depends on a desktop process, the workstation, a local file
 system, an installed Office application, an operating-system window, or explicit
-element-coordinate placement requiring a responsive-layout decision. The
-proposals below are candidates pending decision D-017 (MIGRATION_MASTER.md
-section 17). Until that ADR is approved the specification rows govern, and
-FR-INV-012 forbids dropping any of them silently.
+element-coordinate placement requiring a responsive-layout decision. Decision
+D-017 approved the web equivalents below on 10 October 2026
+(GDF_MIGRATION_MASTER.md section 17; ADR-002, section 30.4). They are
+requirements of this design and replace the literal legacy behavior of the
+cited rows; FR-INV-012 is satisfied by this table.
 
-| Area | Requirements | Candidate web equivalent |
+| Area | Requirements | Approved web equivalent |
 |---|---|---|
 | Identity | FR-START-009, FR-SEC-001 | The subject is established by the organization identity provider (sections 10.1, 12.1, 15.1; NFR-SEC-001). Workstation identity is never an authority. Debug impersonation is replaced by the audited support mechanism in section 23.3. |
 | Layout | FR-SEC-010, FR-SHELL-003, FR-SHELL-004 | Split position, navigation expansion, and last application persist as preferences (section 16). Browser window size and maximized state belong to the browser; the legacy maximized-window option is lineage only, with no authored browser-window setting. |
-| Element coordinates | FR-ELEM-002, FR-FIELD-002 | Candidate responsive ordering/grouping reinterpretation in section 8.5; explicit configured positions remain binding until D-017 approves this row. |
-| Detach and reattach | FR-WIN-005, FR-WIN-006, FR-WIN-007, FR-TOOL-004 | A Detach command (stable key, section 8.8) opens the screen in a separate browser window or standalone route that shares the session and the unsaved-change protocol; a Reattach command returns it to the workspace. The drag gesture and desktop focus rectangle have no equivalent. Whether Detach is required at all is a D-017 product choice; no user evidence exists. |
+| Element coordinates | FR-ELEM-002, FR-FIELD-002 | Responsive ordering and grouping as defined in section 8.5. Authored order and group replace top/left coordinates; no pixel or twip position is authored or honored. |
+| Detach and reattach | FR-WIN-005, FR-WIN-006, FR-WIN-007, FR-TOOL-004 | A Detach command (stable key, section 8.8) opens the screen in a separate browser window or standalone route that shares the session and the unsaved-change protocol; a Reattach command returns it to the workspace. The drag gesture and desktop focus rectangle have no equivalent. Both commands are part of the platform and are offered according to hosted or detached state. |
 | Diagnostics | FR-START-008, FR-SHELL-008, FR-SYSINFO-001, FR-SYSINFO-002, FR-LOG-001, FR-LOG-002, FR-LOG-005, FR-LOG-006 | No client file, folder, or log is written. Session diagnostics are server-side structured telemetry correlated by session (section 23). The global command bar exposes About (application, client build, API and metadata versions, subject, locale, correlation ID) and, for authorized support users, a diagnostics view replacing System Explorer and the debug window (section 23.3). Administrator error mail becomes alert routing through the telemetry platform (section 23.1) under the FR-LOG-008 transport rule. |
 | Print | FR-PRINT-003 | The print document opens in a print view or as a download (section 18.4); the invoking screen's bounds are not preserved. |
 | Export | FR-EXCEL-005, FR-EXCEL-006, FR-EXCEL-007 | Each export is a server-generated file (section 18.3); Export All is one job producing a multi-sheet workbook-compatible file; generation failure is reported through the job and error contracts (sections 13.6, 21) rather than as an Excel diagnostic. |
@@ -428,7 +437,7 @@ For each published display definition, the metadata runtime exposes a compiled
 
 - application, screen, version, caption, subcaption, icon, help, and screen type;
 - master, detail, lookup, action, report, and tree DataClass references;
-- field definitions in deterministic position/order;
+- field definitions in deterministic order within their layout group;
 - filter, search, sort, grouping, paging, refresh, popup, and child rules;
 - command definitions and authorization requirements;
 - layout regions, responsive hints, widths, alignment, frozen columns, and
@@ -579,15 +588,12 @@ styles, event handlers, URLs, or arbitrary component names.
 
 ### 8.5 Layout
 
-FR-ELEM-002 and FR-FIELD-002 currently require explicit configured positions
-converted from twips to device-independent units and honored; otherwise field/tab
-order applies. This remains the acceptance baseline until D-017 approves the
-section 32.1 coordinate row in the functional specification.
-
-The candidate web reinterpretation treats coordinates as ordering/grouping hints
-in responsive regions. It is not approved by this design update. Either the
-preserved layout or its approved alternative must satisfy NFR-UI-001, including
-zoom and narrow-view access. The candidate layout provides:
+The legacy form honored explicit top/left positions converted from twips
+(FR-ELEM-002, FR-FIELD-002). Decision D-017 replaced that with responsive
+layout: an author sets the order of each element and the group or region it
+belongs to, and the renderer places it. No coordinate is authored, stored, or
+honored. The layout must satisfy NFR-UI-001, including zoom and narrow-view
+access, and provides:
 
 - explicit label/control association;
 - minimum/maximum widths and documented overflow;
@@ -658,16 +664,20 @@ pixel-level rendering or ActiveX event plumbing.
 | `CSFPButtons` | Command collection model | indexed/keyed access and ordered mutation during construction | immutable published collection; keyed state updates |
 | `CSFPPanel` | Layout panel/surface | border, caption, child containment, resize participation | CSS layout regions, semantic heading/region, responsive sizing |
 | `CSFPSplitter` | Resizable separator | linked panes, min/max bounds, drag completion and position | pointer and keyboard resizing, ARIA separator, saved bounded preference |
-| `CSFPDropDown` (generic-screen contract conditional on D-017) | Select/combobox | values, selected key, display text, enabled/read-only state, change event | accessible listbox/combobox, async paging when required |
-| `CSFPTextLookup` (generic-screen contract conditional on D-017) | Lookup input with search trigger | editable/display text, lookup button event, host-provided retrieval | lookup dialog/service owned by host; control never executes SQL |
-| Outlook bar hierarchy | Navigation groups/tree | group/items, order, selected item, expansion, icon/caption, activation | unified responsive navigation; two-level by default, deeper trees only where D-017 requires them (FR-NAV-008) |
+| `CSFPDropDown` (lineage only under D-017) | Select/combobox | values, selected key, display text, enabled/read-only state, change event | accessible listbox/combobox, async paging when required |
+| `CSFPTextLookup` (lineage only under D-017) | Lookup input with search trigger | editable/display text, lookup button event, host-provided retrieval | lookup dialog/service owned by host; control never executes SQL |
+| Outlook bar hierarchy | Navigation groups/tree | group/items, order, selected item, expansion, icon/caption, activation | unified responsive navigation with the two-level model; no deeper hierarchy (D-017, FR-NAV-008) |
 | Legacy grid OCX | Data grid | columns, rows, selection, editing, grouping, sorting, filtering, frozen columns, context actions | virtualization, semantic table/grid modes, server paging, keyboard and screen-reader acceptance |
 | Legacy tabs/docking | Workspace tab/panel system | active screen identity, close, resize, modal/modeless relationships | route integration, responsive panels, no OS-level docking dependency |
 | Tooltip helper | Design-system tooltip/help | delayed contextual description | never the sole source of required information; keyboard/touch accessible |
 
 Ordinary dropdown and lookup behaviors in section 8.4 remain required. D-017
-controls the specific dormant custom-control contracts, not those standard field
-types (FR-CTL-USE-005, FR-CTL-LU-006).
+decided that the dormant `CSFPDropDown` and `CSFPTextLookup` contracts, the
+custom Outlook controls, and the tooltip helper are not carried into the
+generic screen as distinct contracts (FR-CTL-USE-005..007, FR-CTL-LU-006); the
+two rows above record which standard component covers the same need.
+Design-time-only setter guards are not reproduced: splitter orientation and
+bounds are compiled view-model properties (FR-CTL-API-005, DEF-033).
 
 Component properties that affect observable behavior remain part of the
 compiled view model. Design-time property pages, window handles, COM persistence
@@ -681,7 +691,7 @@ equivalent.
 | State | Owner | Persistence |
 |---|---|---|
 | Published definitions and capability hints | Server; filtered for the current subject | Private, subject/application/policy-version-scoped reuse under section 14.7; never a shared public response or authority for access |
-| Authentication/session | Identity and API edge | Session credential carrier (cookie or bearer token) is decided by the D-005 security ADR; the client shall treat the credential as opaque, short-lived, and rotated, and shall never parse, store beyond the ADR-defined scope, or forward it. This row is the authority for sections 7.6 and 15.3 |
+| Authentication/session | Identity and API edge | Server-side session established by OpenID Connect (D-005, section 15.1). The browser holds only an opaque session cookie that script cannot read; identity-provider tokens never reach the browser. The client never parses, stores, or forwards the credential. This row is the authority for sections 7.6 and 15.3 |
 | Current route/application/tab | Web client | URL plus optional session restoration |
 | Query criteria, sort, page, selection | Screen instance | URL only when safe; otherwise memory/session state |
 | Draft row edits | Screen instance | Memory by default; no silent durable storage of sensitive data |
@@ -709,7 +719,7 @@ equivalent.
 ### 10.3 Browser support
 
 The product shall support the browser set defined in the browser support
-matrix, which the D-001 framework ADR (MIGRATION_MASTER.md section 17) owns
+matrix, which the D-001 framework ADR (GDF_MIGRATION_MASTER.md section 17) owns
 and publishes with the framework selection; every supported combination shall
 meet NFR-UI-001 and NFR-ACC-001. The support matrix must define minimum versions, operating systems, assistive
 technology combinations, cookie/storage constraints, download behavior, and
@@ -735,7 +745,7 @@ The normalized target model preserves the semantics of these legacy families:
 | DataClass | Query/action source, read/write routing, parameter set, cursor/paging/cache policy, keys, mutation, audit, concurrency, join, lineage |
 | Navigation | Menu, submenu/item, parent relationship, sequence, caption, icon, target, ownership, personal shortcut state |
 | Display | Screen/display definition, screen type, master/detail relation, popup mode, filter strategy, report, options, helper references, refresh |
-| Element | Field/column identity, position/order, data binding, type, format, default, key, visibility, editability, lookup, validation, grouping, sizing, master-detail role |
+| Element | Field/column identity, order and layout group, data binding, type, format, default, key, visibility, editability, lookup, validation, grouping, sizing, master-detail role |
 | Parameter | Parameter, set, ordered membership, type, source, default/current binding, substitution marker, dynamic context |
 | Report/tree | Report, report column/operation, tree relation/key override, chart definition, output policy |
 | Security | Role, subject mapping, application access, screen/command/field policy, row scope (data-scope predicates over trusted context), active/default state |
@@ -833,7 +843,7 @@ bound values.
 Governed web authoring is a first-release capability (D-015 adopted), because
 no legacy metadata rows exist to import. The minimum authoring path needed for
 the first vertical slice is delivered in Phase 3 and completed in Phase 4
-(MIGRATION_MASTER.md section 13). Authoring shall use the same APIs and
+(GDF_MIGRATION_MASTER.md section 13). Authoring shall use the same APIs and
 validation pipeline as programmatic submission or promotion of newly authored configuration and support:
 
 - search and dependency navigation;
@@ -909,11 +919,61 @@ admission rule and current authorization are checked first. A Superseded version
 may support compatible held state; a Withdrawn or Retired version cannot be used
 to start new execution merely because this structural test passes.
 
+### 11.6 Platform store portability
+
+Decision D-013 does not select a database product. The platform's own state
+(versioned definitions, publication state, policy and role mappings,
+preferences, messages, jobs, operation records, pending effect intents, and
+audit pointers) is held in a transactional relational store reached only
+through a *platform store adapter*. Which engine a deployment uses is
+configuration: a logical store ID mapped to a qualified engine, endpoint,
+secret reference, and pool, in the same way section 14.3 maps application
+connections (ADR-005, GDF_MIGRATION_MASTER.md section 30.7).
+
+- Platform services depend on the store contract (typed operations and
+  transaction scopes), never on an engine's SQL dialect, driver types, or
+  proprietary features. Engine-specific SQL, DDL, type mapping, locking, and
+  error classification live inside that engine's adapter.
+- The store contract requires only capabilities every qualified engine must
+  provide: ACID transactions at read-committed isolation or stronger, unique
+  and foreign-key constraints, optimistic concurrency by version value, atomic
+  conditional update (used for leases, key allocation, and publication-state
+  admission), ordered paged range reads, exact decimal and UTC instant storage,
+  Unicode text, and large text or binary values for compiled bundles.
+- An engine is *qualified* when its adapter passes the platform store
+  conformance suite: the same executable tests for every engine, covering each
+  contract operation, concurrency and isolation behavior, schema migration
+  forward and back across one release, backup and restore, and failure
+  classification. A deployment may select only a qualified engine; an unknown
+  or unqualified engine ID fails startup validation.
+- The schema is defined once as a logical model and delivered as versioned
+  migrations for each qualified engine. Migrations for all qualified engines
+  ship in the same release and are tested together.
+- A deployment runs the platform store on one engine at a time. Changing the
+  engine of an existing deployment is a controlled data move through the store
+  contract, with backup, verification, and rollback; it is not a runtime
+  switch.
+- The platform store and application databases are separate concerns and may
+  run on different engines. The business-transaction guarantees of section
+  14.6 (operation identity, outcome fencing, durable effect intents) are
+  proven for each application provider, not by the platform store.
+- Application providers follow the same rule under D-004: none is privileged,
+  and each is an adapter enabled by configuration once its matrix passes
+  (section 14.2).
+
+No engine is named in this design. The first engines to be qualified are
+selected at Gate C together with the D-008 runtime, because driver
+availability depends on the runtime. To keep the agnostic claim testable, the
+conformance suite must pass on at least two engines before Gate E (WDES-025);
+until then the platform is portable by design and qualified only on the
+engines that have passed.
+
 ## 12. Application services
 
 ### 12.1 Session service
 
-Builds the trusted `SessionContext` from host-established identity, current
+Builds the trusted `SessionContext` from host-established identity (the
+OpenID Connect subject of the server-side session, section 15.1), current
 application selection, effective roles/claims, locale, time zone, correlation
 context, and supported client/API versions. It never accepts caller-provided
 roles or audit identity as authority. Missing/inactive identity mappings and
@@ -999,7 +1059,7 @@ access and is never enabled by a client-side flag.
 
 > **Candidate contract.** The transport, encoding, live-update channel, and
 > dataset wire shape in this section are the recommended candidate pending
-> decisions D-002 and D-007 in MIGRATION_MASTER.md section 17; they do not
+> decisions D-002 and D-007 in GDF_MIGRATION_MASTER.md section 17; they do not
 > pre-empt those decisions and become binding only through an approved ADR.
 
 ### 13.1 Protocol baseline
@@ -1030,6 +1090,7 @@ DataClass.
 
 | Method and path | Purpose |
 |---|---|
+| `GET /auth/sign-in`, `GET /auth/callback`, `POST /auth/sign-out` | OpenID Connect redirect, callback, and sign-out handled by the host (section 15.1); outside the versioned business API and never called with business data |
 | `GET /api/v1/session` | Current trusted subject, locale, capabilities, authorized applications, and API compatibility |
 | `POST /api/v1/session/application` | Select an authorized application context |
 | `GET /api/v1/applications/{applicationId}/shell` | Versioned shell options, navigation, global commands, and message settings |
@@ -1182,11 +1243,14 @@ tested against real supported provider versions for null, decimal, Unicode,
 date/time, Boolean, binary, identity, affected rows, concurrency, transaction,
 timeout, cancellation, and connection-loss behavior.
 
-The reference implementation (MIGRATION_MASTER.md sections 23 and 29)
+The reference implementation (GDF_MIGRATION_MASTER.md sections 23 and 29)
 supported SQL Server, Sybase, Oracle, Access, XML datasets, and registered
-service/helper adapters; that is lineage, not a target provider list. A
-provider is supported only when D-004 selects it for an authored application
-and its matrix passes. Access or local-file sources should be isolated in
+service/helper adapters; that is lineage, not a target provider list. Under
+D-004 the platform is provider-agnostic: no engine is privileged or assumed,
+an application's connections name a provider from the registered catalogue,
+and a provider is supported only when its adapter exists and its matrix
+passes. Enabling a qualified provider for a deployment is configuration, not
+a code change. Access or local-file sources should be isolated in
 a controlled worker rather than mounted into the web tier.
 
 ### 14.3 Connection management
@@ -1338,9 +1402,9 @@ existing-key collisions and fail before business commit. Idempotent retries
 reconcile the original mutation before allocating a new key; unknown outcomes
 are never blindly replayed.
 
-After committed logical delete, remove/requery the visible row under candidate
-DEF-012; reconcile generated values and audit stamps under candidate DEF-013.
-These changes remain pending approval of their D-011 dispositions.
+After committed logical delete, remove or requery the visible row (DEF-012,
+Fix). After every commit, reconcile generated values and audit stamps from the
+server (DEF-013, Fix).
 
 ### 14.7 Caching and refresh
 
@@ -1383,9 +1447,8 @@ section 14.6.
 Forced refresh bypasses lookup but cannot weaken authorization. Auto-refresh
 pauses while the screen is dirty, hidden, disconnected, or saving and resumes
 under an explicit screen policy. This is an intentional difference from the
-legacy interval refresh, recorded as DEF-038 in functional specification
-section 31 and binding only once that disposition is approved under D-011.
-Overlapping refresh requests coalesce.
+legacy interval refresh, recorded as DEF-038 (Fix) in functional specification
+section 31. Overlapping refresh requests coalesce.
 
 ## 15. Security design
 
@@ -1397,6 +1460,25 @@ The browser and all request data are untrusted. Identity is established by the
 approved organization identity provider at the host. Session, application,
 role, and data-scope authority are derived server-side. Client capability flags
 exist only to improve presentation.
+
+**Sign-in and session (D-005; ADR-004, GDF_MIGRATION_MASTER.md section 30.6).**
+Interactive users sign in through OpenID Connect, using the authorization code
+flow with PKCE against the organization's identity provider. Any
+standards-compliant provider is admissible and none is named here. The host is
+the relying party and keeps the identity-provider tokens on the server. After
+sign-in it creates a server-side session and gives the browser only an opaque,
+unguessable session identifier in a cookie marked HttpOnly, Secure, and
+SameSite and scoped to the application origin. The identifier is regenerated
+at sign-in, and the session has idle and absolute lifetimes set in deployment
+configuration within bounds the security owner approves. Every request
+resolves the session on the server, so sign-out, expiry, and administrative
+revocation take effect on the next request. Sign-out ends the server session
+and, where the provider supports it, the provider session. Session state is
+held in a shared store so that no API instance needs affinity (section 25).
+
+Automated clients do not use the cookie session. Their service-identity
+mechanism is the remaining part of D-005 and is decided before the first
+automated contract is published; none is in the first slice.
 
 ### 15.2 Authorization
 
@@ -1419,8 +1501,11 @@ denials, and invalidation after changes.
 
 The default is deny. Definition delivery is filtered to avoid unnecessary
 disclosure, and every data/action endpoint independently authorizes execution.
-Role changes invalidate sessions/capability caches; revocation takes effect
-within a window defined by the D-005 ADR, and NFR-SEC-001 governs. Row/data-scope
+Role changes invalidate sessions/capability caches. Because every request
+resolves the server-side session (section 15.1), session revocation takes
+effect on the next request; a role or policy change takes effect when the
+policy revision changes, which invalidates filtered caches under section 14.7.
+NFR-SEC-001 governs. Row/data-scope
 predicates are defined in the metadata Security domain (section 11.1, row
 scope), compiled into the policy bundle, and evaluated only by the Policy
 engine against trusted session context; the section 29 security tests cover
@@ -1431,10 +1516,12 @@ row scope alongside field and command policy.
 The selected implementation shall provide:
 
 - TLS for all traffic and encryption for managed storage;
-- secure handling of the session credential carrier selected by the D-005 ADR
-  (section 10.1), with short lifetime and rotation;
-- CSRF protection if the D-005 carrier is ambient (cookie-based); origin and
-  referrer controls in either case;
+- the D-005 session cookie (section 15.1): HttpOnly, Secure, SameSite,
+  host-scoped, identifier regenerated at sign-in, with idle and absolute
+  lifetimes;
+- CSRF protection on every state-changing request, because the session cookie
+  is ambient: an anti-forgery token or equivalent custom-header check, plus
+  origin and referrer validation;
 - restrictive Content Security Policy and no unsafe metadata-injected markup;
 - output encoding and safe URL allow-lists;
 - clickjacking protection and deliberate embedding policy;
@@ -1444,7 +1531,7 @@ The selected implementation shall provide:
 - download content-disposition/type hardening and malware policy where needed;
 - administrative network/access restrictions; and
 - independent penetration testing before the first production release
-  (MIGRATION_MASTER.md section 13, Phase 5).
+  (GDF_MIGRATION_MASTER.md section 13, Phase 5).
 
 ### 15.4 Secrets and connections
 
@@ -1612,7 +1699,8 @@ retain correlation across the boundary.
 
 ### 20.3 Aggregator
 
-If decision D-020 brings it into scope, aggregation definitions become versioned typed
+Out of scope: decision D-020 excluded aggregation on 10 October 2026 (ADR-003).
+If a later decision reopens it, aggregation definitions become versioned typed
 pipelines with explicit input schemas, group keys, operations, ordering,
 null/decimal rules, output schema, limits, and deterministic tests. Small
 interactive aggregation may run in the application/provider layer; large or
@@ -1620,7 +1708,10 @@ scheduled aggregation runs as a job.
 
 ### 20.4 Limit processing
 
-If decision D-020 brings it into scope, limit rules, AND/OR sequencing, thresholds,
+Out of scope: decision D-020 excluded limit processing and the historical PLM
+capabilities on 10 October 2026 (ADR-003). The reference application's Run
+limit check screen is a plain Action DataClass and is unaffected (section
+8.3). If a later decision reopens it, limit rules, AND/OR sequencing, thresholds,
 jurisdiction/COB context, schedules, recipients, violation persistence,
 acknowledgement, and notification templates become an independently deployable
 rules/job module. It uses explicit rule versions, effective dates, replayable
@@ -1833,7 +1924,7 @@ approved web edge are all admissible. Whatever D-003 selects must support the
 NFR-SCALE-001 concurrency profile, NFR-AVAIL-001, NFR-REL-003 restart
 recovery, health checks, zero/low-downtime rollout, secret injection, network
 policy, telemetry, controlled egress, backups, and rollback. The selection is
-recorded by ADR (MIGRATION_MASTER.md section 30) without changing the logical
+recorded by ADR (GDF_MIGRATION_MASTER.md section 30) without changing the logical
 boundaries here.
 
 ## 28. Delivery sequencing
@@ -1842,7 +1933,7 @@ boundaries here.
 
 No legacy instance exists, so nothing is migrated, routed side by side, cut
 over, or retired. The platform and its first application are delivered in the
-phases of MIGRATION_MASTER.md section 13.
+phases of GDF_MIGRATION_MASTER.md section 13.
 
 ### 28.1 Delivery units
 
@@ -1866,9 +1957,10 @@ complete when only its visual page exists.
 
 ### 28.3 Application databases
 
-The platform provisions its own metadata store (D-013). Each authored
-application designs or connects to its own application database under D-004
-and D-010 through least-privilege service identities. Database schema or
+The platform provisions its own metadata store on whichever qualified engine
+the deployment configures (D-013, section 11.6). Each authored application
+designs or connects to its own application database, on any qualified
+provider, under D-004 and D-010 through least-privilege service identities. Database schema or
 stored-procedure changes are controlled changes of that application, with
 migration and rollback plans as in section 27.2.
 
@@ -1880,7 +1972,7 @@ Observable behavior shall be tested with real implementations, protocol
 fixtures, lightweight purpose-built fakes at protocol boundaries, and real
 provider/integration environments appropriate to the boundary. Mocking
 frameworks that substitute generated doubles for real boundaries are
-prohibited. This rule is normative here and in MIGRATION_MASTER.md section
+prohibited. This rule is normative here and in GDF_MIGRATION_MASTER.md section
 11; CONTRIBUTING.md restates it for contributors.
 
 | Test layer | Required coverage |
@@ -1889,8 +1981,8 @@ prohibited. This rule is normative here and in MIGRATION_MASTER.md section
 | Component | Keyboard, focus, semantics, validation, responsive states, toolbar, splitter, dropdown, lookup, navigation, grid, dialog, status, message |
 | Screen renderer | All seven screen types, every field type, command/state lifecycle, dirty/close, empty/loading/error/forbidden/conflict states; OutcomeUnknown blocks fresh mutation and preserves status-only reconciliation |
 | Contract | API schemas, versions, typed values, nulls, errors, pagination, idempotency, conditional versions, backward compatibility |
-| Provider integration | Single-row counts of zero/one/multiple, unknown counts and trigger/procedure counts, concurrent key allocation and exhaustion; duplicate submissions and durable outcome lookup; all-target commit/rollback and participant recovery for each D-021-admitted pair; real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider |
-| Security | Authentication, cross-user/application isolation, field/row-scope/command policies (section 15.2), injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation; authoring-versus-execution inputs, digest-bound approvals, policy-scoped definition caches/304 responses, and withdrawn/retired admission |
+| Provider integration | Single-row counts of zero/one/multiple, unknown counts and trigger/procedure counts, concurrent key allocation and exhaustion; duplicate submissions and durable outcome lookup; all-target commit/rollback and participant recovery for each D-021-admitted pair; real serialization, parameters, types, queries, transactions, identity, concurrency, failure, timeout, cancellation, cleanup for every supported provider; the platform store conformance suite run unchanged against every qualified store engine, including migration, restore, and rejection of an unqualified engine at startup (section 11.6) |
+| Security | OpenID Connect sign-in and callback validation, session cookie attributes, identifier regeneration, CSRF rejection, next-request effect of sign-out/expiry/revocation on every instance (section 15.1); authentication, cross-user/application isolation, field/row-scope/command policies (section 15.2), injection, XSS, CSRF, secrets, downloads, admin boundaries, revocation; authoring-versus-execution inputs, digest-bound approvals, policy-scoped definition caches/304 responses, and withdrawn/retired admission |
 | Conformance | Workflows and requests against the expected outcomes recorded in the functional specification and its approved dispositions and decisions |
 | Workflow | Startup, application switch, navigation, query, criteria/filter, CRUD, master-detail, action, refresh, preferences, report/export/print, messages, shutdown |
 | Accessibility | Automated checks plus manual keyboard, screen reader, zoom/reflow, contrast, dialogs, grids, trees, charts, and error handling |
@@ -1905,7 +1997,7 @@ provider, security, accessibility, and performance evidence is reused.
 
 Every applicable functional requirement, NFR, and approved defect disposition maps to one
 or more acceptance tests in the traceability matrix generated into
-[DOCUMENT_CONTROL.md section 8](DOCUMENT_CONTROL.md#8-requirement-traceability-matrix)
+[GDF_DOCUMENT_CONTROL.md section 8](GDF_DOCUMENT_CONTROL.md#8-requirement-traceability-matrix)
 from the FR-*/NFR-*/DEF-* rows of the functional specification and the
 `WDES-*` rows of section 33 of this document.
 
@@ -1959,10 +2051,13 @@ working spike, support for:
 - accessible virtualized grids, trees, dialogs, splitters, command bars, forms,
   charts, and responsive layouts;
 - typed contract generation and validation;
-- organization authentication and server-side policy enforcement;
+- an OpenID Connect relying party with server-side sessions shared across
+  instances (D-005, section 15.1) and server-side policy enforcement;
 - asynchronous I/O, cancellation, streaming, jobs, live messages, and
   horizontal scale;
-- required database drivers and transaction/type behavior;
+- supported drivers for at least two candidate store engines and the
+  transaction/type behavior the store contract requires, so the platform store
+  adapter can be qualified on more than one engine (D-013, section 11.6);
 - secure secret integration and deployment configuration;
 - structured telemetry and distributed tracing;
 - deterministic builds, dependency scanning, supported lifecycle, and team
@@ -2002,29 +2097,33 @@ security, and data boundaries is not sufficient evidence.
 | WDES-022 | Withdrawn/Retired definitions shall block new execution regardless of structural compatibility; open screens, queued work, admitted transactions, status recovery, and output downloads shall follow the explicit withdrawal protocol. |
 | WDES-023 | Filtered definitions/capability hints and conditional responses shall be authorized and scoped by subject/policy, application, version, and response-affecting context; shared internal compiler caching shall never expose another subject's filtered response. |
 | WDES-024 | Dual-source definitions shall remain blocked until D-021 scope and provider-qualified atomicity/recovery are approved and tested; independent commits or compensation shall not be reported as an atomic rollback. |
+| WDES-025 | The platform store and every application provider shall be reached only through adapters selected by deployment configuration. No platform service shall contain engine-specific SQL or driver types; every engine offered as a platform store shall pass the same store conformance suite; an unknown or unqualified engine shall fail startup validation; and the suite shall pass on at least two engines before the platform is described as engine-agnostic. |
+| WDES-026 | Interactive sign-in shall use OpenID Connect with a server-side session. Browser script shall never hold identity-provider tokens or read the session cookie; the cookie shall be HttpOnly, Secure, and SameSite with its identifier regenerated at sign-in; every state-changing request shall pass CSRF validation; and sign-out, expiry, and revocation shall take effect on the next request on every instance. |
 
-## 34. Decisions required before implementation
+## 34. Decisions and their status
 
-The web direction is selected (D-001); framework and product selections remain
-deferred. These concrete choices remain ADRs (MIGRATION_MASTER.md sections 17
-and 30) rather than hidden assumptions:
+The logical architecture is technology-neutral by decision: it fixes
+protocols, boundaries, and behavior and leaves every product replaceable. The
+table separates what is decided from the selections that remain for Gate C or
+later (GDF_MIGRATION_MASTER.md sections 17 and 30). Nothing here is a hidden
+assumption.
 
-| Decision | Register ID | Required evidence |
+| Decision | Register ID and status | Evidence required or recorded |
 |---|---|---|
 | Browser UI framework and design system | D-001 (framework ADR) | Accessibility and performance spike across grid/form/tree/dialog/splitter/chart workflows |
 | API language/runtime and hosting model | D-008 | Team support, lifecycle, async/streaming, identity, provider drivers, telemetry, scale, and cost |
 | Contract style and live channel | D-002, D-007 | HTTP/JSON baseline, schema generation, event proxy behavior, reconnect, security, and compatibility |
-| Metadata/platform database | D-013 | Transaction/version/query needs, migrations, backup/restore, HA, operations, and licensing |
+| Metadata/platform database | D-013 (direction decided: engine-agnostic and configurable, section 11.6; ADR-005) | First qualified engine selected at Gate C with D-008; conformance suite on at least two engines before Gate E (WDES-025) |
 | Queue, cache, and object storage | D-014 | Delivery/lease semantics, durability, encryption, expiry, scale, portability, and support |
-| Authentication and authorization implementation | D-005 | Organization identity, service identity, role/data-scope model, revocation, audit, and admin separation |
-| Provider scope | D-004 | Data sources the authored applications need, real driver tests, and database ownership |
+| Authentication and authorization implementation | D-005 (decided: OpenID Connect with a server-side session, section 15.1; ADR-004) | Identity-provider product is a deployment choice; service identity for automated clients is decided before the first automated contract; WDES-026 |
+| Provider scope | D-004 (direction decided: provider-agnostic and configurable, section 14.2; ADR-005) | First qualified provider selected at Gate C with D-008; each further provider passes its matrix before it is enabled |
 | Deployment topology and cloud/on-premises placement | D-003 | Network/database reachability, identity, data residency, operations, resilience, recovery, and cost |
 | Metadata authoring scope | D-015 (adopted: governed web authoring in the first release, section 11.4) | Approval model and ownership |
 | Offline behavior | D-016 (default adopted: online-only, section 7.6) | Any offline editing requires an ADR with explicit encrypted storage, conflict, expiry, and support design |
-| Desktop-bound behavior and legacy control scope | D-017 | Product choice per section 7.7 area, in particular whether Detach is used; approval of every functional specification section 32.1 row and of the legacy control scope rows FR-CTL-API-005 and FR-CTL-USE-005..007 |
+| Desktop-bound behavior and legacy control scope | D-017 (approved; ADR-002) | Every functional specification section 32.1 row approved as section 7.7 states, including Detach and Reattach and responsive layout; legacy control scope rows FR-CTL-API-005 and FR-CTL-USE-005..007 and navigation depth FR-NAV-008 decided (section 9) |
 | Format token model | D-018 | Technology-neutral display and output format tokens and their mapping from the legacy VBA-format semantics (FR-ELEM-008) |
 | Extension contract scope | D-019 | Which legacy helper contracts (section 20.1; spec §24) become registered adapter contracts and which are retired |
-| Specialist component scope | D-020 | Whether any PLM, aggregation, or limit-processing capability (sections 20.3–20.4; spec §§27, 43) is in scope; default out of scope |
+| Specialist component scope | D-020 (decided: out of scope; ADR-003) | PLM, aggregation, and limit processing (sections 20.3–20.4; spec §§27, 43) are excluded; reopening requires a new decision |
 | Dual-source write scope and execution | D-021 | Gate B scope decision for FR-DC-004; atomicity domain, coordinator/provider capabilities, durable participant outcomes, and recovery proof before any admitted dual-source capability is implemented or published |
 
 None of these decisions may weaken the logical boundaries, functional
@@ -2037,12 +2136,13 @@ Implementation may begin with a vertical slice when:
 1. the selected slice's application metadata is authored and its referenced
    database objects are catalogued;
 2. its reference behavior is specified with characterization fixtures, and its
-   defect dispositions and D-017 decisions are approved; D-021 scope is recorded
+   defect dispositions and D-017 decisions are approved (done for every row on
+   10 October 2026); D-021 scope is recorded
    at Gate B and, if the first slice admits dual-source writes, its execution/recovery
    strategy is approved and provider-qualified at Gate C (before dependent
    Phase 4 implementation/publication if admitted only in later groups);
-3. Gate C is passed: D-001, D-004 (first provider), D-005, D-008, and D-013
-   are decided; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016
+3. Gate C is passed: D-001, D-005, and D-008 are decided, and the first
+   qualified provider (D-004) and platform-store engine (D-013) are selected; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016
    are decided or explicitly deferred with a documented safe default, each
    recorded by ADR as required by master section 18;
 4. API, metadata, policy, provider, component, and telemetry contracts are
@@ -2053,7 +2153,7 @@ Implementation may begin with a vertical slice when:
    with a least-privilege identity exist; slice deployment, monitoring, and
    rollback evidence is delivered in Phase 3, and production backup and
    operational readiness are completed before the Phase 5 release gate;
-7. the traceability matrix generated into DOCUMENT_CONTROL.md section 8
+7. the traceability matrix generated into GDF_DOCUMENT_CONTROL.md section 8
    includes the slice's functional IDs and `WDES-*` design requirements; and
 8. product, security, database, UI/workflow, operations, and test owners accept
    the slice plan.
@@ -2116,9 +2216,8 @@ sequenceDiagram
 4. Server authenticates, authorizes, resolves current compatible metadata,
    validates all rows/fields/helpers, and produces a typed mutation plan.
 5. Provider executes the plan in the required transaction.
-6. On a proven business commit, generated keys and authoritative stamps reconcile (candidate
-   DEF-013, pending D-011 approval) into the
-   browser, dirty state clears, and durably recorded post-commit effects deliver.
+6. On a proven business commit, generated keys and authoritative stamps reconcile (DEF-013, Fix)
+   into the browser, dirty state clears, and durably recorded post-commit effects deliver.
    Pending/failed effect delivery does not change the committed business outcome.
 7. On validation failure, draft values remain and fields/rows receive errors.
 8. On conflict, the UI offers only approved reload/compare/resolution actions.

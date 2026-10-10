@@ -7,7 +7,7 @@ param(
 # Regenerates the controlled, derived artifacts:
 #   baseline/legacy-file-inventory.csv, baseline/legacy-source.sha256,
 #   baseline/legacy-source-manifest.sha256     (only when the legacy tree is reachable)
-#   docs/DOCUMENT_CONTROL.md section 8         (traceability matrix, between markers)
+#   docs/GDF_DOCUMENT_CONTROL.md section 8         (traceability matrix, between markers)
 # Output is deterministic for a given set of inputs: no timestamps are embedded.
 
 $ErrorActionPreference = 'Stop'
@@ -15,8 +15,8 @@ $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
 $BaselineRoot = Join-Path $ProjectRoot 'baseline'
 $DocsRoot = Join-Path $ProjectRoot 'docs'
 $SpecPath = Join-Path $DocsRoot 'GDFramework Functional Specification.md'
-$DesignPath = Join-Path $DocsRoot 'MODERN_WEB_SYSTEM_DESIGN.md'
-$ControlPath = Join-Path $DocsRoot 'DOCUMENT_CONTROL.md'
+$DesignPath = Join-Path $DocsRoot 'GDF_MODERN_WEB_SYSTEM_DESIGN.md'
+$ControlPath = Join-Path $DocsRoot 'GDF_DOCUMENT_CONTROL.md'
 
 foreach ($required in @($BaselineRoot, $DocsRoot, $SpecPath, $DesignPath, $ControlPath)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Required path is missing: $required" }
@@ -157,9 +157,11 @@ foreach ($line in Get-Content -LiteralPath $SpecPath) {
                    elseif ($classification -match 'PHYSICAL-DDL-VERIFY') { 'Physical schema decided by the metadata-store design (D-013)' }
                    elseif ($classification -match 'RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Source-only evidence; resolved by reading or a recorded decision (Gate B)' }
                    else { 'Source evidence only; no deployed instance exists' }
-        $decisionRef = if ($classification -match '\((D-\d{3})\)') { $Matches[1] } else { '' }
+        # "(D-NNN)" is a pending decision; "(D-NNN decided)" records that the register row is decided.
+        $decisionRef = if ($classification -match '\((D-\d{3})(?: decided)?\)') { $Matches[1] } else { '' }
+        $decisionRecorded = $classification -match '\(D-\d{3} decided\)'
         $status = if ($classification -match 'NOT APPLICABLE') { 'Not applicable; no deployed legacy instance' }
-                  elseif ($classification -match 'REPLATFORM DECISION') { if ($decisionRef) { "Decision $decisionRef pending; test not implemented" } else { 'Replatform decision pending; test not implemented' } }
+                  elseif ($classification -match 'REPLATFORM DECISION') { if ($decisionRecorded) { "Decision $decisionRef recorded; test not implemented" } elseif ($decisionRef) { "Decision $decisionRef pending; test not implemented" } else { 'Replatform decision pending; test not implemented' } }
                   elseif ($classification -match 'METADATA-DEPENDENT|PHYSICAL-DDL-VERIFY|RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Resolution by decision pending; test not implemented' }
                   else { 'Source-specified; test not implemented' }
         $rows += [pscustomobject]@{Id=$id;Spec=$location;Line=$lineNumber;Classification=$classification;Source=$evidence;Runtime=$runtime;Test="AT-$id";Phase=(Get-TargetPhase $prefix);Status=$status}
@@ -203,7 +205,7 @@ $trace += '<!-- END GENERATED TRACEABILITY -->'
 
 $control = (Get-Content -LiteralPath $ControlPath -Raw) -replace "`r`n", "`n"
 $pattern = '(?s)<!-- BEGIN GENERATED TRACEABILITY -->.*?<!-- END GENERATED TRACEABILITY -->'
-if ($control -notmatch $pattern) { throw "DOCUMENT_CONTROL.md is missing the generated-traceability markers" }
+if ($control -notmatch $pattern) { throw "GDF_DOCUMENT_CONTROL.md is missing the generated-traceability markers" }
 $control = [regex]::Replace($control, $pattern, [System.Text.RegularExpressions.MatchEvaluator]{ param($m) ($trace -join "`n") })
 Set-Content -LiteralPath $ControlPath -Value $control -Encoding utf8 -NoNewline
 
