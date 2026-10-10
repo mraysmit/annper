@@ -22,7 +22,7 @@
 | 0.5 | 2026-09-10 | Premise corrected: no deployed legacy instance, metadata, users, or consumers exist. Compatibility adapter, legacy callers, side-by-side routing, cutover, and retirement removed (sections 5, 6, 28, 29, 33, 36); WDES-014 and WDES-015 withdrawn; metadata lifecycle starts at Draft and web authoring is a first-release capability (D-015); section 28 restated as delivery sequencing; Appendix C restated as configuration to be authored; D-018..D-020 added to section 34; NFR-COMP-001 citations removed; prototypes recorded as the reference implementations of the layouts and of the authoring workflow |
 | 0.6 | 2026-09-13 | Design-review corrections: explicit pending layout scope, safe mutations and keys, authored capabilities, messages, startup and security, lifecycle, preference identity, gate alignment, and citations; no pending product or defect decision approved |
 | 0.7 | 2026-10-04 | Coherence review: preserve default DataClass caching; register pending D-021 dual-source scope; define uncertain-save reconciliation, durable post-commit effects, protected authoring, filtered-definition cache isolation, and withdrawal admission rules; record source-manifest identity and new verification requirements. No product, defect, or technology approval implied |
-| 0.8 | 2026-10-10 | Owner decisions recorded. D-017 approved: section 7.7 and 8.5 reinterpretations, Detach and Reattach, two-level navigation, and legacy control scope are requirements, not candidates. D-011 approved with every DEF-* row decided, so the DEF-003, DEF-005, DEF-012, DEF-013, and DEF-038 behaviors are binding. D-020 decided: aggregation, limit processing, and PLM are out of scope. D-005 decided: OpenID Connect with a server-side session and an HttpOnly cookie (sections 10.1, 15.1, 15.3). D-013 and D-004 decided in direction: engine-agnostic, configurable platform store and providers (new section 11.6). WDES-025 and WDES-026 added. The stack stays technology-neutral; D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged |
+| 0.8 | 2026-10-10 | Owner decisions recorded. D-017 approved: section 7.7 and 8.5 reinterpretations, Detach and Reattach, two-level navigation, and legacy control scope are requirements, not candidates. D-011 approved with every DEF-* row decided, so the DEF-003, DEF-005, DEF-012, DEF-013, and DEF-038 behaviors are binding. D-020 decided: aggregation, limit processing, and PLM are out of scope. D-005 decided: OpenID Connect with a server-side session and an HttpOnly cookie (sections 10.1, 15.1, 15.3). D-013 and D-004 decided in direction: engine-agnostic, configurable platform store and providers (new section 11.6). User records are live administration data outside publication (D-022, new section 15.6). WDES-025, WDES-026, and WDES-027 added. The stack stays technology-neutral; D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged |
 
 ## 1. Purpose and authority
 
@@ -748,7 +748,7 @@ The normalized target model preserves the semantics of these legacy families:
 | Element | Field/column identity, order and layout group, data binding, type, format, default, key, visibility, editability, lookup, validation, grouping, sizing, master-detail role |
 | Parameter | Parameter, set, ordered membership, type, source, default/current binding, substitution marker, dynamic context |
 | Report/tree | Report, report column/operation, tree relation/key override, chart definition, output policy |
-| Security | Role, subject mapping, application access, screen/command/field policy, row scope (data-scope predicates over trusted context), active/default state |
+| Security | Versioned: role, group mapping, application access, screen/command/field policy, row scope (data-scope predicates over trusted context). Live administration, outside publication (section 15.6): user record, subject mapping, application assignment and default, role membership, user override, active state |
 | Personalization | Layout, visible columns, order, width, sort, group, filter, format, menu/shortcut, application preference |
 | System | Named settings, messages, message store/delivery state, error/audit records, ID allocation lineage |
 
@@ -1048,9 +1048,9 @@ file for audit does not make it downloadable by a business user.
 
 ### 12.9 Administration service
 
-Provides policy-controlled metadata publication, cache invalidation,
-job management, system-message administration, safe diagnostics, configuration
-status, and support actions. Operational access is separate from business-user
+Provides policy-controlled metadata publication, user administration
+(section 15.6), cache invalidation, job management, system-message
+administration, safe diagnostics, configuration status, and support actions. Operational access is separate from business-user
 access and is never enabled by a client-side flag.
 
 ## 13. Service contracts
@@ -1113,6 +1113,7 @@ DataClass.
 | `POST /api/v1/messages/{messageId}/acknowledgement` | Record required acknowledgement/read action |
 | `POST /api/v1/admin/metadata/drafts` | Submit control-plane definition data under section 11.4 and start non-executing validation |
 | `POST /api/v1/admin/metadata/versions/{versionId}/publish` | Publish an immutable candidate only after its separate digest-bound approval requirements are met |
+| `GET/PUT/DELETE /api/v1/admin/users/{userId}` | Read or change a user record, its application assignments, role memberships, and overrides; effective on the next request and audited, with no publication (section 15.6) |
 | `GET /api/v1/health/live` | Process liveness only |
 | `GET /api/v1/health/ready` | Readiness of required platform dependencies, access restricted as appropriate |
 
@@ -1548,6 +1549,46 @@ metadata version, outcome, correlation ID, and change summary. High-risk
 administration records before/after definition hashes and approval identity.
 Sensitive row values are minimized, classified, masked, or referenced according
 to policy.
+
+### 15.6 User administration
+
+Roles, their permissions, field policies, and row scopes are versioned
+configuration and change only through publication (section 11.2). User
+records are not configuration (decision D-022; ADR-006,
+GDF_MIGRATION_MASTER.md section 30.8). A user record is live administration
+data owned by the Security administrator and changed through the
+Administration service (section 12.9):
+
+- the identity-provider subject it maps to, display name, email, and region;
+- the active state (FR-SEC-002);
+- application assignments, with exactly one marked default whenever any is
+  assigned (FR-SEC-003, FR-SEC-004);
+- role memberships, which are cumulative (FR-SEC-005, FR-SEC-006);
+- user-specific overrides, each replacing the combined role result for one
+  screen (FR-SEC-008); and
+- last login and last logout per application assignment, written by the
+  Session service and read-only here (FR-SEC-009, section 12.1).
+
+A user record holds no password or other credential; sign-in belongs to the
+identity provider (section 15.1).
+
+A change to a user needs no validation, approval, or publication. It takes
+effect on the next request, because every request resolves the server-side
+session and the current policy revision (sections 15.1 and 15.2). It raises
+the policy revision, which invalidates filtered definitions and capability
+caches (section 14.7), and it is written to the audit record with the actor,
+the target, the outcome, and a reason for deactivation and for overrides
+(section 15.5). It never alters a draft, a published definition, or a
+definition digest. Deactivating a user is the emergency revocation path.
+
+Role membership can name only a role in the active published version, and
+only for an application the user is assigned to. A membership naming a role
+that a later publication removes grants nothing and is reported for clean-up. A role may also be granted
+to an identity-provider group; that grants the role to the group's members
+but does not make them users. A subject with no active user record, or with
+no active application assignment, is refused at start-up (section 7.6 step
+3). An override cannot bypass an inactive record, a missing application
+assignment, row scope, or revocation (section 15.2).
 
 ## 16. Personalization
 
@@ -2099,6 +2140,7 @@ security, and data boundaries is not sufficient evidence.
 | WDES-024 | Dual-source definitions shall remain blocked until D-021 scope and provider-qualified atomicity/recovery are approved and tested; independent commits or compensation shall not be reported as an atomic rollback. |
 | WDES-025 | The platform store and every application provider shall be reached only through adapters selected by deployment configuration. No platform service shall contain engine-specific SQL or driver types; every engine offered as a platform store shall pass the same store conformance suite; an unknown or unqualified engine shall fail startup validation; and the suite shall pass on at least two engines before the platform is described as engine-agnostic. |
 | WDES-026 | Interactive sign-in shall use OpenID Connect with a server-side session. Browser script shall never hold identity-provider tokens or read the session cookie; the cookie shall be HttpOnly, Secure, and SameSite with its identifier regenerated at sign-in; every state-changing request shall pass CSRF validation; and sign-out, expiry, and revocation shall take effect on the next request on every instance. |
+| WDES-027 | User records, application assignments, role memberships, and user overrides shall be administered live, outside publication: a change shall take effect on the next request on every instance, raise the policy revision, be audited, and leave every draft, published definition, and definition digest unchanged. A subject without an active user record and an active application assignment shall be refused at start-up, and a user record shall hold no credential. |
 
 ## 34. Decisions and their status
 
@@ -2124,6 +2166,7 @@ assumption.
 | Format token model | D-018 | Technology-neutral display and output format tokens and their mapping from the legacy VBA-format semantics (FR-ELEM-008) |
 | Extension contract scope | D-019 | Which legacy helper contracts (section 20.1; spec §24) become registered adapter contracts and which are retired |
 | Specialist component scope | D-020 (decided: out of scope; ADR-003) | PLM, aggregation, and limit processing (sections 20.3–20.4; spec §§27, 43) are excluded; reopening requires a new decision |
+| User administration model | D-022 (decided: live administration outside publication, section 15.6; ADR-006) | WDES-027 |
 | Dual-source write scope and execution | D-021 | Gate B scope decision for FR-DC-004; atomicity domain, coordinator/provider capabilities, durable participant outcomes, and recovery proof before any admitted dual-source capability is implemented or published |
 
 None of these decisions may weaken the logical boundaries, functional

@@ -24,7 +24,7 @@
 | 0.8 | 2026-09-10 | Premise corrected: the legacy system is not deployed anywhere and no metadata, users, or consumers exist, so the document becomes a rebuild plan. Coexistence, pilot, cutover, retirement, compatibility, and evidence-acquisition content removed; sections 1, 2, 3.4, 4.3, 5, 6.1, 8.3, 11–22, 23.5, 24, 25–29, and Appendix A rewritten or trimmed in place so that section numbers cited by the other documents remain valid. Phases reduced to 0–5 and gates to A–F; D-006 and D-012 closed; D-001 moved to Gate C; D-015 adopted (authoring first); D-018..D-020 registered; risks that assumed a deployed instance closed; penetration test placed at Phase 5 exit; section 3.5 records the prototypes as reference implementations and adopts their sample application as the first application |
 | 0.9 | 2026-09-13 | Design-review reconciliation: coordinate scope in D-017, Gate C deferral consistency, Phase 3 threat-model work, test-layer mapping, and baseline references; historical phase references retained in change history |
 | 0.10 | 2026-10-04 | Quality/coherence review: default DataClass caching preserved; operation-outcome recovery, durable post-commit effects, scoped metadata caching, protected authoring, and withdrawal admission aligned with the design; D-021 registers pending dual-source scope and atomic execution evidence; obsolete deployed-evidence obligations removed. No decisions or dispositions approved by these edits. |
-| 0.11 | 2026-10-10 | Owner decisions recorded as ADR-001..ADR-005 (section 30): D-011 disposition policy approved and all DEF-* rows decided; D-017 approved as proposed, including Detach and responsive layout; D-020 decided out of scope; D-005 decided as OpenID Connect with a server-side session; D-013 and D-004 decided in direction as engine-agnostic and configurable, with the first qualified engines selected at Gate C. Gates C to E, Phases 2 to 4, sections 9.6, 10.1, 22, 29, and risk R-020 updated to match. The stack stays technology-neutral: D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged. Named owner recorded for every role |
+| 0.11 | 2026-10-10 | Owner decisions recorded as ADR-001..ADR-006 (section 30): D-011 disposition policy approved and all DEF-* rows decided; D-017 approved as proposed, including Detach and responsive layout; D-020 decided out of scope; D-005 decided as OpenID Connect with a server-side session; D-013 and D-004 decided in direction as engine-agnostic and configurable, with the first qualified engines selected at Gate C; D-022 decided as live user administration outside publication. Gates C to E, Phases 2 to 4, sections 9.6, 10.1, 22, 29, and risk R-020 updated to match. The stack stays technology-neutral: D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged. Named owner recorded for every role. User records are live administration data outside publication (design section 15.6, WDES-027) |
 
 ## 1. Document purpose and authority
 
@@ -205,7 +205,7 @@ server. Where a prototype and the design document differ, the design governs
 | Prototype | What it demonstrates | Role in the plan |
 |---|---|---|
 | `gdframework-web-mockup.html` (GD Workspace) | The end-user shell, navigation with personal shortcuts, tabs, addressable routes, Detach and Reattach, personalization, the six message types, export jobs, the print document, About and support diagnostics, the conflict, unknown-outcome, unreachable, and withdrawn-definition states, responsive layout, and themes, with a sample application that exercises every screen family: Order register (grid), Customer records (field), Inventory by product (master-detail), Repricing action and Run limit check (action), Regional hierarchy (tree/detail), Customer products (junction), and Sales performance (chart) | Layout reference for design sections 7–9 and the definition of the first application (Phase 1) |
-| `gdframework-admin-mockup.html` (GD Studio) | Metadata authoring: applications, navigation, screens, fields, commands, DataClasses, connections with the neutral provider catalogue and read-only deployment mapping, value lists, reports, security, validation results, version history and comparison, impact, digest-bound approvals, publication checklist, rollback with its withdrawal effects, and retirement | Reference for the D-015 authoring tool (design section 11.4) |
+| `gdframework-admin-mockup.html` (GD Studio) | Metadata authoring: applications, navigation, screens, fields, commands, DataClasses, connections with the neutral provider catalogue and read-only deployment mapping, value lists, reports, security, validation results, live user administration, version history and comparison, impact, digest-bound approvals, publication checklist, rollback with its withdrawal effects, and retirement | Reference for the D-015 authoring tool (design section 11.4) |
 
 The sample application in the runtime prototype, called the *reference
 application* in this plan, is the first application to be authored. Both
@@ -1129,6 +1129,7 @@ identifier stays stable.
 | D-019 | Extension contract scope: decide which of the legacy helper contracts (validation, function, simple service, database helper; functional specification section 24 and FR-EXT-DB-001) become registered adapter contracts in the rebuild, and which are retired. | Migration technical lead | Phase 4 entry, before capability group 8 | Open | None raised (add as section 30.N) |
 | D-020 | PLM, aggregation, and limit-processing scope: decide whether any of the specialist components in functional specification sections 27 and 43 (FR-PLM-001, FR-PLM-006, FR-AGG-*, FR-LIMIT-*) is in scope for the rebuild; the default is out of scope. | Product/domain owner | Gate B | Decided 2026-10-10: out of scope | [ADR-003](#305-adr-003--plm-aggregation-and-limit-processing-out-of-scope) |
 | D-021 | Dual-source writes (FR-DC-004): decide functional scope, then qualify each admitted provider pair's routing, shared transaction or coordinated atomic commit, durable operation identity, participant-outcome proof, and recovery. Pending/unsupported definitions fail closed. A non-atomic alternative requires an approved behavior change; compensation is not atomic rollback. | Product/domain owner with Database owner and Migration technical lead; Security/Operations review | Gate B for scope; Gate C for strategy if needed by the first slice, otherwise before dependent Phase 4 implementation or publication | Open | None raised (add as section 30.N) |
+| D-022 | User administration model: user records, application assignments, role memberships, and user overrides are live administration data, changed by the security administrator with immediate effect and full audit, outside validation, approval, and publication (design section 15.6). Roles and their permissions stay versioned configuration. | Security owner with the Product/domain owner | Gate C | Decided 2026-10-10 (live administration) | [ADR-006](#308-adr-006--live-user-administration-outside-publication) |
 
 No engine is an input to D-004 or D-013 and none carries default status
 (ADR-005): the first qualified provider and platform-store engine are selected
@@ -1207,6 +1208,9 @@ criterion requires.
 - WDES-026 sign-in, session-cookie, CSRF, and next-request revocation tests
   pass, and the platform store conformance suite passes on the slice engine
   (WDES-025).
+- WDES-027 user-administration tests pass: a user change is effective on the
+  next request without publication, and a subject with no active user record
+  or application assignment is refused at start-up.
 - NFR-ACC-001 keyboard and screen-reader checks pass for the slice screens.
 - NFR-OBS-001 and NFR-OBS-002 met for the slice: every failed operation is
   diagnosable by authorized support without exposing sensitive values.
@@ -1681,6 +1685,7 @@ rollback procedure.
 | [ADR-003](#305-adr-003--plm-aggregation-and-limit-processing-out-of-scope) | D-020 specialist component scope | Approved | 2026-10-10 |
 | [ADR-004](#306-adr-004--openid-connect-sign-in-with-a-server-side-session) | D-005 authentication and session | Approved | 2026-10-10 |
 | [ADR-005](#307-adr-005--engine-agnostic-platform-store-and-configurable-providers) | D-013 and D-004 store and provider neutrality | Approved | 2026-10-10 |
+| [ADR-006](#308-adr-006--live-user-administration-outside-publication) | D-022 user administration model | Approved | 2026-10-10 |
 
 Add each new record as `### 30.N ADR-NNN — Title` and link it from section 17.
 
@@ -1980,6 +1985,66 @@ move through the store contract with backup and verification.
 |---|---|---|---|
 | Migration technical lead | Mark Raysmith | Approved | 2026-10-10 |
 | Database owner | Mark Raysmith | Approved | 2026-10-10 |
+
+### 30.8 ADR-006 — Live user administration outside publication
+
+**Status:** Approved  
+**Date:** 2026-10-10  
+**Owner:** Security owner with the Product/domain owner, Mark Raysmith  
+**Decision register ID:** D-022  
+**Affected requirements:** FR-SEC-002..006, FR-SEC-008, FR-SEC-009; NFR-SEC-001, NFR-SEC-002; WDES-003, WDES-023, WDES-027  
+**Baseline manifest:** `../baseline/legacy-source-manifest.sha256`
+
+#### Context and evidence
+
+The functional specification requires a user record of the platform's own:
+it must exist and be active, hold application assignments with a default,
+carry cumulative role memberships and user-specific overrides, and record
+last login and logout (FR-SEC-002..009). The reference system kept those
+rows beside the configuration. The rebuilt platform versions configuration
+and publishes it under validation and approval, so the question is whether
+user records follow that cycle. The GD Studio prototype had roles but no
+users, which exposed the gap.
+
+#### Options considered
+
+| Option | Benefits | Costs/risks | Evidence |
+|---|---|---|---|
+| Live administration, outside publication | Joiners, leavers, and emergency revocation need no release; effect on the next request | Needs strict administrator authorization and a complete audit | Design sections 14.7, 15.1, 15.2 already separate the policy revision from the definition version |
+| Versioned with the configuration | One model for everything | Adding or deactivating a user waits for validation, approvals, and publication | Design section 11.2 |
+| Groups only, records created at first sign-in | Least administration | Nobody can be prepared before they sign in, and the FR-SEC-002 existence check loses its meaning | FR-SEC-002, FR-SEC-003 |
+
+#### Decision
+
+User records, application assignments, role memberships, and user overrides
+are live administration data. The Security administrator changes them through
+the Administration service; a change takes effect on the next request, raises
+the policy revision, and is audited. Roles, their permissions, field
+policies, and row scopes remain versioned configuration. A user record holds
+no credential.
+
+#### Consequences
+
+The policy revision is distinct from the definition version, and filtered
+definition caches key on both. Role membership can name only a role in the
+active published version; a membership naming a role that a later publication
+removes grants nothing and is reported for clean-up. A group mapping grants a
+role but does not create a user, so a subject without an active user record
+and application assignment is refused at start-up. The authoring tool gains a
+Users screen that is not part of the draft, the digest, or Undo.
+
+#### Validation and rollback
+
+WDES-027 and the NFR-SEC-002 role-matrix tests at Gate D. Individual user
+changes are reversed by a further audited change, not by publication
+rollback. The model changes only through a new ADR.
+
+#### Approval
+
+| Role | Name | Decision | Date |
+|---|---|---|---|
+| Security owner | Mark Raysmith | Approved | 2026-10-10 |
+| Product/domain owner | Mark Raysmith | Approved | 2026-10-10 |
 
 ## Appendix A — Source-document disposition
 

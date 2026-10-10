@@ -46,7 +46,8 @@ Superseded drafts are not kept in the working tree; git history is the archive
 - [Open the single-file GD Studio administration mockup](prototype/gdframework-admin-mockup.html).
   It demonstrates metadata-driven application, navigation, screen, field,
   command, DataClass, connection and provider-catalogue, value-list, report,
-  security, validation, impact-analysis, version-comparison, approval,
+  security, live user administration, validation, impact-analysis,
+  version-comparison, approval,
   publication, rollback, retirement, and audit configuration workflows.
 
 Both prototypes run locally without a server or external assets and embed their

@@ -470,10 +470,10 @@ test('Studio 11.3: every reference is resolved and duplicates are detected', () 
   const s=studio();
   s.run(`model.dataClasses[0].writeConnectionId='nope';model.screens[0].reportId='missing-report';model.screens[0].commands[0].policy='orders.approve';model.screens[0].commands[1].policy='customers.update';
     model.roles[0].permissions.ghost={read:true};model.valueLists.find(v=>v.id==='customers').displayField='title';model.dataClasses[1].uniqueKey=['customer_id'];model.reports[0].appId='gone';
-    model.roles[0].fieldPolicies[0].fieldId='nope';model.roles[0].rowScopes[0].field='nope';model.overrides[0].screenId='nope'`);
+    model.roles[0].fieldPolicies[0].fieldId='nope';model.roles[0].rowScopes[0].field='nope'`);
   for(const [code,path] of [['INVALID_REFERENCE','dataClasses.orders.writeConnectionId'],['INVALID_REFERENCE','screens.orders.reportId'],['UNDEFINED_POLICY','screens.orders.commands.New.policy'],['UNDEFINED_POLICY','screens.orders.commands.Edit.policy'],
     ['INVALID_REFERENCE','roles.operations-reader.permissions.ghost'],['INVALID_REFERENCE','valueLists.customers.displayField'],['INVALID_REFERENCE','dataClasses.customers.uniqueKey'],['INVALID_REFERENCE','reports.order-export.appId'],
-    ['INVALID_REFERENCE','roles.operations-reader.fieldPolicies.#0'],['INVALID_REFERENCE','roles.operations-reader.rowScopes.#0'],['INVALID_REFERENCE','overrides.ovr-sara-evans-customers.screenId']])assert.ok(hasIssue(s,code,path),path);
+    ['INVALID_REFERENCE','roles.operations-reader.fieldPolicies.#0'],['INVALID_REFERENCE','roles.operations-reader.rowScopes.#0']])assert.ok(hasIssue(s,code,path),path);
   const t=studio();
   t.run("model.navigation.ops[1].id='daily';model.navigation.ops[2].items[0].id='nav-orders';model.screens[0].commands.push({...model.screens[0].commands[0]});model.dataClasses[0].parameters.push({name:'status',type:'string',source:'request',required:false});model.screens[1].commands[2].shortcut='Ctrl+S'");
   for(const path of ['navigation.ops.daily','navigation.ops.items.nav-orders','screens.orders.commands.New','dataClasses.orders.parameters.status','screens.customers.commands.New.shortcut'])assert.ok(hasIssue(t,'DUPLICATE_ID',path),path);
@@ -660,12 +660,14 @@ test('Studio 3.4: imported values cannot reach HTML unescaped', () => {
   s.run(`const bad=configuration();bad.screens[0].capabilities={[${JSON.stringify(hostile)}]:true};bad.screens[0].commands[0].key=${JSON.stringify(hostile)};bad.screens[0].autoRefresh=${JSON.stringify(hostile)};bad.navigation.ops[0].sequence=${JSON.stringify(hostile)};bad.reports[0].outputs=[${JSON.stringify(tag)}];globalThis.shapeErrors=configurationShapeIssues(bad);`);
   assert.ok(s.run('shapeErrors.length')>=4);assert.throws(()=>s.run('importConfiguration(bad)'));
   s.run(`const o=model.screens[0];o.caption=${JSON.stringify(tag)};o.description=${JSON.stringify(hostile)};o.fields[1].caption=${JSON.stringify(tag)};o.fields[1].group=${JSON.stringify(hostile)};o.fields[1].format=${JSON.stringify(hostile)};o.commands[0].label=${JSON.stringify(tag)};o.commands[0].shortcut=${JSON.stringify(hostile)};o.commands[0].policy=${JSON.stringify(hostile)};o.filterMode=${JSON.stringify(hostile)};
-    model.reports[0].outputs=[${JSON.stringify(tag)}];model.reports[0].columns[0].caption=${JSON.stringify(tag)};model.navigation.ops[0].label=${JSON.stringify(tag)};model.dataClasses[0].source=${JSON.stringify(hostile)};model.dataClasses[0].parameters[0].name=${JSON.stringify(hostile)};model.connections[0].secretRef=${JSON.stringify(tag)};model.connections[0].providerId=${JSON.stringify(hostile)};model.roles[1].name=${JSON.stringify(tag)};model.valueLists[0].values[0].label=${JSON.stringify(tag)};model.valueLists[0].values[0].value=${JSON.stringify(hostile)};model.overrides[0].subject=${JSON.stringify(hostile)};
+    model.reports[0].outputs=[${JSON.stringify(tag)}];model.reports[0].columns[0].caption=${JSON.stringify(tag)};model.navigation.ops[0].label=${JSON.stringify(tag)};model.dataClasses[0].source=${JSON.stringify(hostile)};model.dataClasses[0].parameters[0].name=${JSON.stringify(hostile)};model.connections[0].secretRef=${JSON.stringify(tag)};model.connections[0].providerId=${JSON.stringify(hostile)};model.roles[1].name=${JSON.stringify(tag)};model.valueLists[0].values[0].label=${JSON.stringify(tag)};model.valueLists[0].values[0].value=${JSON.stringify(hostile)};
+    Object.assign(administration.users[3],{name:${JSON.stringify(tag)},email:${JSON.stringify(hostile)},subject:${JSON.stringify(hostile)},region:${JSON.stringify(hostile)}});administration.users[3].overrides[0].reason=${JSON.stringify(tag)};administration.users[3].overrides[0].screenId=${JSON.stringify(hostile)};administration.users[3].roles.push(${JSON.stringify(hostile)});state.selectedUser='usr-104';
     state.selectedField='customer';state.navSelection='group:daily';state.selectedList='order-status';`);
   let html='';
   for(const tab of ['properties','field','command','behavior','access']){s.run(`state.inspectorTab='${tab}';renderScreens()`);html+=s.run('host.innerHTML');}
   for(const tab of ['definition','parameters','result','caching','write','dependencies']){s.run(`state.detailTab='${tab}';renderDataClasses()`);html+=s.run('host.innerHTML');}
-  for(const tab of ['permissions','access','fields','rows','overrides']){s.run(`state.securityTab='${tab}';renderSecurity()`);html+=s.run('host.innerHTML');}
+  for(const tab of ['permissions','access','fields','rows','users']){s.run(`state.securityTab='${tab}';renderSecurity()`);html+=s.run('host.innerHTML');}
+  html+=s.run("renderUsers(),host.innerHTML")+s.run("userEffectiveAccess('usr-104'),''")+s.dialogs.at(-1).body;
   html+=s.run("renderNavigation(),host.innerHTML")+s.run("renderReports(),host.innerHTML")+s.run("renderConnections(),host.innerHTML")+s.run("renderValues(),host.innerHTML")+s.run("renderValidation(),host.innerHTML")+s.run("renderVersions(),host.innerHTML")+s.run("renderAudit(),host.innerHTML")+s.run("reportPreview(model.reports[0])")+s.run("comparison('ver-2026-09-1','draft')");
   absent(html,/<img src=x/);absent(html,/" onfocus="alert/);
   present(html,/&lt;img src=x onerror=alert\(1\)&gt;/);present(html,/x&quot; onfocus=&quot;alert\(1\)&quot;/);
@@ -721,6 +723,161 @@ test('Studio accessibility and robustness contracts are present in the source', 
   absent(admin,/\bconfirm\(/);absent(admin,/\.drop-zone|\.diff-col|\.diff-head|\.diff-line/);
   const inputs=s.run("(renderDataClasses(),host.innerHTML)+(renderSecurity(),host.innerHTML)+(renderReports(),host.innerHTML)+(renderValues(),host.innerHTML)");
   for(const m of inputs.matchAll(/<(input|select|textarea)\b([^>]*)>/g))assert.ok(/aria-label=|id="/.test(m[2])||/type="checkbox"/.test(m[2]),m[0]);
+});
+
+/* ---- Users: live administration, not versioned configuration ---- */
+const security = () => { const s = studio(); s.run("state.actor='Alex Morgan'"); return s; };
+const draftFacts = "JSON.stringify([digest(),state.dirty,state.validated,state.validation&&state.validation.digest,Object.keys(state.approvals),state.history.length,canonical(configuration())])";
+
+test('Users: sample records are environment-owned administration data and agree with the runtime signed-in user', () => {
+  const users=fixtures.administration.users,alex=users.find(u=>u.id==='usr-101'),session=json(runtime,'mock-datasources').session;
+  assert.deepEqual([alex.name,alex.subject,alex.active,alex.applications.map(a=>a.appId+(a.default?'*':'')).join(),alex.roles.join()],['Alex Smith','alex.smith',true,'ops*,risk','operations-editor,risk-manager']);
+  assert.deepEqual([session.subjectId,session.displayName,session.roles.join(),session.defaultApplication],[alex.id,alex.name,alex.roles.join(),alex.applications.find(a=>a.default).appId]);
+  assert.deepEqual(users.map(u=>u.name),['Alex Smith','Maya Chen','Jay Patel','Sara Evans','Priya Raman','Daniel Weber','Ken Ito']);
+  assert.deepEqual(users.find(u=>u.name==='Sara Evans').overrides,[{screenId:'customers',permissions:{read:true},reason:'Read-only access during secondment'}]);
+  assert.ok(!('users' in initial)&&!('overrides' in initial)&&!('administration' in initial),'not in the versioned seed');
+  const s=studio();
+  assert.ok(!s.run('configKeys').includes('overrides')&&!s.run('configKeys').includes('users'));
+  absent(s.run('canonical(configuration())'),/usr-101|alex\.smith|"overrides"/,'user data is outside the digest input');
+  const before=s.run('digest()');s.run("administration.users[0].name='Changed';administration.policyRevision=99;fixtures.administration.users.length=0");assert.equal(s.run('digest()'),before);
+});
+
+test('Users: a user record holds no credential-like property', () => {
+  const keys=new Set();(function walk(v){if(Array.isArray(v))v.forEach(walk);else if(v&&typeof v==='object')for(const [k,x] of Object.entries(v)){keys.add(k);walk(x);}})(fixtures.administration.users);
+  assert.deepEqual([...keys].filter(k=>/pass|pwd|secret|credential|token|hash|salt|pin$/i.test(k)),[]);
+  assert.ok(fixtures.administration.users.every(u=>JSON.stringify(Object.keys(u))===JSON.stringify(['id','subject','name','email','region','active','applications','roles','overrides'])));
+  const s=security();assert.equal(s.run("registerUser('new.person','New Person','new.person@example.test','UK')"),true);
+  assert.equal(s.run('JSON.stringify(administration.users.at(-1))'),'{"id":"usr-108","subject":"new.person","name":"New Person","email":"new.person@example.test","region":"UK","active":false,"applications":[],"roles":[],"overrides":[]}');
+  assert.equal(s.run("userStart(findUser('usr-108')).reason"),'Inactive');
+  for(const bad of [["","X","x@example.test"],["Has Space","X","x@example.test"],["alex.smith","X","x@example.test"],["ok.subject","","x@example.test"],["ok.subject","X","not-an-email"]])assert.equal(s.run(`registerUser(${JSON.stringify(bad[0])},${JSON.stringify(bad[1])},${JSON.stringify(bad[2])},'UK')`),false,bad.join('|'));
+  s.run("state.selectedUser='usr-104';renderUsers()");
+  absent(admin,/type="password"/i);absent(s.run('host.innerHTML'),/password|passphrase|credential field/i);
+});
+
+test('Users: a change takes effect at once and never touches the draft, its digest, validation, approvals or Undo', () => {
+  const s=security();validCandidate(s);s.run("state.actor='Priya Raman';recordApproval('Product','Reviewed');state.actor='Alex Morgan'");
+  const before=s.run(draftFacts),revision=s.run('administration.policyRevision');
+  for(const change of ["setUserProp('usr-102','email','maya.chen@example.org')","assignApplication('usr-102','risk')","setUserRole('usr-102','risk-reader',true)","setDefaultApplication('usr-102','risk')","setUserOverride('usr-102','orders',{read:true},'Read-only while covering leave')","setUserActive('usr-102',false,'Extended leave')"])assert.equal(s.run(change),true,change);
+  assert.equal(s.run(draftFacts),before);assert.equal(s.run('administration.policyRevision'),revision+6);
+  assert.equal(s.run("userAccess(findUser('usr-102'),model.screens[0]).source"),'inactive','effective on the next evaluation');
+  assert.deepEqual([...s.run('[audit[0].action,audit[0].target,audit[0].actor,audit[0].outcome,audit[0].reason,audit[0].version]')],['Deactivated user','users.usr-102','Alex Morgan','Succeeded','Extended leave','policy revision '+(revision+6)]);
+  assert.equal(s.run('undo()'),false,'nothing of the user change is on the undo stack');
+  s.run("state.actor='Jordan Lee';setProp('screens.orders','caption','Orders','');state.actor='Alex Morgan';setUserProp('usr-103','name','Jay R. Patel');undo()");
+  assert.deepEqual([...s.run("[model.screens[0].caption,findUser('usr-103').name,findUser('usr-102').active]")],['Order register','Jay R. Patel',false]);
+  assert.equal(s.run('fixtures.administration.users[1].email'),'maya.chen@example.test','the embedded sample is not written to');
+  s.run("selectVersion('ver-2026-08-4')");assert.equal(s.run("setUserProp('usr-103','region','EU')"),true,'viewing a read-only version does not lock live administration');
+});
+
+test('Users: activation and deactivation need a reason, are audited and raise the policy revision', () => {
+  const s=security(),revision=s.run('administration.policyRevision'),records=s.run('audit.length');
+  assert.equal(s.run("setUserActive('usr-101',false,'   ')"),false);assert.match(s.messages.at(-1)[0],/reason is required to deactivate/);
+  assert.deepEqual([...s.run("[findUser('usr-101').active,administration.policyRevision,audit.length]")],[true,revision,records]);
+  assert.equal(s.run("setUserActive('usr-101',false,'Left the organization')"),true);
+  assert.deepEqual([...s.run("[findUser('usr-101').active,administration.policyRevision,audit.length,audit[0].action,audit[0].reason]")],[false,revision+1,records+1,'Deactivated user','Left the organization']);
+  assert.match(s.run('audit[0].detail'),/session of this user ends on the next request/);
+  assert.equal(s.run("userStart(findUser('usr-101')).reason"),'Inactive');
+  assert.equal(s.run("setUserActive('usr-101',true,'')"),false);assert.equal(s.run("setUserActive('usr-101',true,'Returned')"),true);assert.equal(s.run("userStart(findUser('usr-101')).ok"),true);
+  assert.equal(s.run("removeUser('usr-107','')"),false);assert.equal(s.run("removeUser('usr-107','Record created in error')"),true);
+  assert.deepEqual([...s.run("[Boolean(findUser('usr-107')),audit[0].action,audit[0].reason,administration.policyRevision]")],[false,'Removed user','Record created in error',revision+3]);
+});
+
+test('Users: exactly one assigned application is the default whenever any is assigned', () => {
+  const s=security(),defaults=()=>s.run("findUser('usr-105').applications.map(a=>a.appId+(a.default?'*':'')).join()");
+  assert.ok(fixtures.administration.users.every(u=>u.applications.filter(a=>a.default).length===(u.applications.length?1:0)));
+  assert.equal(s.run("assignApplication('usr-105','risk')"),true);assert.equal(defaults(),'risk*');
+  assert.equal(s.run("assignApplication('usr-105','ops')"),true);assert.equal(defaults(),'risk*,ops');
+  assert.equal(s.run("assignApplication('usr-105','ops')"),false,'already assigned');assert.equal(s.run("assignApplication('usr-105','finance')"),false,'not in the active release');
+  assert.equal(s.run("setDefaultApplication('usr-105','ops')"),true);assert.equal(defaults(),'risk,ops*');
+  assert.equal(s.run("removeApplication('usr-105','ops')"),true);assert.equal(defaults(),'risk*','the default moves to a remaining assignment');
+  assert.equal(s.run("setDefaultApplication('usr-105','ops')"),false);assert.match(s.messages.at(-1)[0],/Only an assigned application can be the default/);
+  assert.equal(s.run("removeApplication('usr-105','risk')"),true);assert.equal(defaults(),'');assert.equal(s.run("userStart(findUser('usr-105')).reason"),'No application');
+});
+
+test('Users: only a role of the active release, for an assigned application, can be given', () => {
+  const s=security();
+  s.run("model.roles.push({id:'auditor',name:'Auditor',active:true,applications:['ops'],permissions:{orders:{read:true}},subjects:[],fieldPolicies:[],rowScopes:[]})");
+  assert.equal(s.run("setUserRole('usr-102','auditor',true)"),false);assert.match(s.messages.at(-1)[0],/Only a role in the active release can be assigned/);
+  assert.equal(s.run("setUserRole('usr-102','risk-manager',true)"),false);assert.match(s.messages.at(-1)[0],/not assigned to/);
+  assert.equal(s.run("assignApplication('usr-102','risk')&&setUserRole('usr-102','risk-manager',true)&&setUserOverride('usr-102','risks',{read:true},'Observer only')"),true);
+  assert.equal(s.run("removeApplication('usr-102','risk')"),true);
+  assert.deepEqual([...s.run("[findUser('usr-102').roles.join(),findUser('usr-102').overrides.length]")],['operations-editor',0],'memberships and overrides for the removed application go with it');
+  assert.match(s.run('audit[0].detail'),/memberships removed: risk-manager; overrides removed: risks/);
+  s.run("findUser('usr-102').roles.push('retired-role');state.selectedUser='usr-102';renderUsers()");
+  present(s.run('host.innerHTML'),/Not yet published, so not assignable: <button class="link" data-action="open" data-path="roles\.auditor">Auditor<\/button>/);
+  present(s.run('host.innerHTML'),/<code>retired-role<\/code> is not in the active release and grants nothing/);
+  assert.deepEqual([...s.run("userRoles(findUser('usr-102')).map(x=>x.role.id)")],['operations-editor'],'a stale membership grants nothing');
+  present(s.run('host.innerHTML'),/data-role="risk-manager" data-admin disabled> Risk manager <span class="muted">Risk &amp; Controls · assign the application first/);
+  assert.equal(s.run("performRetire('ver-2026-09-1','Application retired')&&setUserRole('usr-107','operations-reader',true)"),false,'no active release, no assignable role');
+});
+
+test('Users: only the security administrator can change users; everyone else is read-only', () => {
+  for(const [actor,can] of [['Jordan Lee',false],['Priya Raman',false],['Dana Whitlock',false],['Alex Morgan',true]]){const s=studio();s.run(`state.actor=${JSON.stringify(actor)}`);assert.equal(s.run('canAdministerUsers()'),can,actor);}
+  const s=studio(),before=s.run('JSON.stringify(administration)');
+  for(const change of ["registerUser('new.person','New Person','new.person@example.test','UK')","setUserProp('usr-102','name','X')","setUserActive('usr-102',false,'x')","assignApplication('usr-105','ops')","removeApplication('usr-101','risk')","setDefaultApplication('usr-101','risk')","setUserRole('usr-101','risk-manager',false)","setUserOverride('usr-101','orders',{read:true},'x')","removeUserOverride('usr-104','customers')","removeUser('usr-107','x')"]){
+    assert.equal(s.run(change),false,change);assert.match(s.messages.at(-1)[0],/Only the security administrator \(Alex Morgan\) can change users/);
+    assert.deepEqual([...s.run('[audit[0].action,audit[0].outcome,audit[0].actor]')],['Refused user administration','Denied','Jordan Lee']);
+  }
+  assert.equal(s.run('JSON.stringify(administration)'),before);
+  s.run("state.selectedUser='usr-104';renderUsers()");const html=s.run('host.innerHTML');
+  present(html,/<strong>Read-only\.<\/strong> Only the security administrator \(Alex Morgan\) can change users\. You are signed in as Jordan Lee\./);
+  for(const m of html.matchAll(/<(?:input|select|button)\b[^>]*(?:data-change="user|data-action="(?:registerUser|userActive|userAssign|userUnassign|userDropRole|userOverride|userDropOverride|removeUser)")[^>]*>/g))assert.ok(/ data-admin/.test(m[0]),m[0].slice(0,120));
+  present(admin,/if\(!canAdministerUsers\(\)\)root\.querySelectorAll\('\[data-admin\]'\)\.forEach\(el=>\{el\.disabled=true;\}\)/);
+  absent(html,/data-mutates/,'user controls are not draft controls');
+  const t=security();t.run('renderUsers()');absent(t.run('host.innerHTML'),/Read-only\./);
+});
+
+test('Users: start-up is refused when the record is inactive, has no application, or has no role', () => {
+  const s=security(),start=id=>s.run(`JSON.stringify(userStart(findUser('${id}')))`);
+  assert.equal(start('usr-101'),'{"ok":true,"reason":""}');assert.equal(start('usr-106'),'{"ok":false,"reason":"Inactive"}');
+  assert.equal(start('usr-105'),'{"ok":false,"reason":"No application"}');assert.equal(start('usr-107'),'{"ok":false,"reason":"No role"}');
+  assert.deepEqual([...s.run("userRoles(findUser('usr-105')).map(x=>x.role.id+':'+x.via)")],['risk-manager:group mapping'],'a group mapping alone does not make a user');
+  assert.deepEqual([...s.run("userRoles(findUser('usr-103')).map(x=>x.role.id+':'+x.via)")],['operations-reader:group mapping','risk-reader:membership']);
+  s.run("findUser('usr-107').roles=['risk-reader']");assert.equal(start('usr-107'),'{"ok":false,"reason":"No role"}','a role for an unassigned application does not count');
+  s.run("findUser('usr-107').roles=['operations-reader']");assert.equal(start('usr-107'),'{"ok":true,"reason":""}');
+  assert.equal(s.run("(()=>{const c=structuredClone(liveConfig());c.roles.find(r=>r.id==='operations-reader').active=false;return userStart(findUser('usr-107'),c).reason})()"),'No role','an inactive role grants nothing');
+  s.run('renderUsers()');const html=s.run('host.innerHTML');
+  for(const text of ['<th scope="col">Can start</th>','<th scope="col">Last sign-in</th>','Operations Hub \\(default\\), Risk &amp; Controls','<span class="status bad">No</span> Inactive','<span class="status bad">No</span> No application','<span class="status good">Yes</span>','Operations reader \\(group\\)','aria-label="Search users by name or subject"','policy revision <strong id="policyRevision">41</strong>'])present(html,new RegExp(text));
+  s.run("performRetire('ver-2026-09-1','Application retired')");assert.equal(start('usr-101'),'{"ok":false,"reason":"No role"}','nothing is live without an active release');
+});
+
+test('Users: effective access is cumulative across roles, with the user override applied last', () => {
+  const s=security(),access=(id,screen)=>JSON.parse(s.run(`JSON.stringify(userAccess(findUser('${id}'),liveConfig().screens.find(x=>x.id==='${screen}')))`));
+  assert.deepEqual(access('usr-103','orders'),{permissions:['read','export','print'],source:'roles',hiddenFields:[],roles:['operations-reader']});
+  assert.deepEqual(access('usr-103','customers').hiddenFields,['creditLimit']);
+  assert.equal(s.run("setUserRole('usr-103','operations-editor',true)"),true);
+  assert.deepEqual(access('usr-103','orders'),{permissions:['read','insert','update','delete','export','print'],source:'roles',hiddenFields:[],roles:['operations-reader','operations-editor']});
+  assert.deepEqual(access('usr-103','customers').hiddenFields,[],'a field is withheld only when every granting role withholds it');
+  assert.deepEqual(access('usr-103','risks').permissions,['read','export','print']);assert.deepEqual(access('usr-103','limitCheck').permissions,[]);
+  assert.deepEqual(access('usr-104','customers'),{permissions:['read'],source:'user override',hiddenFields:[],roles:['operations-editor']});
+  assert.deepEqual(access('usr-104','orders').permissions,['read','insert','update','delete','export','print']);
+  assert.deepEqual(access('usr-104','risks'),{permissions:[],source:'no application assignment',hiddenFields:[],roles:[]});
+  for(const [call,why] of [["setUserOverride('usr-104','risks',{read:true},'x')",'unassigned application'],["setUserOverride('usr-104','repricing',{read:true},'x')",'read on an action screen'],["setUserOverride('usr-104','orders',{read:true},' ')",'no reason'],["setUserOverride('usr-104','nope',{read:true},'x')",'unknown screen']])assert.equal(s.run(call),false,why);
+  assert.equal(s.run("setUserOverride('usr-104','orders',{},'Suspended from orders pending review')"),true);assert.deepEqual(access('usr-104','orders').permissions,[],'an empty override denies the screen');
+  s.run("userEffectiveAccess('usr-104')");const body=s.dialogs.at(-1).body;
+  for(const text of ['Combined from roles','User override','Read-only access during secondment','Can start\\.','Operations editor \\(membership\\)','ops\\.region|orders\\.region equals session\\.region'])present(body,new RegExp(text));
+  s.run("state.previewRole='user:usr-104'");
+  assert.equal([...s.run("screenCanvas(model.screens.find(x=>x.id==='customers'),false)").matchAll(/preview-tool">([^<]+)</g)].map(m=>m[1]).join(),'Previous record,Next record,Refresh,Detach');
+  s.run("state.actor='Alex Morgan';setUserActive('usr-104',false,'Left')");assert.deepEqual(access('usr-104','customers'),{permissions:[],source:'inactive',hiddenFields:[],roles:[]},'an override cannot bypass an inactive record');
+  present(s.run("screenCanvas(model.screens.find(x=>x.id==='customers'),false)"),/Sara Evans is granted nothing on this screen \(inactive\)/);
+  s.run("state.previewRole='operations-reader'");
+  assert.equal(s.run("JSON.stringify(previewSubject(model.screens[0]).permissions)"),'["read","export","print"]','the role preview uses the same rule');
+  assert.equal(s.run("JSON.stringify(previewSubject(model.screens[0]))"),s.run("JSON.stringify({name:'Operations reader',...subjectAccess([model.roles[0]],['ops'],[],model.screens[0])})"));
+});
+
+test('Users: the module is reachable, linked from roles, and the role tabs explain group mappings', () => {
+  const s=security();
+  assert.equal(s.run("openPath('users.usr-104')"),true);assert.deepEqual([...s.run('[state.module,state.selectedUser]')],['users','usr-104']);
+  present(admin,/\['security','Security','◇'\],\['users','Users','◍'\],\['validation'/);present(admin,/\['user','selectedUser'\]/);present(admin,/parts\.push\(`user=\$\{state\.selectedUser\}`\)/);
+  s.run("state.selectedRole='operations-editor';state.securityTab='access';renderSecurity()");
+  present(s.run('host.innerHTML'),/A group mapping grants this role to every member of the group, but it does not make anyone a user\. A person with no active user record, or with no application assignment, is refused at start-up\./);
+  absent(s.run('host.innerHTML'),/User overrides/);
+  s.run("state.securityTab='users';renderSecurity()");
+  present(s.run('host.innerHTML'),/data-action="open" data-path="users\.usr-104">Sara Evans<\/button>/);present(s.run('host.innerHTML'),/<td>membership<\/td>/);
+  s.run("model.roles.push({id:'auditor',name:'Auditor',active:true,applications:['ops'],permissions:{},subjects:[],fieldPolicies:[],rowScopes:[]});state.selectedRole='auditor';renderSecurity()");
+  present(s.run('host.innerHTML'),/This role is not in the active release yet\. It cannot be assigned to a user until a version containing it is published\./);
+  s.run("state.selectedUser='usr-101';renderUsers()");const html=s.run('host.innerHTML');
+  for(const text of ['Identity-provider subject','Application assignments','Role memberships','User overrides','Last sign-out','Remove user','◉ Effective access','Deactivate','name="default-usr-101"','holds no credential'])present(html,new RegExp(text));
+  s.run('renderAudit()');s.run("setUserProp('usr-101','region','UK');renderAudit()");present(s.run('host.innerHTML'),/data-action="open" data-path="users\.usr-101">users\.usr-101<\/button>/);
 });
 
 function inventory() {
@@ -887,7 +1044,8 @@ test('RT-08: message intents are data; unknown, duplicate and expired messages d
 // ---- both prototypes embed the same reference application
 test('Cross-prototype: applications, navigation, screens, commands and capabilities agree', () => {
   const granted = o => Object.keys(o || {}).filter(k => o[k]).sort();
-  assert.equal(rt.metadataVersion, initial.releases.find(r => r.status === 'Published').label);
+  // The runtime shows the reference application as the Studio draft authors it, so it carries that draft's version.
+  assert.equal('Draft ' + rt.metadataVersion, initial.draft.label);
   assert.deepEqual(rt.applications.map(a => [a.id, a.name, a.description, a.defaultScreen, a.allowPersonalMenus]),
     initial.applications.map(a => [a.id, a.name, a.description, a.defaultScreen, a.options.allowPersonalMenus]));
   for (const app of rt.applications) {

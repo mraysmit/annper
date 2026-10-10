@@ -485,9 +485,6 @@
       {"id":"risk-reader","name":"Risk reader","active":true,"applications":["risk"],"subjects":[{"type":"group","id":"risk-readers"}],"permissions":{"risks":{"read":true,"export":true,"print":true}},"fieldPolicies":[],"rowScopes":[]},
       {"id":"risk-manager","name":"Risk manager","active":true,"applications":["risk"],"subjects":[{"type":"group","id":"risk-managers"}],"permissions":{"risks":{"read":true,"update":true,"insert":true,"export":true,"print":true},"limitCheck":{"execute":true}},"fieldPolicies":[],"rowScopes":[]}
     ],
-    "overrides":[
-      {"id":"ovr-sara-evans-customers","subject":"sara.evans","screenId":"customers","permissions":{"read":true},"reason":"Read-only access during secondment"}
-    ],
     "settings":[
       {"id":"session-idle-minutes","name":"Session idle lifetime (minutes)","value":"30"},
       {"id":"export-inline-row-limit","name":"Largest export produced without a job (rows)","value":"5000"},
@@ -539,6 +536,19 @@
       },
       "roleMembers":{"operations-reader":42,"operations-editor":18,"risk-reader":27,"risk-manager":6},
       "activity":{"openScreens":14,"dirtyScreens":3,"queuedJobs":2,"runningJobs":1,"admittedTransactions":4,"unknownOperations":1,"retainedOutputs":6}
+    },
+    "administration":{
+      "policyRevision":41,
+      "directory":{"alex.smith":[],"maya.chen":["operations-editors"],"jay.patel":["operations-readers"],"sara.evans":[],"priya.raman":["risk-managers"],"daniel.weber":["operations-readers"],"ken.ito":[]},
+      "users":[
+        {"id":"usr-101","subject":"alex.smith","name":"Alex Smith","email":"alex.smith@example.test","region":"EU","active":true,"applications":[{"appId":"ops","default":true,"lastLogin":"2026-09-06T07:58:00Z","lastLogout":"2026-09-05T17:31:00Z"},{"appId":"risk","default":false,"lastLogin":"2026-09-05T09:12:00Z","lastLogout":"2026-09-05T09:40:00Z"}],"roles":["operations-editor","risk-manager"],"overrides":[]},
+        {"id":"usr-102","subject":"maya.chen","name":"Maya Chen","email":"maya.chen@example.test","region":"UK","active":true,"applications":[{"appId":"ops","default":true,"lastLogin":"2026-09-06T08:40:00Z","lastLogout":"2026-09-05T18:02:00Z"}],"roles":["operations-editor"],"overrides":[]},
+        {"id":"usr-103","subject":"jay.patel","name":"Jay Patel","email":"jay.patel@example.test","region":"UK","active":true,"applications":[{"appId":"risk","default":true,"lastLogin":"2026-09-05T16:01:00Z","lastLogout":"2026-09-05T16:44:00Z"},{"appId":"ops","default":false,"lastLogin":"2026-09-04T10:15:00Z","lastLogout":"2026-09-04T10:52:00Z"}],"roles":["risk-reader"],"overrides":[]},
+        {"id":"usr-104","subject":"sara.evans","name":"Sara Evans","email":"sara.evans@example.test","region":"NA","active":true,"applications":[{"appId":"ops","default":true,"lastLogin":"2026-09-05T14:20:00Z","lastLogout":"2026-09-05T15:05:00Z"}],"roles":["operations-editor"],"overrides":[{"screenId":"customers","permissions":{"read":true},"reason":"Read-only access during secondment"}]},
+        {"id":"usr-105","subject":"priya.raman","name":"Priya Raman","email":"priya.raman@example.test","region":"UK","active":true,"applications":[],"roles":[],"overrides":[]},
+        {"id":"usr-106","subject":"daniel.weber","name":"Daniel Weber","email":"daniel.weber@example.test","region":"EU","active":false,"applications":[{"appId":"ops","default":true,"lastLogin":"2026-07-18T09:30:00Z","lastLogout":"2026-07-18T12:10:00Z"}],"roles":["operations-reader"],"overrides":[]},
+        {"id":"usr-107","subject":"ken.ito","name":"Ken Ito","email":"ken.ito@example.test","region":"APAC","active":true,"applications":[{"appId":"ops","default":true,"lastLogin":null,"lastLogout":null}],"roles":[],"overrides":[]}
+      ]
     },
     "providerCatalogue":[
       {"id":"engine-a","name":"Relational engine A","qualified":true},
@@ -677,14 +687,14 @@
     'use strict';
     const initial=JSON.parse(document.getElementById('admin-metadata').textContent),model=structuredClone(initial);
     const fixtures=JSON.parse(document.getElementById('admin-fixtures').textContent);
-    const state={module:'overview',appId:'ops',selectedScreen:'orders',selectedField:'customer',selectedCommand:'New',selectedDataClass:'orders',selectedConnection:'ops-db',selectedList:'order-status',selectedReport:'order-export',selectedRole:'operations-editor',navSelection:null,inspectorTab:'properties',detailTab:'definition',securityTab:'permissions',systemTab:'settings',dirty:0,validated:false,validation:null,compiling:false,approvals:{},acceptedWarnings:{},schedule:null,actor:'Jordan Lee',publicationNote:'',viewVersion:null,compareBase:'',compareOther:'',previewRole:'',inspectorVisible:true,history:[],future:[],publicationRevision:7,focusPath:''};
+    const state={module:'overview',appId:'ops',selectedScreen:'orders',selectedField:'customer',selectedCommand:'New',selectedDataClass:'orders',selectedConnection:'ops-db',selectedList:'order-status',selectedReport:'order-export',selectedRole:'operations-editor',selectedUser:'usr-101',navSelection:null,inspectorTab:'properties',detailTab:'definition',securityTab:'permissions',systemTab:'settings',dirty:0,validated:false,validation:null,compiling:false,approvals:{},acceptedWarnings:{},schedule:null,actor:'Jordan Lee',publicationNote:'',viewVersion:null,compareBase:'',compareOther:'',previewRole:'',inspectorVisible:true,history:[],future:[],publicationRevision:7,focusPath:''};
     const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const app=()=>model.applications.find(x=>x.id===state.appId);
     const screen=()=>model.screens.find(x=>x.id===state.selectedScreen);
     const dc=()=>model.dataClasses.find(x=>x.id===state.selectedDataClass);
     const list=()=>model.valueLists.find(x=>x.id===state.selectedList);
     const dcFor=s=>model.dataClasses.find(d=>d.id===s.dataClassId);
-    const configKeys=['applications','navigation','screens','dataClasses','connections','valueLists','reports','roles','overrides','settings','messages'];
+    const configKeys=['applications','navigation','screens','dataClasses','connections','valueLists','reports','roles','settings','messages'];
     // Closed vocabularies. The compiler rejects any value outside them.
     const CAPABILITIES=['insert','update','delete','refresh','filter','search','export','print','personalize','detach'];
     const PERMISSIONS=['read','insert','update','delete','export','print','execute'];
@@ -709,12 +719,14 @@
     const ROW_TEMPLATES={
       parameter:{name:'new_parameter',type:'string',source:'request',required:false},resultField:{name:'new_field',type:'string'},value:{value:'new-value',label:'New value',active:true},
       column:{field:'',caption:'New column',format:''},aggregate:{field:'',function:'sum'},subject:{type:'group',id:'new-group'},fieldPolicy:{screenId:'',fieldId:'',read:true,write:false},
-      rowScope:{dataClassId:'',field:'',operator:'equals',context:'session.region'},override:{id:'override',subject:'',screenId:'',permissions:{},reason:''},
+      rowScope:{dataClassId:'',field:'',operator:'equals',context:'session.region'},
       setting:{id:'setting',name:'New setting',value:''},message:{id:'message',severity:'info',title:'New message',text:'',active:false}
     };
     // Screen-type settings are created with every schema property the first time one is edited.
     const SETTING_DEFAULTS={relation:{masterField:'',detailParameter:''},tree:{keyField:'',parentField:'',labelField:'',loading:'eager'},junction:{ownerField:'',memberField:''},chart:{kind:'bar',category:'',series:[]},personalization:{}};
     const audit=structuredClone(initial.audit);let auditSequence=audit.length;
+    // Users are live administration data owned by the environment: outside the versioned draft, its digest and Undo.
+    const administration=structuredClone(fixtures.administration);
     let draftConfig=configuration(),releaseSequence=2;
     const releases=seedReleases(initial.releases,draftConfig);
     const modules=[
@@ -722,7 +734,7 @@
       {section:'Application structure',items:[['applications','Applications','A'],['navigation','Navigation','≡'],['screens','Screen designer','▦']]},
       {section:'Data and behavior',items:[['dataclasses','DataClasses','D'],['connections','Connections','◎'],['values','Value lists','⌄']]},
       {section:'Output',items:[['reports','Reports & export','▥']]},
-      {section:'Access and release',items:[['security','Security','◇'],['validation','Validation','✓'],['impact','Impact analysis','◈'],['versions','Versions & publish','↑'],['audit','Audit history','◷']]},
+      {section:'Access and release',items:[['security','Security','◇'],['users','Users','◍'],['validation','Validation','✓'],['impact','Impact analysis','◈'],['versions','Versions & publish','↑'],['audit','Audit history','◷']]},
       {section:'Platform',items:[['system','System','⚙']]}
     ];
     const titles=Object.fromEntries(modules.flatMap(g=>g.items.map(([id,label])=>[id,label])));
@@ -847,7 +859,6 @@
         if(r.fieldPolicies!==undefined)rows(r.fieldPolicies,`${p}.fieldPolicies`,{screenId:'string',fieldId:'string',read:'boolean',write:'boolean'});
         if(r.rowScopes!==undefined)rows(r.rowScopes,`${p}.rowScopes`,{dataClassId:'string',field:'string',operator:'string',context:'string'});
       });
-      rows(config.overrides,'overrides',{id:'id',subject:'string',screenId:'string',permissions:'object',reason:'string'},{},(o,p)=>flags(o.permissions,`${p}.permissions`,PERMISSIONS,'permission'));
       rows(config.settings,'settings',{id:'id',name:'string',value:'string'});
       rows(config.messages,'messages',{id:'id',severity:'string',title:'string',text:'string',active:'boolean'});
       return [...new Set(errors)];
@@ -923,7 +934,6 @@
         (r.fieldPolicies||[]).forEach((x,i)=>add(`${p}.fieldPolicies.#${i}`,'screens',x.screenId,'field policy screen','screenId'));
         (r.rowScopes||[]).forEach((x,i)=>add(`${p}.rowScopes.#${i}`,'dataClasses',x.dataClassId,'row scope DataClass','dataClassId'));
       }
-      for(const o of config.overrides)add(`overrides.${o.id}`,'screens',o.screenId,'override screen','screenId');
       return refs;
     }
     function dependents(path,config=model){return references(config).filter(r=>r.to===path);}
@@ -934,8 +944,8 @@
       return (!c.capability||s.capabilities[c.capability]===true)&&(!role||roleGrants(role,s.id,permission));
     }
     function entityName(path,config=model){
-      const s=String(path).split('.'),e=resolvePath(config,entityOf(path));
-      const kinds={applications:'Application',navigation:'Navigation',screens:'Screen',dataClasses:'DataClass',connections:'Connection',valueLists:'Value list',reports:'Report',roles:'Role',overrides:'User override',settings:'Setting',messages:'System message'};
+      const s=String(path).split('.'),e=s[0]==='users'?findUser(s[1]):resolvePath(config,entityOf(path));
+      const kinds={applications:'Application',navigation:'Navigation',screens:'Screen',dataClasses:'DataClass',connections:'Connection',valueLists:'Value list',reports:'Report',roles:'Role',users:'User',settings:'Setting',messages:'System message'};
       const tail=s.slice(2).filter(x=>!['fields','commands','items','parameters','resultFields','permissions'].includes(x)).join(' › ');
       return `${kinds[s[0]]||s[0]} · ${e?.caption||e?.name||e?.subject||s[1]||''}${tail?' › '+tail:''}`;
     }
@@ -1110,12 +1120,6 @@
           option(`${p}.rowScopes.#${i}`,x.operator,'scopeOperator','row-scope operator');option(`${p}.rowScopes.#${i}`,x.context,'scopeContext','trusted context value');
         });
       }
-      for(const o of model.overrides){
-        const p=`overrides.${o.id}`,s=model.screens.find(x=>x.id===o.screenId);
-        if(!o.subject.trim())add(`${p}.subject`,'A user override names its subject.','FIELD_INCOMPLETE');
-        if(!o.reason.trim())add(`${p}.reason`,'A user override records its reason.','FIELD_INCOMPLETE');
-        if(s)for(const k of Object.keys(o.permissions).filter(k=>o.permissions[k]))if((s.type==='action')!==(k==='execute'))add(`${p}.permissions.${k}`,`"${k}" does not apply to this screen type; denied by default.`,'AMBIGUOUS_PERMISSION');
-      }
       for(const m of model.messages)option(`messages.${m.id}.severity`,m.severity,'severity','message severity');
       return issues;
     }
@@ -1154,7 +1158,7 @@
         const target=queue.shift();
         for(const r of refs)if(r.to===target){
           const from=entityOf(r.from);
-          if(!affected.has(from)){affected.add(from);if(!/^(applications|navigation|roles|overrides)\./.test(from))queue.push(from);}
+          if(!affected.has(from)){affected.add(from);if(!/^(applications|navigation|roles)\./.test(from))queue.push(from);}
         }
       }
       const of=kind=>[...affected].filter(p=>p.startsWith(kind+'.')).sort(),apps=new Set(of('applications'));
@@ -1227,7 +1231,7 @@
       if(s[0]==='roles')return s[2]==='permissions'?'role permission':s[2]==='subjects'?'subject mapping':s[2]==='fieldPolicies'?'field policy':s[2]==='rowScopes'?'row scope':'role';
       if(s[0]==='valueLists')return s[2]==='values'?'value-list item':'value list';
       if(s[0]==='reports')return s[2]==='columns'?'report column':s[2]==='aggregates'?'report aggregate':'report';
-      return {applications:'application',navigation:'navigation',connections:'connection',overrides:'user override',settings:'setting',messages:'system message'}[s[0]]||'configuration';
+      return {applications:'application',navigation:'navigation',connections:'connection',settings:'setting',messages:'system message'}[s[0]]||'configuration';
     }
     function coerce(raw,kind){
       if(kind==='boolean')return Boolean(raw);
@@ -1313,12 +1317,11 @@
       checkpoint('Duplicated screen',()=>{copy.id=id;copy.caption+=' copy';copy.commands.forEach(c=>c.policy=`${id}.${policyParts(c.policy).permission}`);model.screens.push(copy);state.selectedScreen=id;state.selectedField=copy.fields[0]?.id;},`screens.${id}`,'',`Copied from ${original.id}`);
     }
     function deletionPlan(path){
-      const [kind,id]=String(path).split('.'),refs=dependents(path),cascading=['navigation target','permission screen','field policy screen','override screen','application access','row scope DataClass'];
+      const [kind,id]=String(path).split('.'),refs=dependents(path),cascading=['navigation target','permission screen','field policy screen','application access','row scope DataClass'];
       const dropScreen=screenId=>{
         model.screens=model.screens.filter(s=>s.id!==screenId);
         for(const groups of Object.values(model.navigation))for(const g of groups)g.items=g.items.filter(i=>i.screenId!==screenId);
         for(const r of model.roles){delete r.permissions[screenId];r.fieldPolicies=(r.fieldPolicies||[]).filter(x=>x.screenId!==screenId);}
-        model.overrides=model.overrides.filter(o=>o.screenId!==screenId);
       };
       if(kind==='screens')return {blocking:refs.filter(r=>!cascading.includes(r.via)),cascade:refs.filter(r=>cascading.includes(r.via)),apply:()=>dropScreen(id)};
       if(kind==='applications'){
@@ -1359,7 +1362,7 @@
       if(parts&&(!group||(parts[0]==='item'&&!group.items.some(i=>i.id===parts[2]))))state.navSelection=null;
     }
     function select(kind,id){
-      const key={app:'appId',screen:'selectedScreen',field:'selectedField',command:'selectedCommand',dataClass:'selectedDataClass',connection:'selectedConnection',list:'selectedList',report:'selectedReport',role:'selectedRole',nav:'navSelection'}[kind];
+      const key={app:'appId',screen:'selectedScreen',field:'selectedField',command:'selectedCommand',dataClass:'selectedDataClass',connection:'selectedConnection',list:'selectedList',report:'selectedReport',role:'selectedRole',user:'selectedUser',nav:'navSelection'}[kind];
       if(!key)return;
       state[key]=id;
       if(kind==='app'){state.selectedScreen=model.screens.find(s=>s.appId===id)?.id;state.selectedDataClass=model.dataClasses.find(d=>d.appId===id)?.id;state.navSelection=null;}
@@ -1371,9 +1374,10 @@
     // Diagnostics, dependency links and audit targets all navigate with the same entity path.
     function openPath(path){
       const s=String(path).split('.'),kind=s[0],owner=resolvePath(model,entityOf(path));
-      const target={applications:'applications',navigation:'navigation',screens:'screens',dataClasses:'dataclasses',connections:'connections',valueLists:'values',reports:'reports',roles:'security',overrides:'security',settings:'system',messages:'system'}[kind];
+      const target={applications:'applications',navigation:'navigation',screens:'screens',dataClasses:'dataclasses',connections:'connections',valueLists:'values',reports:'reports',roles:'security',users:'users',settings:'system',messages:'system'}[kind];
       if(!target)return false;
       state.module=target;
+      if(kind==='users'&&findUser(s[1]))state.selectedUser=s[1];
       const appId=['applications','navigation'].includes(kind)?s[1]:owner?.appId;
       if(model.applications.some(a=>a.id===appId))state.appId=appId;
       if(kind==='navigation')state.navSelection=s[4]?`item:${s[2]}:${s[4]}`:s[2]?`group:${s[2]}`:null;
@@ -1391,7 +1395,6 @@
       if(kind==='valueLists')state.selectedList=s[1];
       if(kind==='reports')state.selectedReport=s[1];
       if(kind==='roles'){state.selectedRole=s[1];state.securityTab=['subjects','applications','name','active'].includes(s[2])?'access':s[2]==='fieldPolicies'?'fields':s[2]==='rowScopes'?'rows':'permissions';}
-      if(kind==='overrides')state.securityTab='overrides';
       if(kind==='settings'||kind==='messages')state.systemTab=kind;
       state.focusPath=String(path);render();return true;
     }
@@ -1491,6 +1494,141 @@
       return state.validated;
     }
 
+    // ---- access rules shared by the role preview, the user preview and both effective-access views ----
+    // Cumulative result of the given roles for one screen; a user override, when present, replaces it.
+    function subjectAccess(roles,applications,overrides,s){
+      if(!applications.includes(s.appId))return {permissions:[],source:'no application assignment',hiddenFields:[],roles:[]};
+      const usable=roles.filter(r=>r.active!==false&&(r.applications||[]).includes(s.appId)),grants=(r,k)=>r.permissions?.[s.id]?.[k]===true;
+      const granting=usable.filter(r=>PERMISSIONS.some(k=>grants(r,k))),override=(overrides||[]).find(o=>o.screenId===s.id);
+      const permissions=PERMISSIONS.filter(k=>override?override.permissions?.[k]===true:usable.some(r=>grants(r,k)));
+      const hiddenFields=(s.fields||[]).filter(f=>granting.length&&granting.every(r=>(r.fieldPolicies||[]).some(x=>x.screenId===s.id&&x.fieldId===f.id&&!x.read))).map(f=>f.id);
+      return {permissions,source:override?'user override':granting.length?'roles':'default deny',hiddenFields,roles:granting.map(r=>r.id)};
+    }
+    function previewSubject(s){
+      const id=String(state.previewRole||''),user=id.startsWith('user:')?findUser(id.slice(5)):null,role=model.roles.find(r=>r.id===id);
+      if(user)return {name:user.name,...userAccess(user,s,model)};
+      return role?{name:role.name,...subjectAccess([role],role.applications||[],[],s)}:null;
+    }
+
+    // ---- users: live administration (takes effect on the next request; never part of the draft) ----
+    function liveConfig(){return activeRelease()?.snapshot||null;}
+    function findUser(id){return administration.users.find(u=>u.id===id);}
+    function securityAdministrator(){return fixtures.reviewers.find(r=>r.role==='Security');}
+    function canAdministerUsers(){return Boolean(state.actor)&&securityAdministrator()?.name===state.actor;}
+    function userGroups(user){return administration.directory[user.subject]||[];}
+    // Roles a user holds in a configuration: direct membership, or a mapping to one of the user's identity-provider groups.
+    function userRoles(user,config=liveConfig()){
+      const groups=userGroups(user);
+      return (config?.roles||[]).map(role=>({role,via:user.roles.includes(role.id)?'membership':(role.subjects||[]).some(x=>(x.type==='group'&&groups.includes(x.id))||(x.type==='user'&&x.id===user.subject))?'group mapping':''})).filter(x=>x.via);
+    }
+    // Start-up admission: an active record, an application assignment and a role for an assigned application.
+    function userStart(user,config=liveConfig()){
+      const assigned=user.applications.map(a=>a.appId);
+      if(!user.active)return {ok:false,reason:'Inactive'};
+      if(!assigned.length)return {ok:false,reason:'No application'};
+      if(!userRoles(user,config).some(x=>x.role.active!==false&&(x.role.applications||[]).some(a=>assigned.includes(a))))return {ok:false,reason:'No role'};
+      return {ok:true,reason:''};
+    }
+    function userAccess(user,s,config=liveConfig()){
+      const start=userStart(user,config);
+      if(!start.ok)return {permissions:[],source:start.reason.toLowerCase(),hiddenFields:[],roles:[]};
+      return subjectAccess(userRoles(user,config).map(x=>x.role),user.applications.map(a=>a.appId),user.overrides,s);
+    }
+    // Every user change goes through here: security administrator only, audited, and it raises the policy revision.
+    function administer(action,target,detail,reason,change){
+      const revision=()=>`policy revision ${administration.policyRevision}`;
+      if(!canAdministerUsers()){
+        appendAudit('Refused user administration',target,action,{outcome:'Denied',reason:'Only the security administrator may change users',version:revision()});
+        toast(`Only the security administrator (${securityAdministrator()?.name||'not configured'}) can change users.`,'warn');return false;
+      }
+      change();administration.policyRevision++;
+      appendAudit(action,target,detail,{reason:String(reason||'').trim(),version:revision()});render();return true;
+    }
+    function refuseUserChange(text){toast(text,'warn');return false;}
+    function registerUser(subject,name,email,region){
+      const s=String(subject).trim().toLowerCase(),n=String(name).trim(),e=String(email).trim();
+      if(!canAdministerUsers())return administer('Registered user','users');
+      if(!/^[a-z0-9][a-z0-9._-]*$/.test(s))return refuseUserChange('Enter the subject identifier issued by the identity provider: lower-case letters, digits, dots, hyphens or underscores.');
+      if(administration.users.some(u=>u.subject===s))return refuseUserChange('That subject already has a user record.');
+      if(!n)return refuseUserChange('A display name is required.');
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return refuseUserChange('A valid email address is required.');
+      const id=`usr-${Math.max(100,...administration.users.map(u=>Number(u.id.slice(4))||0))+1}`;
+      return administer('Registered user',`users.${id}`,`Subject ${s}; inactive until activated`,'',()=>{administration.users.push({id,subject:s,name:n,email:e,region:String(region||''),active:false,applications:[],roles:[],overrides:[]});administration.directory[s]??=[];state.selectedUser=id;});
+    }
+    function setUserProp(id,prop,value){
+      const user=findUser(id),next=String(value).trim();
+      if(!canAdministerUsers())return administer('Updated user',`users.${id}`);
+      if(!user||!['name','email','region'].includes(prop))return false;
+      if(prop==='name'&&!next)return refuseUserChange('A display name is required.');
+      if(prop==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(next))return refuseUserChange('A valid email address is required.');
+      if(user[prop]===next)return false;
+      return administer('Updated user',`users.${id}`,`${prop}: ${user[prop]} to ${next}`,'',()=>{user[prop]=next;});
+    }
+    function setUserActive(id,active,reason){
+      const user=findUser(id);
+      if(!canAdministerUsers())return administer(active?'Activated user':'Deactivated user',`users.${id}`);
+      if(!user||user.active===active)return false;
+      if(!String(reason||'').trim())return refuseUserChange(`A reason is required to ${active?'activate':'deactivate'} a user.`);
+      return administer(active?'Activated user':'Deactivated user',`users.${id}`,active?'May start on the next request if assigned an application and a role':'Every session of this user ends on the next request',reason,()=>{user.active=active;});
+    }
+    function assignApplication(id,appId){
+      const user=findUser(id);
+      if(!canAdministerUsers())return administer('Assigned application',`users.${id}`);
+      if(!user||user.applications.some(a=>a.appId===appId))return false;
+      if(!liveConfig()?.applications.some(a=>a.id===appId))return refuseUserChange('Only an application in the active release can be assigned.');
+      return administer('Assigned application',`users.${id}`,`${appId}${user.applications.length?'':' (default)'}`,'',()=>{user.applications.push({appId,default:!user.applications.length,lastLogin:null,lastLogout:null});});
+    }
+    function removeApplication(id,appId){
+      const user=findUser(id),live=liveConfig();
+      if(!canAdministerUsers())return administer('Removed application assignment',`users.${id}`);
+      if(!user||!user.applications.some(a=>a.appId===appId))return false;
+      const left=user.applications.filter(a=>a.appId!==appId).map(a=>a.appId);
+      const roles=user.roles.filter(r=>{const role=live?.roles.find(x=>x.id===r);return role&&!(role.applications||[]).some(a=>left.includes(a));});
+      const overrides=user.overrides.filter(o=>live?.screens.find(s=>s.id===o.screenId)?.appId===appId);
+      return administer('Removed application assignment',`users.${id}`,`${appId}${roles.length?`; memberships removed: ${roles.join(', ')}`:''}${overrides.length?`; overrides removed: ${overrides.map(o=>o.screenId).join(', ')}`:''}`,'',()=>{
+        user.applications=user.applications.filter(a=>a.appId!==appId);user.roles=user.roles.filter(r=>!roles.includes(r));user.overrides=user.overrides.filter(o=>!overrides.includes(o));
+        if(user.applications.length&&!user.applications.some(a=>a.default))user.applications[0].default=true;
+      });
+    }
+    function setDefaultApplication(id,appId){
+      const user=findUser(id),target=user?.applications.find(a=>a.appId===appId);
+      if(!canAdministerUsers())return administer('Changed default application',`users.${id}`);
+      if(!target)return refuseUserChange('Only an assigned application can be the default.');
+      if(target.default)return false;
+      return administer('Changed default application',`users.${id}`,appId,'',()=>{user.applications.forEach(a=>{a.default=a===target;});});
+    }
+    function setUserRole(id,roleId,member){
+      const user=findUser(id),role=liveConfig()?.roles.find(r=>r.id===roleId);
+      if(!canAdministerUsers())return administer(member?'Granted role membership':'Removed role membership',`users.${id}`);
+      if(!user||user.roles.includes(roleId)===member)return false;
+      if(member&&!role)return refuseUserChange('Only a role in the active release can be assigned. Publish the version that defines it first.');
+      if(member&&!(role.applications||[]).some(a=>user.applications.some(x=>x.appId===a)))return refuseUserChange(`${role.name} applies to an application this user is not assigned to. Assign the application first.`);
+      return administer(member?'Granted role membership':'Removed role membership',`users.${id}`,roleId,'',()=>{user.roles=member?[...user.roles,roleId]:user.roles.filter(r=>r!==roleId);});
+    }
+    function setUserOverride(id,screenId,permissions,reason){
+      const user=findUser(id),s=liveConfig()?.screens.find(x=>x.id===screenId),keys=PERMISSIONS.filter(k=>permissions?.[k]===true);
+      if(!canAdministerUsers())return administer('Set user override',`users.${id}`);
+      if(!user)return false;
+      if(!s)return refuseUserChange('An override names a screen in the active release.');
+      if(!user.applications.some(a=>a.appId===s.appId))return refuseUserChange('An override cannot reach an application the user is not assigned to.');
+      if(keys.some(k=>(s.type==='action')!==(k==='execute')))return refuseUserChange('Execute applies to action screens only; the other permissions apply to data screens only.');
+      if(!String(reason||'').trim())return refuseUserChange('A reason is required for a user override.');
+      return administer('Set user override',`users.${id}`,`${screenId}: ${keys.join(', ')||'everything denied'} replaces the combined role result`,reason,()=>{user.overrides=[...user.overrides.filter(o=>o.screenId!==screenId),{screenId,permissions:Object.fromEntries(keys.map(k=>[k,true])),reason:String(reason).trim()}];});
+    }
+    function removeUserOverride(id,screenId){
+      const user=findUser(id);
+      if(!canAdministerUsers())return administer('Removed user override',`users.${id}`);
+      if(!user||!user.overrides.some(o=>o.screenId===screenId))return false;
+      return administer('Removed user override',`users.${id}`,`${screenId}: the combined role result applies again`,'',()=>{user.overrides=user.overrides.filter(o=>o.screenId!==screenId);});
+    }
+    function removeUser(id,reason){
+      const user=findUser(id);
+      if(!canAdministerUsers())return administer('Removed user',`users.${id}`);
+      if(!user)return false;
+      if(!String(reason||'').trim())return refuseUserChange('A reason is required to remove a user.');
+      return administer('Removed user',`users.${id}`,`${user.name} (${user.subject}); start-up is refused from the next request`,reason,()=>{administration.users=administration.users.filter(u=>u!==user);state.selectedUser=administration.users[0]?.id;});
+    }
+
     // ---- rendering helpers: every model value is escaped, in text and in attributes ----------
     function controlId(path,prop){return 'c-'+hash(`${path}|${prop}`);}
     function optionList(options,value){
@@ -1532,7 +1670,7 @@
     }
     function link(path,text){return `<button class="link" data-action="open" data-path="${esc(path)}">${esc(text??entityName(path))}</button>`;}
     function chip(status){
-      const tone={Draft:'draft',Validating:'warn',Approved:'info',Published:'good',Superseded:'superseded',Withdrawn:'bad',Retired:'retired',Healthy:'good',Degraded:'warn',Succeeded:'good',Denied:'bad',Blocked:'bad'}[status]||'';
+      const tone={Draft:'draft',Validating:'warn',Approved:'info',Published:'good',Superseded:'superseded',Withdrawn:'bad',Retired:'retired',Healthy:'good',Degraded:'warn',Succeeded:'good',Denied:'bad',Blocked:'bad',Active:'good',Inactive:'bad'}[status]||'';
       return `<span class="status ${tone}">${esc(status)}</span>`;
     }
     function refList(refs,empty){return refs.length?`<ul class="ref-list">${refs.map(r=>`<li>${link(r.from)} <span class="muted">${esc(r.via)}</span></li>`).join('')}</ul>`:`<p class="muted">${esc(empty)}</p>`;}
@@ -1572,8 +1710,8 @@
       return String(value);
     }
     function screenCanvas(s,interactive=true){
-      const role=model.roles.find(r=>r.id===state.previewRole),master=dcFor(s),detail=model.dataClasses.find(d=>d.id===s.detailDataClassId),rows=master?fixtureRows(master):[];
-      const denied=f=>role&&(role.fieldPolicies||[]).some(x=>x.screenId===s.id&&x.fieldId===f.id&&!x.read);
+      const viewer=previewSubject(s),master=dcFor(s),detail=model.dataClasses.find(d=>d.id===s.detailDataClassId),rows=master?fixtureRows(master):[];
+      const denied=f=>viewer&&viewer.hiddenFields.includes(f.id);
       const shown=s.fields.filter(f=>f.visible&&f.type!=='hidden'&&!denied(f)),hidden=s.fields.filter(f=>f.type==='hidden'||!f.visible);
       const pick=f=>interactive?` data-action="select" data-kind="field" data-id="${esc(f.id)}"`:' tabindex="-1"',mark=f=>f.id===state.selectedField&&interactive?' active':'';
       const aside=f=>f.role==='criteria'||['label','action','subscreen'].includes(f.type),asideBlock=()=>shown.some(aside)?`<div class="section-title">Criteria and editor elements</div>${form(shown.filter(aside),null)}`:'';
@@ -1590,7 +1728,7 @@
       };
       const form=(fields,row)=>[...new Set(fields.map(f=>f.group))].map(g=>`<fieldset class="preview-group"><legend>${esc(g)}</legend><div class="preview-form">${fields.filter(f=>f.group===g).map(f=>`<div class="${f.wide?'wide':''}"><button type="button" class="preview-field${mark(f)}"${pick(f)}>${esc(f.caption)}${f.required?' *':''}${f.role==='criteria'?' <em>(criteria)</em>':''}</button>${box(f,row)}</div>`).join('')}</div></fieldset>`).join('');
       let body='';
-      if(role&&!PERMISSIONS.some(k=>roleGrants(role,s.id,k)))body=`<p class="notice bad">${esc(role.name)} is granted nothing on this screen. It is omitted from the definition delivered to that role.</p>`;
+      if(viewer&&!viewer.permissions.length)body=`<p class="notice bad">${esc(viewer.name)} is granted nothing on this screen (${esc(viewer.source)}). It is omitted from the definition delivered to them.</p>`;
       else if(s.type==='grid')body=asideBlock()+grid(shown.filter(f=>!aside(f)),rows);
       else if(s.type==='field')body=form(shown,rows[0]);
       else if(s.type==='action'){
@@ -1614,8 +1752,8 @@
         const max=Math.max(1,...rows.flatMap(row=>series.map(f=>Number(row[f.binding])||0)));
         body=`<div class="preview-chart" role="img" aria-label="${esc(s.chart?.kind||'bar')} chart of ${esc(series.map(f=>f.caption).join(' and '))} by ${esc(category?.caption||'category')}; the table below carries the same values">${rows.map(row=>`<div class="preview-bars"><span>${esc(category?previewValue(category,row):'')}</span>${series.map((f,i)=>`<i class="bar-${i%2}" style="height:${Math.max(2,(Number(row[f.binding])||0)/max*70)}px" title="${esc(f.caption)} ${esc(previewValue(f,row))}"></i>`).join('')}</div>`).join('')}</div>${asideBlock()}${grid(shown.filter(f=>!aside(f)),rows)}`;
       }else body='<p class="notice bad">Unsupported screen type. The compiler rejects it; no substitute is rendered.</p>';
-      const tools=s.commands.filter(c=>commandShown(s,c,role));
-      return `<div class="canvas"><div class="browser-frame"><div class="browser-bar"><i class="browser-dot"></i><i class="browser-dot"></i><i class="browser-dot"></i><span class="browser-url">/apps/${esc(s.appId)}/screens/${esc(s.id)}</span></div><div class="preview-shell"><aside class="preview-nav"><div class="preview-brand">GD Workspace</div><div class="preview-link active">${esc(s.caption)}</div></aside><div class="preview-main"><div class="preview-title">${esc(s.caption)}</div><div class="preview-sub">${esc(s.description)}</div><div class="preview-tools" role="toolbar" aria-label="Commands shown${role?' to '+esc(role.name):''}">${tools.map(c=>`<span class="preview-tool">${esc(c.label)}</span>`).join('')||'<span class="muted">No command is shown</span>'}</div>${body}${hidden.length?`<p class="muted">Not rendered: ${hidden.map(f=>esc(f.caption||f.id)+(f.type==='hidden'?' (hidden criteria)':' (not visible)')).join(', ')}</p>`:''}</div></div></div></div>`;
+      const tools=s.commands.filter(c=>commandShown(s,c,null)&&(!viewer||viewer.permissions.includes(policyParts(c.policy).permission)));
+      return `<div class="canvas"><div class="browser-frame"><div class="browser-bar"><i class="browser-dot"></i><i class="browser-dot"></i><i class="browser-dot"></i><span class="browser-url">/apps/${esc(s.appId)}/screens/${esc(s.id)}</span></div><div class="preview-shell"><aside class="preview-nav"><div class="preview-brand">GD Workspace</div><div class="preview-link active">${esc(s.caption)}</div></aside><div class="preview-main"><div class="preview-title">${esc(s.caption)}</div><div class="preview-sub">${esc(s.description)}</div><div class="preview-tools" role="toolbar" aria-label="Commands shown${viewer?' to '+esc(viewer.name):''}">${tools.map(c=>`<span class="preview-tool">${esc(c.label)}</span>`).join('')||'<span class="muted">No command is shown</span>'}</div>${body}${hidden.length?`<p class="muted">Not rendered: ${hidden.map(f=>esc(f.caption||f.id)+(f.type==='hidden'?' (hidden criteria)':' (not visible)')).join(', ')}</p>`:''}</div></div></div></div>`;
     }
     function reportPreview(r){
       const d=model.dataClasses.find(x=>x.id===r.dataClassId),rows=d?fixtureRows(d):[];
@@ -1648,7 +1786,7 @@
       const status=release?release.status:draftStatus(),members=roles.reduce((n,r)=>n+(fixtures.deployment.roleMembers[r.id]||0),0),active=activeRelease();
       host.innerHTML=`<div class="stats"><div class="stat"><span>Configured screens</span><strong>${screens.length}</strong><small>${new Set(screens.map(s=>s.type)).size} screen types in use</small></div><div class="stat"><span>DataClasses</span><strong>${dcs.length}</strong><small>${connections.length} referenced connections</small></div><div class="stat"><span>Validation</span><strong>${release?'Snapshot':state.validation?(state.validated?'Passed':'Failed'):'Not run'}</strong><small>${release?'Immutable selected version':'Compiler result for this candidate'}</small></div><div class="stat"><span>${release?'Version state':'Draft changes'}</span><strong>${release?esc(release.status):state.dirty}</strong><small>${release?esc(release.label):'Based on '+esc(releases.find(v=>v.id===model.draft.basedOn)?.label||model.draft.basedOn)}</small></div></div>
         <div class="overview-grid"><section class="panel"><div class="panel-head"><h2>Version lifecycle</h2><p class="right">${esc(release?.label||model.draft.label)}</p></div><div class="panel-body">${lifecycleStrip(status)}<p>${release?`Read-only ${esc(release.status)} version. Open the draft to continue authoring.`:esc(draftStatusNote())}</p>${release?'':`<h3 class="section-title">Publication checklist: ${done} of ${steps.length}</h3><ul class="check-list">${steps.map(x=>`<li class="${x.done?'done':''}"><span aria-hidden="true">${x.done?'✓':'○'}</span> ${esc(x.label)} <span class="muted">${esc(x.detail)}</span></li>`).join('')}</ul><p class="muted">Publication rechecks every gate.</p>`}</div></section>
-        <section class="panel"><div class="panel-head"><h2>Selected application scope</h2><p class="right">${esc(app().name)}</p></div><div class="panel-body"><p>${screens.length} screens · ${dcs.length} DataClasses · ${connections.length} connections</p><p>${roles.length} roles with permissions here · ${members} role memberships in ${esc(env.name)}</p><div class="detail-kv"><span>Active version</span><span>${active?`${esc(active.label)} · ${esc(active.digest)}`:'None: no definition is executable'}</span></div><div class="detail-kv"><span>Publication-state revision</span><span>${state.publicationRevision}</span></div><div class="detail-kv"><span>Environment</span><span>${esc(env.name)} (${esc(env.kind)})</span></div><div class="detail-kv"><span>Publication scope</span><span>Workspace "${esc(model.workspace.name)}": ${model.applications.map(a=>esc(a.name)).join(', ')} with their shared connections, value lists and roles</span></div></div></section></div>`;
+        <section class="panel"><div class="panel-head"><h2>Selected application scope</h2><p class="right">${esc(app().name)}</p></div><div class="panel-body"><p>${screens.length} screens · ${dcs.length} DataClasses · ${connections.length} connections</p><p>${roles.length} roles with permissions here · ${members} role memberships in ${esc(env.name)}</p><div class="detail-kv"><span>Active version</span><span>${active?`${esc(active.label)} · ${esc(active.digest)}`:'None: no definition is executable'}</span></div><div class="detail-kv"><span>Publication-state revision</span><span>${state.publicationRevision}</span></div><div class="detail-kv"><span>Policy revision (users)</span><span>${administration.policyRevision}</span></div><div class="detail-kv"><span>Environment</span><span>${esc(env.name)} (${esc(env.kind)})</span></div><div class="detail-kv"><span>Publication scope</span><span>Workspace "${esc(model.workspace.name)}": ${model.applications.map(a=>esc(a.name)).join(', ')} with their shared connections, value lists and roles</span></div></div></section></div>`;
     }
     function renderApplications(){
       const a=app(),p=`applications.${a.id}`,screens=model.screens.filter(s=>s.appId===a.id);
@@ -1677,7 +1815,7 @@
       const s=screen();
       if(!s){host.innerHTML=emptyState('No screens configured for this application.','addScreen','＋ Add screen');return;}
       const at=s.fields.findIndex(f=>f.id===state.selectedField),p=`screens.${s.id}`,current=x=>x?' aria-current="true"':'';
-      host.innerHTML=`<div class="toolbar"><button class="button" data-action="addField" data-mutates>＋ Add field</button><button class="button" data-action="duplicateScreen" data-mutates>⧉ Duplicate screen</button><button class="button danger" data-action="deleteEntity" data-path="${esc(p)}" data-mutates>Delete screen</button><span class="divider"></span><button class="button" data-action="rowMove" data-path="${esc(p)}.fields" data-index="${at}" data-delta="-1" data-mutates${at>0?'':' disabled'}>↑ Move field</button><button class="button" data-action="rowMove" data-path="${esc(p)}.fields" data-index="${at}" data-delta="1" data-mutates${at>=0&&at<s.fields.length-1?'':' disabled'}>↓ Move field</button><button class="button danger" data-action="rowDelete" data-path="${esc(p)}.fields" data-index="${at}" data-label="field ${esc(state.selectedField)}" data-mutates${at>=0?'':' disabled'}>Delete field</button><button class="button" data-action="toggleInspector" aria-pressed="${state.inspectorVisible}">${state.inspectorVisible?'Hide inspector':'Show inspector'}</button><span class="right inline-field"><label for="previewRole">Preview as</label><select id="previewRole" class="select" data-change="previewRole"><option value="">Definition (all commands)</option>${model.roles.map(r=>`<option value="${esc(r.id)}"${r.id===state.previewRole?' selected':''}>${esc(r.name)}</option>`).join('')}</select></span></div>
+      host.innerHTML=`<div class="toolbar"><button class="button" data-action="addField" data-mutates>＋ Add field</button><button class="button" data-action="duplicateScreen" data-mutates>⧉ Duplicate screen</button><button class="button danger" data-action="deleteEntity" data-path="${esc(p)}" data-mutates>Delete screen</button><span class="divider"></span><button class="button" data-action="rowMove" data-path="${esc(p)}.fields" data-index="${at}" data-delta="-1" data-mutates${at>0?'':' disabled'}>↑ Move field</button><button class="button" data-action="rowMove" data-path="${esc(p)}.fields" data-index="${at}" data-delta="1" data-mutates${at>=0&&at<s.fields.length-1?'':' disabled'}>↓ Move field</button><button class="button danger" data-action="rowDelete" data-path="${esc(p)}.fields" data-index="${at}" data-label="field ${esc(state.selectedField)}" data-mutates${at>=0?'':' disabled'}>Delete field</button><button class="button" data-action="toggleInspector" aria-pressed="${state.inspectorVisible}">${state.inspectorVisible?'Hide inspector':'Show inspector'}</button><span class="right inline-field"><label for="previewRole">Preview as</label><select id="previewRole" class="select" data-change="previewRole"><option value="">Definition (all commands)</option><optgroup label="Roles">${model.roles.map(r=>`<option value="${esc(r.id)}"${r.id===state.previewRole?' selected':''}>${esc(r.name)}</option>`).join('')}</optgroup><optgroup label="Users">${administration.users.map(u=>`<option value="user:${esc(u.id)}"${`user:${u.id}`===state.previewRole?' selected':''}>${esc(u.name)}</option>`).join('')}</optgroup></select></span></div>
         <div class="workbench ${state.inspectorVisible?'':'inspector-hidden'}"><section class="wb-pane" aria-label="Screens, fields and commands"><div class="wb-head"><strong>Screens</strong><span class="right status info">${screens.length}</span></div><div class="wb-scroll"><input class="entity-search" data-filter="screen" placeholder="Filter screens" aria-label="Filter screens">${screens.map(x=>`<button class="entity ${x.id===s.id?'active':''}"${current(x.id===s.id)} data-filterable="screen" data-action="select" data-kind="screen" data-id="${esc(x.id)}"><span class="entity-icon" aria-hidden="true">${ICONS[x.icon]||'•'}</span><span><strong>${esc(x.caption)}</strong><small>${esc(SCREEN_TYPES[x.type]||x.type)} · ${esc(x.id)}</small></span><em aria-hidden="true">›</em></button>`).join('')}<div class="section-title">Fields</div><div class="tree-indent">${s.fields.map((f,i)=>`<button class="entity ${f.id===state.selectedField?'active':''}"${current(f.id===state.selectedField)} data-action="select" data-kind="field" data-id="${esc(f.id)}"><span class="entity-icon" aria-hidden="true">${i+1}</span><span><strong>${esc(f.caption||f.id)}</strong><small>${esc(f.type)} · ${esc(f.role)} · ${esc(f.group)}</small></span>${f.required?'<em title="Required">*</em>':''}</button>`).join('')||'<p class="muted">No fields.</p>'}</div><div class="section-title">Commands</div><div class="tree-indent">${s.commands.map(c=>`<button class="entity ${c.key===state.selectedCommand&&state.inspectorTab==='command'?'active':''}" data-action="select" data-kind="command" data-id="${esc(c.key)}"><span class="entity-icon" aria-hidden="true">↯</span><span><strong>${esc(c.label)}</strong><small>${esc(c.key)} · ${esc(c.policy)}</small></span></button>`).join('')||'<p class="muted">No commands.</p>'}</div></div></section>
         <section class="wb-pane" aria-label="Screen preview"><div class="wb-head"><strong>Screen preview</strong><span class="muted">${esc(SCREEN_TYPES[s.type]||s.type)}</span><span class="right status draft">${readOnly()?'Immutable version':esc(draftStatus())}</span></div><div class="wb-scroll" style="padding:0">${screenCanvas(s)}</div></section>
         <section class="wb-pane" aria-label="Inspector"><div class="wb-head"><strong>Inspector</strong><button class="button small right" data-action="toggleInspector" aria-label="Hide inspector">×</button></div>${tabList('inspectorTab',state.inspectorTab,[['properties','Screen'],['field','Field'],['command','Command'],['behavior','Behavior'],['access','Access']],'Inspector sections')}<div class="wb-scroll inspector" role="tabpanel" aria-labelledby="tab-inspectorTab-${esc(state.inspectorTab)}">${screenInspector(s)}</div></section></div>`;
@@ -1767,14 +1905,15 @@
       const role=model.roles.find(r=>r.id===state.selectedRole);
       if(!role){host.innerHTML=emptyState('No roles configured. Access is denied by default.','addRole','＋ Add role');return;}
       const p=`roles.${role.id}`,tab=state.securityTab,members=fixtures.deployment.roleMembers[role.id]||0,screenOptions=model.screens.map(s=>[s.id,s.caption]);
+      const live=liveConfig()?.roles.some(r=>r.id===role.id),holders=administration.users.map(u=>({user:u,via:userRoles(u).find(x=>x.role.id===role.id)?.via})).filter(x=>x.via);
       const matrix=`<div class="permission-wrap"><table class="permission"><thead><tr><th scope="col">Screen</th>${PERMISSIONS.map(k=>`<th scope="col">${esc(capitalise(k))}</th>`).join('')}</tr></thead><tbody>${screens.map(s=>`<tr><th scope="row">${link(`screens.${s.id}`,s.caption)}<br><span class="muted">${esc(s.id)}</span></th>${PERMISSIONS.map(k=>`<td><input type="checkbox" data-change="flag" data-path="${esc(p)}.permissions" data-key="${esc(s.id)}" data-prop="${k}" data-mutates aria-label="${esc(capitalise(k))} on ${esc(s.caption)}"${role.permissions[s.id]?.[k]===true?' checked':''}${(s.type==='action')!==(k==='execute')?' disabled':''}></td>`).join('')}</tr>`).join('')||`<tr><td colspan="${PERMISSIONS.length+1}" class="muted">This application has no screens.</td></tr>`}</tbody></table></div><p class="property-help">Nothing is granted unless it is ticked. Execute applies to action screens; the other permissions apply to data screens.</p>`;
-      const overrides=`<p class="muted">A user override replaces the combined role result for one screen for one subject. It does not bypass role assignment, row scope or revocation.</p><div class="table-wrap"><table class="data-grid editor-grid"><thead><tr><th scope="col">Subject</th><th scope="col">Screen</th><th scope="col">Permissions granted (all others denied)</th><th scope="col">Reason</th><th scope="col"><span class="sr-only">Row actions</span></th></tr></thead><tbody>${model.overrides.map((o,i)=>{const op=`overrides.#${i}`,target=model.screens.find(s=>s.id===o.screenId);return `<tr><td><input data-change="prop" data-path="${op}" data-prop="subject" data-mutates aria-label="Subject, override ${i+1}" value="${esc(o.subject)}"></td><td><select data-change="prop" data-path="${op}" data-prop="screenId" data-mutates aria-label="Screen, override ${i+1}">${optionList([['','Not set'],...screenOptions],o.screenId).html}</select></td><td>${PERMISSIONS.filter(k=>!target||(target.type==='action')===(k==='execute')).map(k=>flagBox(`overrides.#${i}.permissions`,'',k,k,o.permissions[k]===true)).join(' ')}</td><td><input data-change="prop" data-path="${op}" data-prop="reason" data-mutates aria-label="Reason, override ${i+1}" value="${esc(o.reason)}"></td><td class="row-actions"><button class="button small danger" data-action="rowDelete" data-path="overrides" data-index="${i}" data-label="user override ${esc(o.id)}" data-mutates aria-label="Delete override ${i+1}">Delete</button></td></tr>`;}).join('')||'<tr><td colspan="5" class="muted">No user overrides defined.</td></tr>'}</tbody></table></div><div class="toolbar"><button class="button small" data-action="rowAdd" data-path="overrides" data-template="override" data-mutates>＋ Add user override</button></div>`;
-      const body=tab==='access'?`<div class="form-grid">${fixed('Stable role ID',role.id)}${control(p,'name','Role name')}<div class="wide">${control(p,'active','Role is active',{kind:'boolean'})}</div>${checkGroup(p,'applications','Application access',model.applications.map(a=>[a.id,a.name]))}</div><div class="section-title">Subject mappings</div><p class="muted">Groups, users or services from the organization's identity provider that receive this role. ${members} members currently resolve in ${esc(environment().name)}.</p>${tableEditor(`${p}.subjects`,[{key:'type',label:'Subject type',options:ENUMS.subjectType},{key:'id',label:'Identifier'}],{label:'subject mapping',template:'subject'})}`
+      const holding=`<p class="muted">Users are live administration, not part of this draft: membership is given and removed in ${link(`users.${holders[0]?.user.id||''}`,'Users')} and takes effect on the next request. Only roles in the active release can be held.</p>${live?'':'<div class="notice bad">This role is not in the active release yet. It cannot be assigned to a user until a version containing it is published.</div>'}<div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">User</th><th scope="col">Held through</th><th scope="col">Can start</th><th scope="col">Overrides</th></tr></thead><tbody>${holders.map(x=>{const start=userStart(x.user);return `<tr><td>${link(`users.${x.user.id}`,x.user.name)}<br><span class="muted">${esc(x.user.subject)}</span></td><td>${esc(x.via)}</td><td>${start.ok?'Yes':`No: ${esc(start.reason.toLowerCase())}`}</td><td>${x.user.overrides.map(o=>esc(o.screenId)).join(', ')||'—'}</td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">No user holds this role.</td></tr>'}</tbody></table></div>`;
+      const body=tab==='access'?`<div class="form-grid">${fixed('Stable role ID',role.id)}${control(p,'name','Role name')}<div class="wide">${control(p,'active','Role is active',{kind:'boolean'})}</div>${checkGroup(p,'applications','Application access',model.applications.map(a=>[a.id,a.name]))}</div><div class="section-title">Subject mappings</div><p class="muted">Groups, users or services from the organization's identity provider that receive this role. ${members} people currently resolve through these mappings in ${esc(environment().name)}.</p><div class="notice">A group mapping grants this role to every member of the group, but it does not make anyone a user. A person with no active user record, or with no application assignment, is refused at start-up. User records are kept in ${link(`users.${holders[0]?.user.id||''}`,'Users')}.</div>${tableEditor(`${p}.subjects`,[{key:'type',label:'Subject type',options:ENUMS.subjectType},{key:'id',label:'Identifier'}],{label:'subject mapping',template:'subject'})}`
         :tab==='fields'?`<p class="muted">A field policy removes read or write access to one field for this role. An unreadable field is omitted from the delivered definition.</p>${tableEditor(`${p}.fieldPolicies`,[{key:'screenId',label:'Screen',options:[['','Not set'],...screenOptions]},{key:'fieldId',label:'Field',options:row=>[['','Not set'],...(model.screens.find(s=>s.id===row.screenId)?.fields||[]).map(f=>[f.id,f.caption||f.id])]},{key:'read',label:'Read',kind:'boolean'},{key:'write',label:'Write',kind:'boolean'}],{label:'field policy',template:'fieldPolicy'})}`
         :tab==='rows'?`<p class="muted">A row scope is a structured predicate over trusted session context. It is evaluated only on the server.</p>${tableEditor(`${p}.rowScopes`,[{key:'dataClassId',label:'DataClass',options:[['','Not set'],...model.dataClasses.filter(d=>d.kind==='query').map(d=>[d.id,d.name])]},{key:'field',label:'Result field',options:row=>[['','Not set'],...(model.dataClasses.find(d=>d.id===row.dataClassId)?.resultFields||[]).map(f=>f.name)]},{key:'operator',label:'Operator',options:ENUMS.scopeOperator},{key:'context',label:'Trusted context',options:ENUMS.scopeContext}],{label:'row scope',template:'rowScope'})}`
-        :tab==='overrides'?overrides:matrix;
+        :tab==='users'?holding:matrix;
       host.innerHTML=`<div class="role-tabs" role="tablist" aria-label="Roles">${model.roles.map(r=>`<button class="role-pill ${r.id===role.id?'active':''}" role="tab" aria-selected="${r.id===role.id}" tabindex="${r.id===role.id?0:-1}" id="tab-role-${esc(r.id)}" data-action="select" data-kind="role" data-id="${esc(r.id)}">${esc(r.name)}${r.active?'':' (inactive)'}</button>`).join('')}</div>
-        <section class="panel"><div class="panel-head"><h2>${esc(role.name)}</h2><p>${members} members in ${esc(environment().name)} · ${(role.applications||[]).map(a=>esc(model.applications.find(x=>x.id===a)?.name||a)).join(', ')||'no application access'}</p><button class="button small danger right" data-action="deleteEntity" data-path="${esc(p)}" data-mutates>Delete role</button></div>${tabList('securityTab',tab,[['permissions','Screen permissions'],['access','Access & subjects'],['fields','Field policies'],['rows','Row scope'],['overrides','User overrides']],'Security sections')}<div class="panel-body" role="tabpanel" aria-labelledby="tab-securityTab-${esc(tab)}">${body}</div></section>
+        <section class="panel"><div class="panel-head"><h2>${esc(role.name)}</h2><p>${holders.length} user record${holders.length===1?'':'s'} · ${live?'in the active release':'not yet published'} · ${(role.applications||[]).map(a=>esc(model.applications.find(x=>x.id===a)?.name||a)).join(', ')||'no application access'}</p><button class="button small danger right" data-action="deleteEntity" data-path="${esc(p)}" data-mutates>Delete role</button></div>${tabList('securityTab',tab,[['permissions','Screen permissions'],['access','Access & subjects'],['fields','Field policies'],['rows','Row scope'],['users','Users with this role']],'Security sections')}<div class="panel-body" role="tabpanel" aria-labelledby="tab-securityTab-${esc(tab)}">${body}</div></section>
         <div class="panel" style="margin-top:12px"><div class="panel-head"><h2>How access is decided</h2></div><div class="panel-body"><div class="form-grid"><div class="relation-box"><strong>Default deny</strong><br><span class="muted">A screen, command or field with no grant is omitted from the delivered definition.</span></div><div class="relation-box"><strong>Server enforcement</strong><br><span class="muted">Every query, change, action, report and administration request rechecks policy on the server.</span></div></div></div></div>`;
     }
     function renderValidation(){
@@ -1823,7 +1962,7 @@
         <section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Side-by-side comparison</h2><span class="right inline-field"><label for="compareBase">Base</label><select id="compareBase" class="select" data-change="compare" data-which="compareBase">${options(state.compareBase||active?.id||'')}</select><label for="compareOther">Compared</label><select id="compareOther" class="select" data-change="compare" data-which="compareOther">${options(state.compareOther||state.viewVersion||'draft')}</select></span></div><div class="panel-body">${comparison()}</div></section>`;
     }
     function auditRow(a){
-      return `<tr><td>${esc(formatTime(a.time))}</td><td><strong>${esc(a.actor)}</strong></td><td>${esc(a.application||'—')}</td><td>${esc(a.action)}</td><td>${resolvePath(model,entityOf(a.target))?link(a.target,a.target):`<code>${esc(a.target)}</code>`}</td><td>${chip(a.outcome||'Succeeded')}</td><td>${esc(a.reason||'—')}</td><td>${esc(a.detail||'')}${a.before||a.after?`<br><code>${esc(a.before||'—')} → ${esc(a.after||'—')}</code>`:''}</td><td><code>${esc(a.version||'')}</code></td><td><code>${esc(a.correlation)}</code></td></tr>`;
+      return `<tr><td>${esc(formatTime(a.time))}</td><td><strong>${esc(a.actor)}</strong></td><td>${esc(a.application||'—')}</td><td>${esc(a.action)}</td><td>${resolvePath(model,entityOf(a.target))||(a.target.startsWith('users.')&&findUser(a.target.split('.')[1]))?link(a.target,a.target):`<code>${esc(a.target)}</code>`}</td><td>${chip(a.outcome||'Succeeded')}</td><td>${esc(a.reason||'—')}</td><td>${esc(a.detail||'')}${a.before||a.after?`<br><code>${esc(a.before||'—')} → ${esc(a.after||'—')}</code>`:''}</td><td><code>${esc(a.version||'')}</code></td><td><code>${esc(a.correlation)}</code></td></tr>`;
     }
     function renderAudit(){
       host.innerHTML=`<div class="toolbar"><input class="entity-search" style="max-width:320px;margin:0" data-filter="audit" placeholder="Filter actor, action, target or reason" aria-label="Filter audit records"><button class="button" data-action="exportAudit">Export audit</button><span class="right muted">Append-only: a correction is a new record, never an edit</span></div><section class="panel"><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Time</th><th scope="col">Actor</th><th scope="col">Application</th><th scope="col">Action</th><th scope="col">Target</th><th scope="col">Outcome</th><th scope="col">Reason</th><th scope="col">Detail and digests (before → after)</th><th scope="col">Version</th><th scope="col">Correlation</th></tr></thead><tbody>${audit.map(a=>auditRow(a).replace('<tr>','<tr data-filterable="audit">')).join('')}</tbody></table></div></section>`;
@@ -1834,6 +1973,58 @@
         :tab==='extensions'?`<div class="notice bad"><strong>Extension registration is blocked.</strong><br>No adapter contract is admitted until the extension scope decision (D-019) is approved. Metadata can then refer only to an approved registration ID; an arbitrary class or executable path is never loaded.</div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Registration ID</th><th scope="col">Contract</th><th scope="col">Owner</th><th scope="col">Version</th><th scope="col">State</th></tr></thead><tbody>${fixtures.extensionRegistry.map(x=>`<tr><td><code>${esc(x.id)}</code></td><td>${esc(x.contract)}</td><td>${esc(x.owner)}</td><td>${esc(x.version)}</td><td>${chip(x.status)}<br><span class="muted">${esc(x.note)}</span></td></tr>`).join('')}</tbody></table></div>`
         :`<p class="muted">Named settings are part of the versioned definition and are published with it.</p>${tableEditor('settings',[{key:'name',label:'Setting'},{key:'value',label:'Value'}],{label:'setting',template:'setting'})}`;
       host.innerHTML=`<section class="panel">${tabList('systemTab',tab,[['settings','Named settings'],['messages','System messages'],['extensions','Extension registry']],'System sections')}<div class="panel-body" role="tabpanel" aria-labelledby="tab-systemTab-${esc(tab)}">${body}</div></section>`;
+    }
+
+    function renderUsers(){
+      const live=liveConfig(),can=canAdministerUsers(),user=findUser(state.selectedUser)||administration.users[0],admin=securityAdministrator();
+      const appName=id=>live?.applications.find(a=>a.id===id)?.name||id,lastSignIn=u=>{const t=u.applications.map(a=>a.lastLogin).filter(Boolean).sort().pop();return t?formatTime(t):'Never';};
+      if(user)state.selectedUser=user.id;
+      const rows=administration.users.map(u=>{
+        const start=userStart(u),held=userRoles(u);
+        return `<tr data-filterable="user" class="${u.id===user?.id?'selected':''}"><td><button class="link" data-action="select" data-kind="user" data-id="${esc(u.id)}" aria-pressed="${u.id===user?.id}"><strong>${esc(u.name)}</strong></button><br><span class="muted">${esc(u.id)}</span></td><td><code>${esc(u.subject)}</code></td><td>${chip(u.active?'Active':'Inactive')}</td><td>${u.applications.map(a=>`${esc(appName(a.appId))}${a.default?' (default)':''}`).join(', ')||'<span class="muted">None</span>'}</td><td>${held.map(x=>`${esc(x.role.name)}${x.via==='group mapping'?' (group)':''}`).join(', ')||'<span class="muted">None</span>'}</td><td>${esc(lastSignIn(u))}</td><td>${start.ok?'<span class="status good">Yes</span>':`<span class="status bad">No</span> ${esc(start.reason)}`}</td></tr>`;
+      }).join('');
+      host.innerHTML=`${can?'':`<div class="notice" role="note"><strong>Read-only.</strong> Only the security administrator (${esc(admin?.name||'not configured')}) can change users. You are signed in as ${esc(state.actor)}.</div>`}
+        <div class="toolbar"><input class="entity-search" style="max-width:300px;margin:0" data-filter="user" placeholder="Search by name or subject" aria-label="Search users by name or subject"><button class="button" data-action="registerUser" data-admin>＋ Register user</button><span class="right muted">Live administration · policy revision <strong id="policyRevision">${administration.policyRevision}</strong> · a change applies on the next request</span></div>
+        <section class="panel"><div class="table-wrap"><table class="data-grid"><caption class="sr-only">Users</caption><thead><tr><th scope="col">User</th><th scope="col">Subject</th><th scope="col">State</th><th scope="col">Applications</th><th scope="col">Roles</th><th scope="col">Last sign-in</th><th scope="col">Can start</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="muted">No users registered. Nobody can start an application.</td></tr>'}</tbody></table></div></section>
+        <p class="muted">Users are administration data, not configuration: nothing here is validated, approved, published or undone with the draft. Sign-in belongs to the organization's identity provider, so a user record holds no credential.</p>${user?userDetail(user):''}`;
+    }
+    function userDetail(user){
+      const live=liveConfig(),start=userStart(user),assigned=user.applications.map(a=>a.appId),groups=userGroups(user),held=userRoles(user),id=esc(user.id);
+      const appName=x=>live?.applications.find(a=>a.id===x)?.name||x,when=t=>t?formatTime(t):'Never',regions=(live?.valueLists.find(v=>v.id==='regions')?.values||[]).map(v=>[v.value,v.label]);
+      const input=(prop,label,control)=>`<div class="field"><label for="user-${prop}">${esc(label)}</label>${control}</div>`,bind=prop=>`id="user-${prop}" data-change="userProp" data-user="${id}" data-prop="${prop}" data-admin`;
+      const free=(live?.applications||[]).filter(a=>!assigned.includes(a.id)),drafts=(readOnly()?draftConfig.roles:model.roles).filter(r=>!live?.roles.some(x=>x.id===r.id)),stale=user.roles.filter(r=>!live?.roles.some(x=>x.id===r));
+      const roleRow=r=>{
+        const usable=(r.applications||[]).some(a=>assigned.includes(a)),member=user.roles.includes(r.id),mapped=held.some(x=>x.role.id===r.id&&x.via==='group mapping');
+        return `<label class="check"><input type="checkbox" data-change="userRole" data-user="${id}" data-role="${esc(r.id)}" data-admin${member?' checked':''}${usable||member?'':' disabled'}> ${esc(r.name)} <span class="muted">${(r.applications||[]).map(a=>esc(appName(a))).join(', ')||'no application'}${usable?'':' · assign the application first'}${mapped?' · also held through a group mapping':''}${r.active===false?' · inactive role':''}</span></label>`;
+      };
+      return `<section class="panel" style="margin-top:12px" aria-label="User ${esc(user.name)}"><div class="panel-head"><h2>${esc(user.name)}</h2>${chip(user.active?'Active':'Inactive')}<span class="status ${start.ok?'good':'bad'}">${start.ok?'Can start':`Cannot start: ${esc(start.reason.toLowerCase())}`}</span><span class="right"><button class="button small" data-action="userAccess" data-user="${id}">◉ Effective access</button> <button class="button small" data-action="userActive" data-user="${id}" data-active="${user.active?'0':'1'}" data-admin>${user.active?'Deactivate':'Activate'}</button> <button class="button small danger" data-action="removeUser" data-user="${id}" data-admin>Remove user</button></span></div><div class="panel-body">
+        <div class="form-grid">${fixed('User ID',user.id)}${fixed('Identity-provider subject',user.subject)}${input('name','Display name',`<input ${bind('name')} value="${esc(user.name)}">`)}${input('email','Email',`<input ${bind('email')} type="email" value="${esc(user.email)}">`)}${input('region','Region (trusted context for row scope)',`<select ${bind('region')}>${optionList([['','Not set'],...regions],user.region).html}</select>`)}</div>
+        <p class="property-help">Deactivating a user ends every session of that user on the next request. The record keeps its history and can be activated again.</p>
+        <div class="section-title">Application assignments</div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Application</th><th scope="col">Default</th><th scope="col">Last sign-in</th><th scope="col">Last sign-out</th><th scope="col"><span class="sr-only">Row actions</span></th></tr></thead><tbody>${user.applications.map(a=>`<tr><td>${esc(appName(a.appId))}<br><span class="muted">${esc(a.appId)}</span></td><td><input type="radio" name="default-${id}" data-change="userDefault" data-user="${id}" data-app="${esc(a.appId)}" data-admin aria-label="${esc(appName(a.appId))} is the default application"${a.default?' checked':''}></td><td>${esc(when(a.lastLogin))}</td><td>${esc(when(a.lastLogout))}</td><td class="row-actions"><button class="button small danger" data-action="userUnassign" data-user="${id}" data-app="${esc(a.appId)}" data-admin aria-label="Remove ${esc(appName(a.appId))} from ${esc(user.name)}">Remove</button></td></tr>`).join('')||'<tr><td colspan="5" class="muted">No application is assigned: start-up is refused.</td></tr>'}</tbody></table></div>
+        <div class="toolbar"><label class="sr-only" for="user-assign">Application to assign</label><select id="user-assign" class="select" data-admin>${free.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')||'<option value="">Every application is assigned</option>'}</select><button class="button small" data-action="userAssign" data-user="${id}" data-admin${free.length?'':' disabled'}>＋ Assign application</button><span class="muted">Exactly one assigned application is the default.</span></div>
+        <div class="section-title">Role memberships</div><fieldset class="field"><legend>Roles in the active release${live?` (${esc(activeRelease().label)})`:''}</legend>${(live?.roles||[]).map(roleRow).join('')||'<span class="muted">No version is active, so no role can be held.</span>'}</fieldset>
+        ${drafts.length?`<p class="muted">Not yet published, so not assignable: ${drafts.map(r=>link(`roles.${r.id}`,r.name)).join(', ')}.</p>`:''}${stale.map(r=>`<div class="notice bad"><code>${esc(r)}</code> is not in the active release and grants nothing. <button class="button small" data-action="userDropRole" data-user="${id}" data-role="${esc(r)}" data-admin>Remove membership</button></div>`).join('')}
+        <p class="property-help">Groups reported by the identity provider: ${groups.map(g=>`<code>${esc(g)}</code>`).join(', ')||'none'}. A role mapped to one of them is held without a membership here, but only by a user who can start.</p>
+        <div class="section-title">User overrides</div><p class="muted">An override replaces the combined role result for one screen for this user. It cannot bypass an inactive record, a missing application assignment or row scope.</p><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Screen</th><th scope="col">Granted instead (everything else denied)</th><th scope="col">Reason</th><th scope="col"><span class="sr-only">Row actions</span></th></tr></thead><tbody>${user.overrides.map(o=>`<tr><td>${esc(live?.screens.find(s=>s.id===o.screenId)?.caption||o.screenId)}<br><span class="muted">${esc(o.screenId)}</span></td><td>${Object.keys(o.permissions).filter(k=>o.permissions[k]).map(esc).join(', ')||'nothing'}</td><td>${esc(o.reason)}</td><td class="row-actions"><button class="button small danger" data-action="userDropOverride" data-user="${id}" data-screen="${esc(o.screenId)}" data-admin aria-label="Remove the override on ${esc(o.screenId)}">Remove</button></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No override: the combined role result applies on every screen.</td></tr>'}</tbody></table></div>
+        <div class="toolbar"><button class="button small" data-action="userOverride" data-user="${id}" data-admin${assigned.length?'':' disabled'}>＋ Add or replace an override</button></div></div></section>`;
+    }
+    function userEffectiveAccess(id){
+      const user=findUser(id),live=liveConfig();if(!user)return toast('Select a user first.','warn');
+      const start=userStart(user),held=userRoles(user),roles=held.map(x=>x.role),assigned=user.applications.map(a=>a.appId),names=list=>list.map(esc).join(', ')||'<span class="muted">none</span>';
+      const scopes=[...new Set(roles.flatMap(r=>(r.rowScopes||[]).map(x=>`${x.dataClassId}.${x.field} ${x.operator} ${x.context} (${r.name})`)))];
+      const row=s=>{
+        const base=subjectAccess(roles,assigned,[],s),final=userAccess(user,s),override=user.overrides.find(o=>o.screenId===s.id);
+        return `<tr><th scope="row">${esc(s.caption)}<br><span class="muted">${esc(s.appId)}</span></th><td>${names(base.permissions)}${base.roles.length?`<br><span class="muted">${esc(base.roles.join(' + '))}</span>`:''}</td><td>${override?`${names(PERMISSIONS.filter(k=>override.permissions[k]))}<br><span class="muted">${esc(override.reason)}</span>`:'—'}</td><td>${final.permissions.length?names(final.permissions):`<span class="status bad">Hidden</span> ${esc(final.source)}`}</td><td>${final.permissions.length?s.commands.filter(c=>commandShown(s,c,null)&&final.permissions.includes(policyParts(c.policy).permission)).map(c=>esc(c.label)).join(', ')||'none':'—'}</td><td>${final.permissions.length?names(final.hiddenFields):'—'}</td></tr>`;
+      };
+      showModal(`Effective access: ${user.name}`,`<p class="muted">What ${esc(user.name)} receives from the active release${live?` ${esc(activeRelease().label)}`:''} at policy revision ${administration.policyRevision}. The roles are combined first, then the user override replaces the result for its screen. The server rechecks every request.</p><div class="notice ${start.ok?'':'bad'}"><strong>${start.ok?'Can start.':`Cannot start: ${esc(start.reason.toLowerCase())}.`}</strong> ${start.ok?'':'Nothing below is granted until that is resolved.'}</div><div class="detail-kv"><span>Roles held</span><span>${held.map(x=>`${esc(x.role.name)} (${esc(x.via)})`).join(', ')||'none'}</span></div><div class="detail-kv"><span>Applications</span><span>${user.applications.map(a=>`${esc(a.appId)}${a.default?' (default)':''}`).join(', ')||'none'}</span></div><div class="table-wrap"><table class="data-grid"><caption class="sr-only">Access per screen</caption><thead><tr><th scope="col">Screen</th><th scope="col">Combined from roles</th><th scope="col">User override</th><th scope="col">Effective</th><th scope="col">Commands shown</th><th scope="col">Fields withheld</th></tr></thead><tbody>${(live?.screens||[]).map(row).join('')||'<tr><td colspan="6" class="muted">No version is active.</td></tr>'}</tbody></table></div><div class="section-title">Row scope</div>${scopes.length?`<ul class="ref-list">${scopes.map(x=>`<li><code>${esc(x)}</code></li>`).join('')}</ul><p class="muted">Evaluated on the server against this user's trusted context (region ${esc(user.region||'not set')}). An override never widens it.</p>`:'<p class="muted">No role held by this user declares a row scope.</p>'}`,[{label:'Close',primary:true,action:closeModal}]);
+    }
+    function userOverrideDialog(id){
+      const user=findUser(id),screens=(liveConfig()?.screens||[]).filter(s=>user?.applications.some(a=>a.appId===s.appId));
+      if(!user||!screens.length)return toast('Assign an application first.','warn');
+      showModal(`Override for ${user.name}`,`<p class="muted">The permissions ticked here replace the combined role result on the chosen screen for this user only. Leave every box empty to deny the screen.</p><form class="form-grid"><div class="field wide"><label for="overrideScreen">Screen</label><select id="overrideScreen">${screens.map(s=>`<option value="${esc(s.id)}">${esc(s.caption)} (${s.type==='action'?'action screen: execute only':'data screen'})</option>`).join('')}</select></div><fieldset class="field wide"><legend>Granted instead</legend>${PERMISSIONS.map(k=>`<label class="check"><input type="checkbox" data-override-permission="${k}"> ${esc(capitalise(k))}</label>`).join('')}</fieldset><div class="field wide"><label for="overrideReason">Reason</label><input id="overrideReason" placeholder="Why this user differs from the role result"></div></form>`,[{label:'Cancel',action:closeModal},{label:'Save override',primary:true,action:()=>{
+        const permissions=Object.fromEntries([...document.querySelectorAll('[data-override-permission]')].filter(x=>x.checked).map(x=>[x.dataset.overridePermission,true]));
+        if(setUserOverride(id,document.getElementById('overrideScreen').value,permissions,document.getElementById('overrideReason').value))closeModal();
+      }}]);
     }
 
     // ---- chrome, dialogs and feedback ----------------------------------------------------------------
@@ -1868,6 +2059,7 @@
     }
     function enhanceUI(root,lock=true){
       if(lock&&readOnly())root.querySelectorAll('[data-mutates]').forEach(el=>{el.disabled=true;});
+      if(!canAdministerUsers())root.querySelectorAll('[data-admin]').forEach(el=>{el.disabled=true;});
       root.querySelectorAll('input,select,textarea').forEach((el,i)=>{
         if(el.labels?.length||el.hasAttribute('aria-label')||el.type==='file')return;
         el.setAttribute('aria-label',el.placeholder||'Configuration value '+(i+1));
@@ -1887,7 +2079,7 @@
       document.getElementById('publishButton').disabled=readOnly();document.getElementById('validateButton').disabled=readOnly();
       syncTopbar();
     }
-    const renderers={overview:renderOverview,applications:renderApplications,navigation:renderNavigation,screens:renderScreens,dataclasses:renderDataClasses,connections:renderConnections,values:renderValues,reports:renderReports,security:renderSecurity,validation:renderValidation,impact:renderImpact,versions:renderVersions,audit:renderAudit,system:renderSystem};
+    const renderers={overview:renderOverview,applications:renderApplications,navigation:renderNavigation,screens:renderScreens,dataclasses:renderDataClasses,connections:renderConnections,values:renderValues,reports:renderReports,security:renderSecurity,users:renderUsers,validation:renderValidation,impact:renderImpact,versions:renderVersions,audit:renderAudit,system:renderSystem};
     // A re-render replaces the editor markup, so keyboard focus is carried over to the equivalent control.
     function focusKey(el){
       if(!el||!document.getElementById('app').contains(el))return null;
@@ -1915,6 +2107,7 @@
       const input=f=>f.options?`<select id="${f.id}">${f.options.map(o=>Array.isArray(o)?o:[o,o]).map(([v,l])=>`<option value="${esc(v)}"${String(v)===String(f.value??'')?' selected':''}>${esc(l)}</option>`).join('')}</select>`:f.multiline?`<textarea id="${f.id}">${esc(f.value??'')}</textarea>`:`<input id="${f.id}" type="${f.type||'text'}" value="${esc(f.value??'')}" placeholder="${esc(f.placeholder||'')}">`;
       showModal(title,`${intro}<form class="form-grid">${fields.map(f=>`<div class="field${f.wide?' wide':''}"><label for="${f.id}">${esc(f.label)}</label>${input(f)}${f.help?`<div class="property-help">${esc(f.help)}</div>`:''}</div>`).join('')}</form>`,[{label:'Cancel',action:closeModal},{label:submitLabel,primary:true,action:()=>{
         const problem=onSubmit(Object.fromEntries(fields.map(f=>[f.id,document.getElementById(f.id).value.trim()])));
+        if(problem===false)return;
         if(problem)toast(problem,'warn');else closeModal();
       }}]);
     }
@@ -2002,10 +2195,10 @@
     function effectiveAccess(){
       const role=model.roles.find(r=>r.id===state.selectedRole);if(!role)return toast('Select a role first.','warn');
       const screens=model.screens.filter(s=>s.appId===state.appId),scopes=(role.rowScopes||[]).map(x=>`${x.dataClassId}.${x.field} ${x.operator} ${x.context}`);
-      showModal(`Effective access: ${role.name}`,`<p class="muted">What a subject holding only this role receives in ${esc(app().name)}. The server rechecks every request.</p>${role.active?'':'<div class="notice bad">This role is inactive: it grants nothing.</div>'}${(role.applications||[]).includes(state.appId)?'':'<div class="notice bad">This role has no access to this application: every screen is denied.</div>'}<div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Screen</th><th scope="col">Granted</th><th scope="col">Commands shown</th><th scope="col">Fields withheld</th></tr></thead><tbody>${screens.map(s=>{const granted=PERMISSIONS.filter(k=>roleGrants(role,s.id,k)&&(role.applications||[]).includes(s.appId));return `<tr><th scope="row">${esc(s.caption)}</th><td>${granted.map(esc).join(', ')||'<span class="status bad">Hidden</span>'}</td><td>${granted.length?s.commands.filter(c=>commandShown(s,c,role)).map(c=>esc(c.label)).join(', ')||'none':'—'}</td><td>${(role.fieldPolicies||[]).filter(x=>x.screenId===s.id&&!x.read).map(x=>esc(x.fieldId)).join(', ')||'—'}</td></tr>`;}).join('')}</tbody></table></div><div class="section-title">Row scope</div>${scopes.length?`<ul class="ref-list">${scopes.map(x=>`<li><code>${esc(x)}</code></li>`).join('')}</ul>`:'<p class="muted">No row scope: every row the DataClass returns is in scope.</p>'}<div class="section-title">User overrides in this application</div>${model.overrides.filter(o=>screens.some(s=>s.id===o.screenId)).map(o=>`<p><code>${esc(o.subject)}</code> on ${esc(o.screenId)}: ${Object.keys(o.permissions).filter(k=>o.permissions[k]).map(esc).join(', ')||'denied'} replaces the role result. <span class="muted">${esc(o.reason)}</span></p>`).join('')||'<p class="muted">None.</p>'}`,[{label:'Close',primary:true,action:closeModal}]);
+      showModal(`Effective access: ${role.name}`,`<p class="muted">What a subject holding only this role receives in ${esc(app().name)}. The server rechecks every request.</p>${role.active?'':'<div class="notice bad">This role is inactive: it grants nothing.</div>'}${(role.applications||[]).includes(state.appId)?'':'<div class="notice bad">This role has no access to this application: every screen is denied.</div>'}<div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Screen</th><th scope="col">Granted</th><th scope="col">Commands shown</th><th scope="col">Fields withheld</th></tr></thead><tbody>${screens.map(s=>{const access=subjectAccess([role],role.applications||[],[],s),granted=access.permissions;return `<tr><th scope="row">${esc(s.caption)}</th><td>${granted.map(esc).join(', ')||'<span class="status bad">Hidden</span>'}</td><td>${granted.length?s.commands.filter(c=>commandShown(s,c,null)&&granted.includes(policyParts(c.policy).permission)).map(c=>esc(c.label)).join(', ')||'none':'—'}</td><td>${access.hiddenFields.map(esc).join(', ')||'—'}</td></tr>`;}).join('')}</tbody></table></div><div class="section-title">Row scope</div>${scopes.length?`<ul class="ref-list">${scopes.map(x=>`<li><code>${esc(x)}</code></li>`).join('')}</ul>`:'<p class="muted">No row scope: every row the DataClass returns is in scope.</p>'}<div class="section-title">Users</div><p class="muted">A user's result is the combination of every role the user holds, with any user-specific override applied last. Open a user in ${link('users.','Users')} to see it.</p>`,[{label:'Close',primary:true,action:closeModal}]);
     }
     function aboutPrototype(){
-      showModal('About this prototype',`<p><strong>GD Studio</strong> is the reference prototype of the governed metadata authoring tool. It is one self-contained page: nothing is sent to a server and nothing is saved when the page closes.</p><ul><li>The reference application (Operations Hub and Risk &amp; Controls), its sample rows, the provider catalogue, the object catalogues and the ${esc(environment().name)} deployment mapping are embedded sample data.</li><li>"Signed in as" switches between four sample administrators so that the author and three independent checkers can be exercised. In the product, identity comes from the organization's identity provider and cannot be chosen.</li><li>The digest is a short non-cryptographic fingerprint, enough to show that approval is bound to exact content. Previews and connection checks answer from the embedded sample data.</li><li>One version line covers the whole workspace. The design's unit of publication is an application scope; the publish dialog states the scope this prototype activates.</li><li>Deep links: <code>#module=&lt;module&gt;&amp;app=&lt;id&gt;&amp;screen=&lt;id&gt;&amp;tab=&lt;tab&gt;&amp;version=&lt;id&gt;&amp;dialog=rollback|retire|about|json|preview|access&amp;theme=dark</code>.</li></ul>`,[{label:'Close',primary:true,action:closeModal}]);
+      showModal('About this prototype',`<p><strong>GD Studio</strong> is the reference prototype of the governed metadata authoring tool. It is one self-contained page: nothing is sent to a server and nothing is saved when the page closes.</p><ul><li>The reference application (Operations Hub and Risk &amp; Controls), its sample rows, the provider catalogue, the object catalogues and the ${esc(environment().name)} deployment mapping are embedded sample data.</li><li>"Signed in as" switches between four sample administrators so that the author and three independent checkers can be exercised. In the product, identity comes from the organization's identity provider and cannot be chosen.</li><li>The Users module holds sample user records, their identity-provider groups and their sign-in times as embedded administration data. The administrator with the Security role stands in for the security administrator, the only identity that can change users.</li><li>The digest is a short non-cryptographic fingerprint, enough to show that approval is bound to exact content. Previews and connection checks answer from the embedded sample data.</li><li>One version line covers the whole workspace. The design's unit of publication is an application scope; the publish dialog states the scope this prototype activates.</li><li>Deep links: <code>#module=&lt;module&gt;&amp;app=&lt;id&gt;&amp;screen=&lt;id&gt;&amp;tab=&lt;tab&gt;&amp;version=&lt;id&gt;&amp;user=&lt;id&gt;&amp;actor=&lt;name&gt;&amp;dialog=rollback|retire|about|json|preview|access|useraccess&amp;theme=dark</code>.</li></ul>`,[{label:'Close',primary:true,action:closeModal}]);
     }
     function showJson(){
       const viewing=readOnly();
@@ -2121,6 +2314,24 @@
         checkpoint('Created role',()=>{model.roles.push({id:v.newId,name:v.newName,active:true,applications:[state.appId],permissions:{},subjects:[],fieldPolicies:[],rowScopes:[]});state.selectedRole=v.newId;state.securityTab='permissions';state.module='security';},`roles.${v.newId}`);
       },'<p class="muted">A new role grants nothing until a permission is ticked.</p>'),
       effectiveAccess:()=>effectiveAccess(),
+      registerUser:()=>formDialog('Register user',[{id:'newSubject',label:'Subject identifier from the identity provider',placeholder:'first.last'},{id:'newName',label:'Display name'},{id:'newEmail',label:'Email',type:'email'},{id:'newRegion',label:'Region',options:[['','Not set'],...(liveConfig()?.valueLists.find(v=>v.id==='regions')?.values||[]).map(v=>[v.value,v.label])]}],'Register user',v=>registerUser(v.newSubject,v.newName,v.newEmail,v.newRegion)?'':false,'<p class="muted">A user record maps one identity-provider subject to this platform. It holds no credential: the person signs in through the organization\'s identity provider. A new record is inactive until it is activated.</p>'),
+      userAccess:d=>userEffectiveAccess(d.user),
+      userActive:d=>{
+        const user=findUser(d.user),activate=d.active==='1';if(!user)return;
+        formDialog(`${activate?'Activate':'Deactivate'} ${user.name}`,[{id:'activeReason',label:'Reason',wide:true}],activate?'Activate':'Deactivate',v=>setUserActive(user.id,activate,v.activeReason)?'':false,`<p>${activate?'The user may start on the next request, provided an application and a role are assigned.':'Every session of this user ends on the next request, and start-up is refused until the record is activated again.'}</p>`);
+      },
+      userAssign:d=>assignApplication(d.user,document.getElementById('user-assign')?.value||''),
+      userUnassign:d=>{
+        const user=findUser(d.user);if(!user)return;
+        showModal('Remove application assignment',`<p>Remove <strong>${esc(d.app)}</strong> from ${esc(user.name)}? Role memberships and overrides that apply only to that application are removed with it, and open sessions lose it on the next request.</p>`,[{label:'Cancel',action:closeModal},{label:'Remove',danger:true,action:()=>{closeModal();removeApplication(user.id,d.app);}}]);
+      },
+      userDropRole:d=>setUserRole(d.user,d.role,false),
+      userOverride:d=>userOverrideDialog(d.user),
+      userDropOverride:d=>showModal('Remove user override',`<p>Remove the override on <strong>${esc(d.screen)}</strong>? The combined role result applies again from the next request.</p>`,[{label:'Cancel',action:closeModal},{label:'Remove',danger:true,action:()=>{closeModal();removeUserOverride(d.user,d.screen);}}]),
+      removeUser:d=>{
+        const user=findUser(d.user);if(!user)return;
+        formDialog(`Remove ${user.name}`,[{id:'removeReason',label:'Reason',wide:true}],'Remove user',v=>removeUser(user.id,v.removeReason)?'':false,`<p>Remove the user record of <strong>${esc(user.name)}</strong> (<code>${esc(user.subject)}</code>)? Start-up is refused from the next request. The audit keeps the history of the record.</p>`);
+      },
       runValidation:()=>runValidation(),
       approve:d=>recordApproval(d.role,document.getElementById(`approvalReason-${d.role}`)?.value||''),
       publish:()=>publish(),
@@ -2141,7 +2352,10 @@
       navParent:(d,el)=>moveNavItemToGroup(state.appId,d.group,d.item,el.value),
       previewRole:(d,el)=>{state.previewRole=el.value;render();},
       acceptWarning:(d,el)=>acceptWarning(d.code,el.checked),
-      compare:(d,el)=>{state[d.which]=el.value;render();}
+      compare:(d,el)=>{state[d.which]=el.value;render();},
+      userProp:(d,el)=>{if(!setUserProp(d.user,d.prop,el.value))render();},
+      userDefault:d=>{if(!setDefaultApplication(d.user,d.app))render();},
+      userRole:(d,el)=>{if(!setUserRole(d.user,d.role,el.checked))render();}
     };
     document.addEventListener('click',e=>{
       const el=e.target.closest('[data-action]');
@@ -2216,7 +2430,8 @@
       if(releases.some(v=>v.id===version)&&state.viewVersion!==version)selectVersion(version);
       if(model.applications.some(a=>a.id===params.get('app')))state.appId=params.get('app');
       if(titles[params.get('module')])state.module=params.get('module');
-      for(const [key,target] of [['screen','selectedScreen'],['field','selectedField'],['command','selectedCommand'],['dataclass','selectedDataClass'],['connection','selectedConnection'],['list','selectedList'],['report','selectedReport'],['role','selectedRole'],['as','previewRole']])if(params.get(key))state[target]=params.get(key);
+      for(const [key,target] of [['screen','selectedScreen'],['field','selectedField'],['command','selectedCommand'],['dataclass','selectedDataClass'],['connection','selectedConnection'],['list','selectedList'],['report','selectedReport'],['role','selectedRole'],['user','selectedUser'],['as','previewRole']])if(params.get(key))state[target]=params.get(key);
+      if(fixtures.reviewers.some(r=>r.name===params.get('actor')))state.actor=params.get('actor');
       const group={screens:'inspectorTab',dataclasses:'detailTab',security:'securityTab',system:'systemTab'}[state.module];
       if(group&&params.get('tab'))state[group]=params.get('tab');
       if(params.get('theme'))setTheme(params.get('theme'));
@@ -2227,6 +2442,7 @@
       if(state.module==='screens'&&state.selectedScreen)parts.push(`screen=${state.selectedScreen}`,`tab=${state.inspectorTab}`);
       if(state.module==='dataclasses'&&state.selectedDataClass)parts.push(`dataclass=${state.selectedDataClass}`,`tab=${state.detailTab}`);
       if(state.module==='security'&&state.selectedRole)parts.push(`role=${state.selectedRole}`,`tab=${state.securityTab}`);
+      if(state.module==='users'&&state.selectedUser)parts.push(`user=${state.selectedUser}`);
       if(state.viewVersion)parts.push(`version=${state.viewVersion}`);
       try{history.replaceState(null,'','#'+parts.map(encodeURI).join('&'));}catch(error){/* some hosts forbid it for local files; deep links still load */}
     }
@@ -2238,6 +2454,7 @@
       if(name==='json')showJson();
       if(name==='preview')previewScreen();
       if(name==='access')effectiveAccess();
+      if(name==='useraccess')userEffectiveAccess(state.selectedUser);
     }
     window.addEventListener('hashchange',()=>{const dialog=readRoute();render();openRouteDialog(dialog);});
     new ResizeObserver(syncTopbar).observe(document.querySelector('.topbar'));
