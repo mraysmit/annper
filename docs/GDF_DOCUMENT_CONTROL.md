@@ -1,7 +1,7 @@
 # GDFramework Migration Document Control
 
 **Status:** Controlled working baseline  
-**Version:** 0.9  
+**Version:** 0.10  
 **Control date:** 10 October 2026  
 **Owner:** Test/quality owner  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`
@@ -54,9 +54,9 @@ functional specification's completeness boundary remains binding.
 | Document | Version/status | Owner role | Approval required from |
 |---|---|---|---|
 | Functional specification (including section 44 NFRs and section 31 dispositions) | 0.12 / controlled working baseline | Product/domain owner | Product, legacy technical, security, test/quality |
-| Modern web system design | 0.9 / controlled working design baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
-| Migration master (including sections 23–30 baseline, evidence, inventories, ADRs) | 0.12 / controlled working baseline | Migration technical lead | Product, security, database, operations, legacy technical, test/quality |
-| Document control (including section 8 traceability) | 0.9 / controlled working baseline | Test/quality owner | Owners of linked evidence and tests |
+| Modern web system design | 0.10 / controlled working design baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
+| Migration master (including sections 23–30 baseline, evidence, inventories, ADRs) | 0.13 / controlled working baseline | Migration technical lead | Product, security, database, operations, legacy technical, test/quality |
+| Document control (including section 8 traceability) | 0.10 / controlled working baseline | Test/quality owner | Owners of linked evidence and tests |
 
 Section 7 names the person holding each owner role. The documents stay
 controlled working baselines until that person records their approval as a
@@ -129,7 +129,8 @@ reviewed copy, not a required path.
 | 2026-09-13 | Functional specification 0.10; Modern web system design 0.6; Migration master 0.9; Document control 0.6 | Design-review findings reconciled with qualified recommendations: coordinate decision pending, mutation and key guarantees, authored capabilities, message/security/startup contracts, gates, applicable acceptance, and regenerated traceability. No D-017 or DEF approval implied. | Superseded by the 2026-10-04 working versions; no approval recorded |
 | 2026-10-04 | Functional specification 0.11; Modern web system design 0.7; Migration master 0.10; Document control 0.7 | Ten quality/coherence findings addressed: default caching retained; pending D-021 dual-source scope/atomicity gates; explicit unknown-save recovery, protected authoring, scoped metadata caches, durable post-commit effects, withdrawal admission, and tests; impossible legacy evidence obligations removed; header identity and applicable acceptance corrected; traceability regenerated. | Superseded by the 2026-10-10 versions |
 | 2026-10-10 | Functional specification 0.12; Modern web system design 0.8; Migration master 0.11; Document control 0.8 | Owner decisions recorded as ADR-001..ADR-006: D-011 policy and all 38 DEF-* dispositions (32 Fix, 6 Retire); D-017 desktop-bound equivalents and legacy control scope; D-020 out of scope; D-005 OpenID Connect with a server-side session; D-013 and D-004 engine-agnostic, configurable store and providers. WDES-025 to WDES-027 added; D-022 user records administered live, outside publication (design section 15.6); generator reports decided decisions; traceability regenerated. Document, tool, and link references follow the `GDF_` file names. Named owner recorded for every role. Stack decisions D-001, D-002, D-003, D-007, D-008, and D-014 unchanged | Superseded for the design, master, and control by the later 2026-10-10 versions; listed decisions approved by Mark Raysmith |
-| 2026-10-10 | Modern web system design 0.9; Migration master 0.12; Document control 0.9 | Administrative roles decided and recorded as ADR-007: D-023 fixed administrative roles granted in the authoring tool with second-person approval and deployment-configured bootstrap (design section 15.7, WDES-028); traceability regenerated. The functional specification is unchanged at 0.12 | Controlled; listed decisions approved by Mark Raysmith; baseline approval of the documents pending |
+| 2026-10-10 | Modern web system design 0.9; Migration master 0.12; Document control 0.9 | Administrative roles decided and recorded as ADR-007: D-023 fixed administrative roles granted in the authoring tool with second-person approval and deployment-configured bootstrap (design section 15.7, WDES-028); traceability regenerated. The functional specification is unchanged at 0.12 | Superseded by the later 2026-10-10 versions; listed decisions approved by Mark Raysmith |
+| 2026-10-10 | Modern web system design 0.10; Migration master 0.13; Document control 0.10 | Access model corrected to the owner's direction and recorded as ADR-008, superseding ADR-006: each application configuration is self-contained and owns its roles and users, published with it (design sections 11.7 and 15.6; D-022 revised; WDES-027 restated). Studio access restated as unrelated to any application (design section 15.7; D-023; WDES-028 restated). Traceability regenerated. The functional specification is unchanged at 0.12 | Controlled; listed decisions approved by Mark Raysmith; baseline approval of the documents pending |
 
 ## 7. Approval record
 

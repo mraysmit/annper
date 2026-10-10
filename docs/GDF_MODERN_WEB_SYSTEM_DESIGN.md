@@ -1,12 +1,12 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.9  
+**Status:** Controlled working design baseline 0.10  
 **Date:** 10 October 2026  
 **Owner:** Migration technical lead  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
 **Functional authority:** [GD Framework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.12](GDF_MIGRATION_MASTER.md)  
+**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.13](GDF_MIGRATION_MASTER.md)  
 **Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 17)
 
 **Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
@@ -24,6 +24,7 @@
 | 0.7 | 2026-10-04 | Coherence review: preserve default DataClass caching; register pending D-021 dual-source scope; define uncertain-save reconciliation, durable post-commit effects, protected authoring, filtered-definition cache isolation, and withdrawal admission rules; record source-manifest identity and new verification requirements. No product, defect, or technology approval implied |
 | 0.8 | 2026-10-10 | Owner decisions recorded. D-017 approved: section 7.7 and 8.5 reinterpretations, Detach and Reattach, two-level navigation, and legacy control scope are requirements, not candidates. D-011 approved with every DEF-* row decided, so the DEF-003, DEF-005, DEF-012, DEF-013, and DEF-038 behaviors are binding. D-020 decided: aggregation, limit processing, and PLM are out of scope. D-005 decided: OpenID Connect with a server-side session and an HttpOnly cookie (sections 10.1, 15.1, 15.3). D-013 and D-004 decided in direction: engine-agnostic, configurable platform store and providers (new section 11.6). User records are live administration data outside publication (D-022, new section 15.6). WDES-025, WDES-026, and WDES-027 added. The stack stays technology-neutral; D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged |
 | 0.9 | 2026-10-10 | Administrative roles decided. D-023: a fixed set of platform administrative roles governs the authoring tool itself, separate from application roles and business access, granted inside the tool with a second-person approval, immediate revocation, no self-changes, and bootstrap platform administrators from deployment configuration (new section 15.7). WDES-028 added |
+| 0.10 | 2026-10-10 | Access model corrected to the owner's direction. An application configuration is self-contained and is the unit of drafts, validation, approval, publication, digest, and rollback (new section 11.7). Each application owns its roles and users, which are versioned and published with it; the live, platform-wide user list of 0.8 and identity-provider group mappings are withdrawn (section 15.6 rewritten; D-022 revised, ADR-008 supersedes ADR-006). Section 15.7 restated as Studio access, unrelated to any application, with the security administrator maintaining roles and users in application drafts. Sections 5, 7.6, 11.1, 12.9, 13.2, 14.7, 15.2, and Appendix C aligned; WDES-027 and WDES-028 restated |
 
 ## 1. Purpose and authority
 
@@ -146,7 +147,7 @@ The system shall provide the following outcomes:
 | Privileged user | Performs approved high-risk or administrative commands subject to explicit policies and audit |
 | Application configurator | Authors, validates, previews, publishes, and retires metadata versions |
 | Support operator | Reviews safe diagnostics, health, job outcomes, metadata versions, and correlation traces |
-| Security administrator | Manages identity mappings, roles, policies, access reviews, and emergency revocation |
+| Security administrator | Maintains the roles and users of each application configuration, reviews access, and ends sessions in an emergency |
 | Database owner | Registers approved connections, provider capabilities, DDL contracts, and service identities |
 | Integration owner | Maintains external action, validation, lookup, reporting, and service adapters |
 | Automated client | Uses an explicitly published API contract and service identity; it never impersonates an interactive user by request fields |
@@ -381,9 +382,9 @@ Startup proceeds as follows:
 
 1. load versioned static assets under a restrictive security policy;
 2. establish or resume an authenticated session;
-3. require an active metadata user mapped to the authenticated subject and an
-   active application assignment in the selected group (FR-SEC-002..003);
-   otherwise show a blocking security message and load no application data;
+3. require that the selected application's published configuration lists the
+   authenticated subject as an active user holding at least one of its roles
+   (FR-SEC-002..003; section 15.6); otherwise show a blocking security message and load no application data;
    retrieve session capabilities and valid application choices;
 4. select the requested/default application;
 5. retrieve the published shell/navigation metadata bundle;
@@ -749,7 +750,7 @@ The normalized target model preserves the semantics of these legacy families:
 | Element | Field/column identity, order and layout group, data binding, type, format, default, key, visibility, editability, lookup, validation, grouping, sizing, master-detail role |
 | Parameter | Parameter, set, ordered membership, type, source, default/current binding, substitution marker, dynamic context |
 | Report/tree | Report, report column/operation, tree relation/key override, chart definition, output policy |
-| Security | Versioned: role, group mapping, application access, screen/command/field policy, row scope (data-scope predicates over trusted context). Live administration, outside publication (section 15.6): user record, subject mapping, application assignment and default, role membership, user override, active state |
+| Security | Owned by each application configuration and published with it (section 15.6): role, user (identity-provider subject, active state, default flag, role membership, override), screen/command/field policy, row scope (data-scope predicates over trusted context) |
 | Personalization | Layout, visible columns, order, width, sort, group, filter, format, menu/shortcut, application preference |
 | System | Named settings, messages, message store/delivery state, error/audit records, ID allocation lineage |
 
@@ -969,6 +970,28 @@ conformance suite must pass on at least two engines before Gate E (WDES-025);
 until then the platform is portable by design and qualified only on the
 engines that have passed.
 
+### 11.7 The application configuration as the unit
+
+An application configuration is self-contained. It holds one application's
+properties, navigation, screens, DataClasses, connections, value lists,
+reports, roles, and users (section 15.6), and nothing that belongs to another
+application. It is the unit of everything in sections 11.2 to 11.5: each
+application has its own drafts, validation, approvals, publication,
+definition digest, version history, compatibility range, and rollback, and
+publishing one application never changes another.
+
+Nothing is shared between application configurations. A reference from one
+application's configuration to another application's screen, DataClass,
+connection, value list, report, role, or user is a compilation error. Two
+applications that need the same list, connection, or person each declare
+their own.
+
+Outside every application configuration, at platform level, are the
+registered provider catalogue and the deployment mapping of connections
+(sections 11.4 and 14.3), the connection owners' object catalogues, the
+registered extension adapters (section 20.1), system settings and system
+messages, and Studio access (section 15.7).
+
 ## 12. Application services
 
 ### 12.1 Session service
@@ -1049,8 +1072,8 @@ file for audit does not make it downloadable by a business user.
 
 ### 12.9 Administration service
 
-Provides policy-controlled metadata publication, user administration
-(section 15.6), administrative role grants (section 15.7), cache invalidation, job management, system-message
+Provides policy-controlled metadata publication, Studio role grants
+(section 15.7), cache invalidation, job management, system-message
 administration, safe diagnostics, configuration status, and support actions. Operational access is separate from business-user
 access and is never enabled by a client-side flag.
 
@@ -1114,8 +1137,7 @@ DataClass.
 | `POST /api/v1/messages/{messageId}/acknowledgement` | Record required acknowledgement/read action |
 | `POST /api/v1/admin/metadata/drafts` | Submit control-plane definition data under section 11.4 and start non-executing validation |
 | `POST /api/v1/admin/metadata/versions/{versionId}/publish` | Publish an immutable candidate only after its separate digest-bound approval requirements are met |
-| `GET/PUT/DELETE /api/v1/admin/users/{userId}` | Read or change a user record, its application assignments, role memberships, and overrides; effective on the next request and audited, with no publication (section 15.6) |
-| `GET /api/v1/admin/administrators`, `POST /api/v1/admin/administrators/{administratorId}/grants`, `POST /api/v1/admin/grants/{grantId}/approval` | List administrators; propose, approve, reject, withdraw, or revoke an administrative role grant under the section 15.7 rules |
+| `GET /api/v1/admin/studio-users`, `POST /api/v1/admin/studio-users/{studioUserId}/grants`, `POST /api/v1/admin/grants/{grantId}/approval` | List Studio users; propose, approve, reject, withdraw, or revoke a Studio role grant under the section 15.7 rules. Application roles and users have no endpoint of their own: they are part of the application draft submitted through the metadata endpoints |
 | `GET /api/v1/health/live` | Process liveness only |
 | `GET /api/v1/health/ready` | Readiness of required platform dependencies, access restricted as appropriate |
 
@@ -1420,8 +1442,9 @@ locale, and every response-affecting preference/scope. Reauthorize cache hits
 and conditional responses before returning content or 304. Never place these
 responses in shared browser/proxy caches; sensitive definitions are no-store,
 and permitted private client reuse is cleared on subject/application change or
-revocation. Policy revisions invalidate filtered entries independently of
-metadata publication. Test two differently entitled subjects using the same
+revocation. The policy revision of an application changes when its roles or
+users are published (section 15.6) and invalidates that application's
+filtered entries. Test two differently entitled subjects using the same
 definition digest, including conditional requests.
 
 Preserve FR-DC-009: a successfully loaded DataClass is cached and reused while
@@ -1506,8 +1529,10 @@ The default is deny. Definition delivery is filtered to avoid unnecessary
 disclosure, and every data/action endpoint independently authorizes execution.
 Role changes invalidate sessions/capability caches. Because every request
 resolves the server-side session (section 15.1), session revocation takes
-effect on the next request; a role or policy change takes effect when the
-policy revision changes, which invalidates filtered caches under section 14.7.
+effect on the next request; a change to an application's roles or users
+takes effect when that application's configuration is published, which
+changes its policy revision and invalidates filtered caches under section
+14.7.
 NFR-SEC-001 governs. Row/data-scope
 predicates are defined in the metadata Security domain (section 11.1, row
 scope), compiled into the policy bundle, and evaluated only by the Policy
@@ -1552,97 +1577,106 @@ administration records before/after definition hashes and approval identity.
 Sensitive row values are minimized, classified, masked, or referenced according
 to policy.
 
-### 15.6 User administration
+### 15.6 Application roles and users
 
-Roles, their permissions, field policies, and row scopes are versioned
-configuration and change only through publication (section 11.2). User
-records are not configuration (decision D-022; ADR-006,
-GDF_MIGRATION_MASTER.md section 30.8). A user record is live administration
-data owned by the Security administrator and changed through the
-Administration service (section 12.9):
+Access to a business application is defined inside that application's
+configuration and nowhere else (decision D-022 as revised; ADR-008,
+GDF_MIGRATION_MASTER.md section 30.10). Each application configuration owns
+its own roles and its own users (section 11.7). Nothing is shared: a person
+who uses two applications has a user entry in each, and each entry names only
+roles of its own application.
 
-- the identity-provider subject it maps to, display name, email, and region;
-- the active state (FR-SEC-002);
-- application assignments, with exactly one marked default whenever any is
-  assigned (FR-SEC-003, FR-SEC-004);
-- role memberships, which are cumulative (FR-SEC-005, FR-SEC-006);
-- user-specific overrides, each replacing the combined role result for one
-  screen (FR-SEC-008); and
-- last login and last logout per application assignment, written by the
-  Session service and read-only here (FR-SEC-009, section 12.1).
+- An **application role** holds permissions on that application's screens,
+  commands, and fields, with its field policies and row scopes (section
+  15.2).
+- An **application user** is an entry identified by the identity-provider
+  subject. It holds a display name, email, and region; the active state
+  (FR-SEC-002); a default flag (FR-SEC-004); the roles of this application
+  the person holds, which are cumulative (FR-SEC-005, FR-SEC-006); and
+  user-specific overrides, each replacing the combined role result for one
+  screen of this application (FR-SEC-008). It holds no password or other
+  credential; sign-in belongs to the identity provider (section 15.1).
 
-A user record holds no password or other credential; sign-in belongs to the
-identity provider (section 15.1).
+Roles and users are versioned configuration. They are edited in the
+application's draft, validated with it, approved with it, and take effect
+only when that application's configuration is published (section 11.2).
+Adding a user, removing one, or changing a user's roles is therefore a
+configuration change like any other: the definition digest covers it, it can
+be compared and rolled back, and its publication changes the application's
+policy revision, which invalidates filtered definitions and capability caches
+for that application (section 14.7).
 
-A change to a user needs no validation, approval, or publication. It takes
-effect on the next request, because every request resolves the server-side
-session and the current policy revision (sections 15.1 and 15.2). It raises
-the policy revision, which invalidates filtered definitions and capability
-caches (section 14.7), and it is written to the audit record with the actor,
-the target, the outcome, and a reason for deactivation and for overrides
-(section 15.5). It never alters a draft, a published definition, or a
-definition digest. Deactivating a user is the emergency revocation path.
+A subject can start an application only when that application's published
+configuration lists them as an active user holding at least one of its active
+roles (FR-SEC-002, FR-SEC-003; section 7.6 step 3). The application that
+opens first is the first, in application order, whose entry for the subject
+is marked default; otherwise it is the first the subject can start
+(FR-SEC-004). An override cannot bypass an inactive entry, a missing role,
+row scope, or revocation.
 
-Role membership can name only a role in the active published version, and
-only for an application the user is assigned to. A membership naming a role
-that a later publication removes grants nothing and is reported for clean-up. A role may also be granted
-to an identity-provider group; that grants the role to the group's members
-but does not make them users. A subject with no active user record, or with
-no active application assignment, is refused at start-up (section 7.6 step
-3). An override cannot bypass an inactive record, a missing application
-assignment, row scope, or revocation (section 15.2).
+There is no mapping from identity-provider groups to application roles:
+access comes only from the application's own user list.
 
-### 15.7 Administrative roles
+Last login and last logout per user and application are operational data
+written by the Session service (FR-SEC-009, section 12.1). They are not part
+of the configuration.
 
-The people who run the platform are governed separately from the people who
-use its applications (decision D-023; ADR-007, GDF_MIGRATION_MASTER.md section
-30.9). Administrative roles are a fixed set defined by the platform. They are
-not authored, are not part of the versioned configuration, and are distinct
-from the application roles of section 15.2.
+Removing access urgently does not wait for a publication. Disabling the
+person at the identity provider stops sign-in, and ending their sessions
+takes effect on the next request (sections 15.1 and 19). Removal from the
+application's user list then follows through publication.
 
-| Administrative role | May |
+### 15.7 Studio access: Studio roles and Studio users
+
+Who may do what in the authoring tool (GD Studio) is governed separately and
+has nothing to do with any application (decision D-023; ADR-007,
+GDF_MIGRATION_MASTER.md section 30.9). A Studio role grants nothing in a
+business application, and being a user of an application grants nothing in
+Studio; a Studio user needs no application user entry.
+
+Studio roles are a fixed set defined by the platform. They are not authored
+and are not part of any application configuration.
+
+| Studio role | May |
 |---|---|
-| Platform administrator | Grant and revoke administrative roles; nothing else |
-| Configurator | Change a draft other than its connections, validate it, publish an approved candidate, roll back, and retire (section 11) |
+| Platform administrator | Grant and revoke Studio roles; nothing else |
+| Configurator | Create or delete an application configuration; change an application draft other than its connections, roles, and users; validate it; publish an approved candidate; roll back; and retire (section 11) |
 | Approver | Record one of the publication approvals the D-015 approval model requires, for the approval area the role names |
-| Security administrator | Administer users (section 15.6) |
+| Security administrator | Change the roles and users in an application draft (section 15.6), and end sessions |
 | Support operator | Read audit, versions, and diagnostics (section 23.3) |
-| Database owner | Register and change the connections in a draft, and maintain the approved object catalogue (sections 11.4 and 14.3) |
+| Database owner | Register and change the connections in an application draft, and maintain the approved object catalogue (sections 11.4 and 14.3) |
 | Integration owner | Maintain the registered extension adapters (section 20.1) |
 
-A person may hold several administrative roles. An administrative role
-grants nothing in a business application, and being a user of a business
-application grants nothing in administration; an administrator needs no user
-record under section 15.6. An administrator record holds the
+A person may hold several Studio roles. A Studio user record holds the
 identity-provider subject, display name, email, and role grants, and no
 credential.
 
-Grants are live administration data, like users: outside drafts, digests,
-validation, and publication, audited at every step, and raising the policy
-revision when they take effect. They follow these rules:
+Studio role grants are live administration data: outside every application
+configuration, draft, digest, and publication, and audited at every step.
+They follow these rules:
 
 - **Two people to grant.** A platform administrator proposes a grant with a
   reason. A pending grant confers nothing. A different platform administrator
   approves or rejects it, and on approval it takes effect on the next request.
-- **Immediate revocation.** A platform administrator revokes a role with a
-  reason and it takes effect on the next request; revocation is the fail-safe
-  direction and does not wait for a second person.
+- **Immediate revocation.** A platform administrator revokes a Studio role
+  with a reason and it takes effect on the next request; revocation is the
+  fail-safe direction and does not wait for a second person.
 - **No self-administration.** Nobody may propose, approve, reject, or revoke
-  a change to their own administrative roles, and the approver is neither the
+  a change to their own Studio roles, and the approver is neither the
   proposer nor the recipient.
 - **Bootstrap.** Deployment configuration names the bootstrap platform
   administrators by identity-provider subject (section 27.3). That is how the
-  first administrators exist without anyone granting them. A bootstrap role
-  is read-only in the authoring tool and changes only by a controlled
-  deployment change.
+  first Studio users exist without anyone granting them. A bootstrap role is
+  read-only in the authoring tool and changes only by a controlled deployment
+  change.
 - **Never fewer than two.** A platform administrator role cannot be revoked
   if fewer than two platform administrators would remain, because every grant
   needs a second one. A grant to a platform administrator needs a third,
   since the approver can be neither the proposer nor the recipient; a
-  deployment whose platform administrators are to hold other administrative
-  roles names at least three.
+  deployment whose platform administrators are to hold other Studio roles
+  names at least three.
 
-The server evaluates administrative policy on every administrative request
+The server evaluates Studio access on every administrative request
 (WDES-003); the authoring tool only reflects it. The separation-of-duties
 rule that an author cannot approve their own candidate (section 11.4) applies
 in addition to these roles.
@@ -2197,8 +2231,8 @@ security, and data boundaries is not sufficient evidence.
 | WDES-024 | Dual-source definitions shall remain blocked until D-021 scope and provider-qualified atomicity/recovery are approved and tested; independent commits or compensation shall not be reported as an atomic rollback. |
 | WDES-025 | The platform store and every application provider shall be reached only through adapters selected by deployment configuration. No platform service shall contain engine-specific SQL or driver types; every engine offered as a platform store shall pass the same store conformance suite; an unknown or unqualified engine shall fail startup validation; and the suite shall pass on at least two engines before the platform is described as engine-agnostic. |
 | WDES-026 | Interactive sign-in shall use OpenID Connect with a server-side session. Browser script shall never hold identity-provider tokens or read the session cookie; the cookie shall be HttpOnly, Secure, and SameSite with its identifier regenerated at sign-in; every state-changing request shall pass CSRF validation; and sign-out, expiry, and revocation shall take effect on the next request on every instance. |
-| WDES-027 | User records, application assignments, role memberships, and user overrides shall be administered live, outside publication: a change shall take effect on the next request on every instance, raise the policy revision, be audited, and leave every draft, published definition, and definition digest unchanged. A subject without an active user record and an active application assignment shall be refused at start-up, and a user record shall hold no credential. |
-| WDES-028 | Administrative roles shall be a fixed platform set, separate from application roles and from business access. A grant shall confer nothing until a second platform administrator, who is neither the proposer nor the recipient, approves it; revocation shall be immediate; nobody shall change their own administrative roles; bootstrap platform administrators shall come only from deployment configuration; fewer than two platform administrators shall never remain; and every step shall be audited and rechecked by the server. |
+| WDES-027 | Each application configuration shall own its roles and users and share nothing with another application. A cross-application reference shall fail compilation; a change to an application's roles or users shall take effect only through publication of that application's configuration and shall be covered by its definition digest; publishing one application shall leave every other application unchanged; a subject who is not an active user of the application holding one of its roles in the published configuration shall be refused; and a user entry shall hold no credential. |
+| WDES-028 | Studio roles shall be a fixed platform set, unrelated to any application: a Studio role shall grant nothing in a business application and an application role nothing in the authoring tool. A grant shall confer nothing until a second platform administrator, who is neither the proposer nor the recipient, approves it; revocation shall be immediate; nobody shall change their own Studio roles; bootstrap platform administrators shall come only from deployment configuration; fewer than two platform administrators shall never remain; and every step shall be audited and rechecked by the server. |
 
 ## 34. Decisions and their status
 
@@ -2224,8 +2258,8 @@ assumption.
 | Format token model | D-018 | Technology-neutral display and output format tokens and their mapping from the legacy VBA-format semantics (FR-ELEM-008) |
 | Extension contract scope | D-019 | Which legacy helper contracts (section 20.1; spec §24) become registered adapter contracts and which are retired |
 | Specialist component scope | D-020 (decided: out of scope; ADR-003) | PLM, aggregation, and limit processing (sections 20.3–20.4; spec §§27, 43) are excluded; reopening requires a new decision |
-| User administration model | D-022 (decided: live administration outside publication, section 15.6; ADR-006) | WDES-027 |
-| Administrative roles for the platform itself | D-023 (decided: fixed roles granted in the authoring tool with second-person approval and deployment-configured bootstrap, section 15.7; ADR-007) | WDES-028; the approver areas follow the D-015 approval model |
+| Application access model | D-022 (decided as revised: each application configuration owns its roles and users, published with it, sections 11.7 and 15.6; ADR-008 supersedes ADR-006) | WDES-027 |
+| Studio access | D-023 (decided: fixed Studio roles, unrelated to any application, granted in the authoring tool with second-person approval and deployment-configured bootstrap, section 15.7; ADR-007) | WDES-028; the approver areas follow the D-015 approval model |
 | Dual-source write scope and execution | D-021 | Gate B scope decision for FR-DC-004; atomicity domain, coordinator/provider capabilities, durable participant outcomes, and recovery proof before any admitted dual-source capability is implemented or published |
 
 None of these decisions may weaken the logical boundaries, functional
@@ -2390,7 +2424,8 @@ for each application (functional specification section 34):
 - navigation groups and items;
 - screens, elements, commands, and layouts for every screen family in use;
 - DataClasses, parameters, joins, and their database objects;
-- roles, subject mappings, and screen, command, field, and row policies;
+- roles, users, and screen, command, field, and row policies, for each
+  application;
 - value lists, reports, charts, and export definitions;
 - system messages and settings; and
 - registered extension adapters, where D-019 admits them.

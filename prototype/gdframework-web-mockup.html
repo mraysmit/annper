@@ -612,25 +612,8 @@
 
   <script id="mock-datasources" type="application/json">
   {
-    "metadataVersion": "2026.09.2",
-    "platform": {"product":"GD Workspace","clientBuild":"1.4.0+build.218","apiVersion":"v1"},
-    "session": {"subjectId":"usr-101","displayName":"Alex Smith","initials":"AS","roles":["operations-editor","risk-manager"],"locale":"en-GB","timeZone":"Europe/London","currency":"GBP","defaultApplication":"ops","signIn":"Signed in through your organization's identity provider"},
-    "roles": [
-      {
-        "id": "operations-editor",
-        "name": "Operations editor",
-        "permissions": {
-          "orders": {"read":true,"insert":true,"update":true,"delete":true,"export":true,"print":true,"execute":false},
-          "customers": {"read":true,"insert":true,"update":true,"delete":true,"export":false,"print":false,"execute":false},
-          "inventory": {"read":true,"insert":false,"update":true,"delete":false,"export":true,"print":false,"execute":false},
-          "repricing": {"read":false,"insert":false,"update":false,"delete":false,"export":false,"print":false,"execute":true},
-          "regions": {"read":true,"insert":false,"update":false,"delete":false,"export":false,"print":false,"execute":false},
-          "associations": {"read":true,"insert":true,"update":true,"delete":false,"export":false,"print":false,"execute":false},
-          "sales": {"read":true,"insert":false,"update":false,"delete":false,"export":true,"print":true,"execute":false}
-        }
-      },
-      {"id":"risk-manager","name":"Risk manager","permissions":{"risks":{"read":true,"insert":true,"update":true,"delete":false,"export":true,"print":true,"execute":false},"limitCheck":{"read":false,"insert":false,"update":false,"delete":false,"export":false,"print":false,"execute":true}}}
-    ],
+    "platform": {"product":"GD Workspace","clientBuild":"1.4.0+build.218","apiVersion":"v1","currency":"GBP","signIn":"Signed in through your organization's identity provider"},
+    "session": {"subject":"alex.smith","displayName":"Alex Smith","initials":"AS","locale":"en-GB","timeZone":"Europe/London"},
     "applications": [
       {
         "id": "ops",
@@ -638,6 +621,12 @@
         "description": "Orders, customers, inventory and operational analytics",
         "defaultScreen": "orders",
         "allowPersonalMenus": true,
+        "version": "2026.09.2",
+        "roles": [
+          {"id":"operations-reader","name":"Operations reader","active":true,"permissions":{"orders":{"read":true,"export":true,"print":true},"customers":{"read":true,"print":true},"inventory":{"read":true,"export":true},"regions":{"read":true},"associations":{"read":true},"sales":{"read":true,"export":true,"print":true}},"fieldPolicies":[{"screenId":"customers","fieldId":"creditLimit","read":false,"write":false}],"rowScopes":[{"dataClassId":"orders","field":"region","operator":"equals","context":"session.region"}]},
+          {"id":"operations-editor","name":"Operations editor","active":true,"permissions":{"orders":{"read":true,"update":true,"insert":true,"delete":true,"export":true,"print":true},"customers":{"read":true,"update":true,"insert":true,"delete":true},"inventory":{"read":true,"update":true,"export":true},"repricing":{"execute":true},"regions":{"read":true},"associations":{"read":true,"update":true,"insert":true},"sales":{"read":true,"export":true,"print":true}},"fieldPolicies":[],"rowScopes":[{"dataClassId":"orders","field":"region","operator":"equals","context":"session.region"}]}
+        ],
+        "users": [{"subject":"alex.smith","displayName":"Alex Smith","email":"alex.smith@example.test","region":"EU","active":true,"default":true,"roles":["operations-editor"],"overrides":[]}],
         "nav": [
           {"id":"daily","label":"Daily work","items":[{"id":"nav-orders","label":"Order register","screenId":"orders","icon":"grid"},{"id":"nav-customers","label":"Customer records","screenId":"customers","icon":"user"},{"id":"nav-inventory","label":"Inventory by product","screenId":"inventory","icon":"table"}]},
           {"id":"tools","label":"Business tools","items":[{"id":"nav-repricing","label":"Repricing action","screenId":"repricing","icon":"action"},{"id":"nav-regions","label":"Regional hierarchy","screenId":"regions","icon":"tree"},{"id":"nav-associations","label":"Customer products","screenId":"associations","icon":"junction"}]},
@@ -650,6 +639,12 @@
         "description": "Operational risk register and controlled limit checks",
         "defaultScreen": "risks",
         "allowPersonalMenus": true,
+        "version": "2026.08.3",
+        "roles": [
+          {"id":"risk-reader","name":"Risk reader","active":true,"permissions":{"risks":{"read":true,"export":true,"print":true}},"fieldPolicies":[],"rowScopes":[]},
+          {"id":"risk-manager","name":"Risk manager","active":true,"permissions":{"risks":{"read":true,"update":true,"insert":true,"export":true,"print":true},"limitCheck":{"execute":true}},"fieldPolicies":[],"rowScopes":[]}
+        ],
+        "users": [{"subject":"alex.smith","displayName":"Alex Smith","email":"alex.smith@example.test","region":"EU","active":true,"default":false,"roles":["risk-manager"],"overrides":[]}],
         "nav": [{"id":"monitor","label":"Monitoring","items":[{"id":"nav-risks","label":"Risk register","screenId":"risks","icon":"risk"},{"id":"nav-limits","label":"Run limit check","screenId":"limitCheck","icon":"action"}]}]
       }
     ],
@@ -974,6 +969,7 @@
     "messages": [
       {"id":"MSG-301","type":"notification","severity":"warning","title":"Scheduled maintenance","text":"Reporting services will be unavailable on Sunday from 02:00 to 03:00 UTC.","sent":"2026-09-06T08:30:00Z","audience":"system","requiresAck":true,"read":false,"acknowledged":false},
       {"id":"MSG-300","type":"notification","severity":"information","title":"Application updated","text":"Operations Hub version 2026.09.2 is now active.","sent":"2026-09-06T07:42:00Z","audience":"application","application":"ops","requiresAck":false,"read":false,"acknowledged":false},
+      {"id":"MSG-299","type":"notification","severity":"information","title":"Application updated","text":"Risk & Controls version 2026.08.3 is now active.","sent":"2026-08-21T09:15:00Z","audience":"application","application":"risk","requiresAck":false,"read":false,"acknowledged":false},
       {"id":"MSG-298","type":"notification","severity":"information","title":"Customer record updated","text":"Northstar Retail was updated by Maya Chen.","sent":"2026-09-05T15:10:00Z","audience":"role","requiresAck":false,"read":true,"acknowledged":false}
     ],
     "serverStandIn": {
@@ -1035,7 +1031,7 @@
         if (state.signedOut || epoch !== state.sessionEpoch) throw Error('Session ended before ' + what + '.');
         const correlationId = nextId('corr');
         const mode = takeSimulation(kind);
-        const record = { time: new Date().toISOString(), kind, what, correlationId, metadataVersion: source.metadataVersion, policy: 'allowed', outcome: 'ok' };
+        const record = { time: new Date().toISOString(), kind, what, correlationId, version: currentVersion(), policy: 'allowed', outcome: 'ok' };
         telemetry.unshift(record);
         if (telemetry.length > 80) telemetry.length = 80;
         if (mode === 'slow') { record.outcome = 'slow'; await this.wait(60000); if (state.signedOut || epoch !== state.sessionEpoch) throw Error('Session ended before ' + what + '.'); record.outcome = 'ok'; }
@@ -1049,14 +1045,14 @@
       alive(ctx, what) { if (state.signedOut || ctx.epoch !== state.sessionEpoch) throw Error('Session ended before ' + what + '.'); },
       async session() {
         const ctx = await this.begin('startup', 320, 'start-up');
-        return { subject: source.session, applications: source.applications.map(a => a.id), correlationId: ctx.correlationId };
+        return { subject: source.session, applications: source.applications.map(a => ({ id: a.id, version: a.version, blocked: applicationAccess(a) })), correlationId: ctx.correlationId };
       },
       async ping() { const ctx = await this.begin('status', 240, 'the connection check'); return { correlationId: ctx.correlationId }; },
       async definition(screenId, appId) {
         const ctx = await this.begin('definition', 120, 'the screen definition');
         const def = metadata[screenId];
         if (!def || def.app !== appId) { ctx.record.outcome = 'configError'; throw requestError('configError', 'The screen is not published for this application.', ctx.correlationId); }
-        return { screenId, metadataVersion: source.metadataVersion, correlationId: ctx.correlationId };
+        return { screenId, version: currentVersion(), correlationId: ctx.correlationId };
       },
       async query(name, options = {}) {
         const ctx = await this.begin(options.refresh ? 'refresh' : 'load', options.ms ?? 260, 'the query');
@@ -1064,7 +1060,7 @@
         let rows = structuredClone(db[name]);
         if (options.parameter) rows = rows.filter(r => r[options.parameter.field] === options.parameter.value);
         ctx.record.rows = rows.length;
-        return { rows, total: rows.length, correlationId: ctx.correlationId, metadataVersion: source.metadataVersion };
+        return { rows, total: rows.length, correlationId: ctx.correlationId, version: currentVersion() };
       },
       async lookup(lookupId, text = '', options = {}) {
         const ctx = await this.begin('lookup', options.ms ?? 140, 'the lookup');
@@ -1145,6 +1141,17 @@
       refresh: ['slow', 'connection-lost', 'data-error', 'forbidden', 'withdrawn'], lookup: ['connection-lost'], status: ['connection-lost'], preference: ['connection-lost'],
       write: ['slow', 'validation', 'conflict', 'unknown', 'connection-lost', 'data-error', 'forbidden', 'withdrawn']
     };
+    // Each application has its own version line. A request is governed by the version of the application in use.
+    function currentVersion() { const a = (source.applications || []).find(x => x.id === state.appId); return a ? a.version : ''; }
+    // Why the signed-in person cannot start an application, or '' when they can. The answer comes from that
+    // application's own list of users and roles; nothing is shared between applications.
+    function applicationAccess(application) {
+      const entry = ((application && application.users) || []).find(u => u.subject === session.subject);
+      if (!entry) return 'Not a user of this application';
+      if (entry.active !== true) return 'Inactive';
+      const held = (application.roles || []).filter(r => r.active !== false && (entry.roles || []).includes(r.id));
+      return held.length ? '' : 'No role';
+    }
     // Authority is decided here, on the service side. What the browser shows or hides is only a hint.
     function authorize(ctx, screenId, operations) {
       const granted = permissionsFor(screenId);
@@ -1165,7 +1172,7 @@
       ctx.record.outcome = op.outcome; ctx.record.operationId = op.operationId;
       return { outcome: op.outcome, operationId: op.operationId, idempotencyKey: op.idempotencyKey, correlationId: ctx.correlationId,
         results: structuredClone(op.results || []), result: op.result ? structuredClone(op.result) : null,
-        effects: op.outcome === 'committed' ? 'complete' : 'none', metadataVersion: source.metadataVersion };
+        effects: op.outcome === 'committed' ? 'complete' : 'none', version: currentVersion() };
     }
     function allocateKey(name) {
       const a = source.serverStandIn.keyAllocation[name];
@@ -1268,8 +1275,8 @@
     // ---------------------------------------------------------------------------------------------
     const session = source.session;
     const formats = {
-      currency: new Intl.NumberFormat(session.locale, { style: 'currency', currency: session.currency }),
-      currencyWhole: new Intl.NumberFormat(session.locale, { style: 'currency', currency: session.currency, maximumFractionDigits: 0 }),
+      currency: new Intl.NumberFormat(session.locale, { style: 'currency', currency: source.platform.currency }),
+      currencyWhole: new Intl.NumberFormat(session.locale, { style: 'currency', currency: source.platform.currency, maximumFractionDigits: 0 }),
       number: new Intl.NumberFormat(session.locale, { maximumFractionDigits: 2 }),
       percent: new Intl.NumberFormat(session.locale, { style: 'percent', maximumFractionDigits: 0 }),
       date: new Intl.DateTimeFormat(session.locale, { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }),
@@ -1334,12 +1341,20 @@
     function valueText(spec, value) { return displayText({ id: 'v', ...spec }, { v: value }); }
     function isNumeric(field) { return ['currency', 'number', 'percentage'].includes(field.type) && !isListed(field); }
 
+    // Effective access to a screen comes from the screen's own application: that application's entry for the
+    // signed-in person, the active roles of that application the entry names, then the entry's override for the screen.
     function permissionsFor(screenId) {
       const merged = { read: false, insert: false, update: false, delete: false, export: false, print: false, execute: false };
-      (source.roles || []).filter(r => (session.roles || []).includes(r.id)).forEach(role => {
-        const granted = role.permissions[screenId];
+      const def = (source.screenDefinitions || {})[screenId];
+      const application = def ? (source.applications || []).find(a => a.id === def.app) : null;
+      const entry = application ? (application.users || []).find(u => u.subject === session.subject) : null;
+      if (!entry || entry.active !== true) return merged;
+      (application.roles || []).filter(r => r.active !== false && (entry.roles || []).includes(r.id)).forEach(role => {
+        const granted = (role.permissions || {})[screenId];
         if (granted) Object.keys(merged).forEach(k => { merged[k] = merged[k] || granted[k] === true; });
       });
+      const override = (entry.overrides || []).find(o => o.screenId === screenId);
+      if (override) Object.keys(merged).forEach(k => { merged[k] = (override.permissions || {})[k] === true; });
       return merged;
     }
     function canOpen(def) { const p = permissionsFor(def.id); return p.read || p.execute; }
@@ -1355,7 +1370,11 @@
         default: return false;
       }
     }
-    function roleNames() { return (source.roles || []).filter(r => (session.roles || []).includes(r.id)).map(r => r.name).concat(state.support ? ['Platform support'] : []); }
+    // The roles the signed-in person holds in the current application only.
+    function roleNames() {
+      const a = app(), entry = a ? (a.users || []).find(u => u.subject === session.subject) : null;
+      return a && entry ? (a.roles || []).filter(r => r.active !== false && (entry.roles || []).includes(r.id)).map(r => r.name) : [];
+    }
 
     // ---------------------------------------------------------------------------------------------
     // Preferences. They belong to the signed-in subject, never to the workstation. The stand-in for the
@@ -1366,7 +1385,7 @@
       let store = {};
       try { const raw = JSON.parse(localStorage.getItem(KEY) || '{}'); if (raw && typeof raw === 'object' && !Array.isArray(raw)) store = raw; } catch (error) { store = {}; }
       const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (error) { /* store unavailable: preferences last for this page only */ } };
-      const mine = create => { const id = session.subjectId || 'anonymous'; if (create && (!store[id] || typeof store[id] !== 'object')) store[id] = {}; return store[id]; };
+      const mine = create => { const id = session.subject || 'anonymous'; if (create && (!store[id] || typeof store[id] !== 'object')) store[id] = {}; return store[id]; };
       return {
         get(path, fallback) {
           let node = mine(false);
@@ -1379,7 +1398,7 @@
           if (value === undefined) delete node[path[path.length - 1]]; else node[path[path.length - 1]] = structuredClone(value);
           persist();
         },
-        reset() { delete store[session.subjectId]; persist(); }
+        reset() { delete store[session.subject]; persist(); }
       };
     })();
     // Applied at once, sent to the preference service at the moment of change, and undone if that fails.
@@ -1631,7 +1650,7 @@
       if (state.signedOut) return undefined;
       const command = (detail.scope === 'shell' && commands[key + '@shell']) || commands[key];
       if (!command) {   // an unknown key is reported, never silently executed
-        telemetry.unshift({ time: new Date().toISOString(), kind: 'command', what: 'unknown command ' + key, correlationId: nextId('corr'), metadataVersion: source.metadataVersion, policy: 'n/a', outcome: 'rejected' });
+        telemetry.unshift({ time: new Date().toISOString(), kind: 'command', what: 'unknown command ' + key, correlationId: nextId('corr'), version: currentVersion(), policy: 'n/a', outcome: 'rejected' });
         toast('That command is not available.', 'error');
         return undefined;
       }
@@ -1699,11 +1718,11 @@
     // Shell rendering
     // ---------------------------------------------------------------------------------------------
     function renderAppPicker() {
-      appEl.innerHTML = source.applications.map(a => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.name)}</option>`).join('');
+      appEl.innerHTML = source.applications.filter(a => !applicationAccess(a)).map(a => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.name)}</option>`).join('');
       appEl.value = state.appId;
       const a = app();
       document.getElementById('sidebarApp').textContent = a ? a.name : '';
-      document.getElementById('sidebarVersion').textContent = a ? 'Version ' + source.metadataVersion : '';
+      document.getElementById('sidebarVersion').textContent = a ? 'Version ' + a.version : '';
       document.getElementById('brandSub').textContent = a ? a.name : '';
     }
     function unreadCount() { return visibleMessages().filter(m => !m.read).length; }
@@ -1791,7 +1810,7 @@
     }
     function renderStatus() {
       const a = app();
-      document.getElementById('statusRight').textContent = [a ? a.name : '', session.displayName, session.locale, session.timeZone].filter(Boolean).join(' · ');
+      document.getElementById('statusRight').textContent = [a ? a.name + ' ' + a.version : '', session.displayName, session.locale, session.timeZone].filter(Boolean).join(' · ');
     }
     function renderShell() {
       if (state.signedOut) return;
@@ -1919,13 +1938,15 @@
     }
     async function switchApplication(appId, target = {}) {
       if (appId === state.appId) return true;
-      if (!source.applications.some(a => a.id === appId)) return false;
+      const wanted = source.applications.find(a => a.id === appId);
+      if (!wanted) return false;
+      const blocked = applicationAccess(wanted);
+      if (blocked) { appEl.value = state.appId; syncRoute(true); toast(`You cannot start ${wanted.name}: ${blocked}.`, 'error'); return false; }
       // Every open screen of the current application is released by the switch, so each dirty one goes through the protocol first.
       if (!(await resolveUnsaved(state.tabs.map(t => t.key), 'switching application'))) { appEl.value = state.appId; syncRoute(true); return false; }
       state.tabs.map(t => t.key).forEach(disposeTab);
       state.activeTab = null; state.navFocus = null;
       state.appId = appId;
-      prefs.set(['shell', 'lastApplication'], appId);
       renderAll();
       const a = app(), first = target.screenId || a.defaultScreen;
       setStatus(a.name + ' selected');
@@ -3112,7 +3133,7 @@
       layer.innerHTML = `<style>@page { size: A4 ${report.orientation}; margin: 14mm; }</style><div class="print-view" role="dialog" aria-modal="true" aria-labelledby="printBarTitle"><div class="print-bar"><h2 id="printBarTitle">Print document: ${escapeHtml(report.title)}</h2><button type="button" class="button primary" data-command="PrintNow" id="printNow">Print</button><button type="button" class="button" data-command="PrintClose" id="printClose">Close</button></div>
         <article class="print-page ${report.orientation}"><header><div><h1>${escapeHtml(report.title)}</h1><p style="margin:4px 0 0">${escapeHtml(app().name)}${filters.length ? ' · Filtered by ' + escapeHtml(filters.join('; ')) : ''}${s.sort.length ? ' · Sorted by ' + escapeHtml(s.sort.map(x => def.fields.find(f => f.id === x.field).label + (x.dir === 1 ? '' : ' (descending)')).join(', ')) : ''}</p></div><div class="print-meta">Generated ${escapeHtml(formatInstant(new Date().toISOString()))}<br>For ${escapeHtml(session.displayName)}<br>Reference ${escapeHtml(ctx.correlationId)}</div></header>
         <table><thead><tr>${fields.map(f => `<th scope="col"${isNumeric(f) ? ' class="number"' : ''}>${escapeHtml(f.label)}</th>`).join('')}</tr></thead><tbody>${body || `<tr><td colspan="${fields.length}">No rows.</td></tr>`}</tbody></table>
-        <footer><span>${plural(view.rows.length, 'row')}${view.rows.length !== s.rows.length ? ' of ' + s.rows.length : ''}</span><span>GD Workspace · version ${escapeHtml(source.metadataVersion)}</span></footer></article></div>`;
+        <footer><span>${plural(view.rows.length, 'row')}${view.rows.length !== s.rows.length ? ' of ' + s.rows.length : ''}</span><span>${escapeHtml(app().name)} · version ${escapeHtml(app().version)}</span></footer></article></div>`;
       layer.returnFocus = back;
       syncInert(); setStatus('Print document ready');
       document.getElementById('printNow').focus();
@@ -3153,7 +3174,7 @@
       if (message.effective && Date.parse(message.effective) > Date.now()) { setTimeout(() => deliverMessage(message), Math.min(Date.parse(message.effective) - Date.now(), 2147483647)); return 'deferred'; }
       if (message.id) state.seenMessages.add(message.id);
       const bound = dataset => state.tabs.filter(t => { const d = metadata[t.screenId]; return d && [d.dataSource, d.masterSource, d.detailSource].includes(dataset); });
-      telemetry.unshift({ time: new Date().toISOString(), kind: 'message', what: message.type, correlationId: nextId('corr'), metadataVersion: source.metadataVersion, policy: 'n/a', outcome: 'received' });
+      telemetry.unshift({ time: new Date().toISOString(), kind: 'message', what: message.type, correlationId: nextId('corr'), version: ((source.applications || []).find(a => a.id === state.appId) || {}).version || '', policy: 'n/a', outcome: 'received' });
       switch (message.type) {
         case 'notification':
           state.messages.unshift({ severity: 'information', requiresAck: false, read: false, acknowledged: false, sent: new Date().toISOString(), ...message });
@@ -3188,11 +3209,11 @@
     // ---------------------------------------------------------------------------------------------
     function openAbout() {
       const a = app();
-      const rows = [['Application', a ? `${a.name} (${a.id})` : ''], ['Client build', source.platform.clientBuild], ['API version', source.platform.apiVersion], ['Metadata version', source.metadataVersion],
-        ['Signed in as', `${session.displayName} (${session.subjectId})`], ['Roles', roleNames().join(', ')], ['Sign-in', session.signIn], ['Locale', session.locale], ['Time zone', session.timeZone],
+      const rows = [['Application', a ? `${a.name} (${a.id})` : ''], ['Client build', source.platform.clientBuild], ['API version', source.platform.apiVersion], ['Metadata version', a ? a.version : ''],
+        ['Signed in as', `${session.displayName} (${session.subject})`], ['Roles in this application', roleNames().join(', ') || 'None'], ['Sign-in', source.platform.signIn], ['Locale', session.locale], ['Time zone', session.timeZone],
         ['Message check interval', state.pollingSeconds + ' seconds'], ['Correlation ID', state.sessionCorrelation || '']];
       openDialog({ title: 'About GD Workspace', dismiss: 'close', defaultButton: 'close',
-        body: `<dl class="kv">${rows.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd${k === 'Correlation ID' ? ' class="mono"' : ''}>${escapeHtml(v)}</dd>`).join('')}</dl><p class="field-help">Quote the correlation ID when you contact support.</p><div class="about-proto"><strong>About this prototype</strong><br>This page is an interactive reference for layout and behaviour. Nothing here is connected to a real service.<br><button type="button" class="button" data-command="PrototypeTools" data-fk="about:proto">Open prototype tools</button></div>`,
+        body: `<dl class="kv">${rows.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd${k === 'Correlation ID' ? ' class="mono"' : ''}>${escapeHtml(v)}</dd>`).join('')}</dl><p class="field-help">Quote the correlation ID when you contact support.</p><div class="about-proto"><strong>About this prototype</strong><br>This page is an interactive reference for layout and behaviour. Nothing here is connected to a real service.${state.support ? ' The support view is switched on in the prototype tools.' : ''}<br><button type="button" class="button" data-command="PrototypeTools" data-fk="about:proto">Open prototype tools</button></div>`,
         buttons: [...(state.support ? [{ id: 'diag', label: 'Diagnostics', handler: () => { setTimeout(openDiagnostics, 0); return 'diag'; } }] : []), { id: 'close', label: 'Close', primary: true }] });
     }
     function openHelp() {
@@ -3204,7 +3225,7 @@
       const q = String(query || '').trim().toLowerCase();
       const hits = telemetry.filter(t => !q || String(t.correlationId).toLowerCase().includes(q) || String(t.operationId || '').toLowerCase().includes(q));
       const pending = api.pendingOperations();
-      return `<p role="status">${plural(hits.length, 'request')} shown. Values, secrets and row contents are never shown here.</p><div class="table-wrap"><table class="compact"><caption class="sr-only">Request lineage</caption><thead><tr><th scope="col">Time</th><th scope="col">Request</th><th scope="col">Outcome</th><th scope="col">Policy</th><th scope="col">Correlation ID</th><th scope="col">Operation</th><th scope="col">Version</th></tr></thead><tbody>${hits.map(t => `<tr><td>${escapeHtml(formatInstant(t.time))}</td><td>${escapeHtml(t.kind + ': ' + t.what)}</td><td>${escapeHtml(t.outcome)}</td><td>${escapeHtml(t.policy)}</td><td class="mono">${escapeHtml(t.correlationId)}</td><td class="mono">${escapeHtml(t.operationId || '')}</td><td>${escapeHtml(t.metadataVersion)}</td></tr>`).join('') || '<tr><td colspan="7">No requests match.</td></tr>'}</tbody></table></div>
+      return `<p role="status">${plural(hits.length, 'request')} shown. Values, secrets and row contents are never shown here.</p><div class="table-wrap"><table class="compact"><caption class="sr-only">Request lineage</caption><thead><tr><th scope="col">Time</th><th scope="col">Request</th><th scope="col">Outcome</th><th scope="col">Policy</th><th scope="col">Correlation ID</th><th scope="col">Operation</th><th scope="col">Version</th></tr></thead><tbody>${hits.map(t => `<tr><td>${escapeHtml(formatInstant(t.time))}</td><td>${escapeHtml(t.kind + ': ' + t.what)}</td><td>${escapeHtml(t.outcome)}</td><td>${escapeHtml(t.policy)}</td><td class="mono">${escapeHtml(t.correlationId)}</td><td class="mono">${escapeHtml(t.operationId || '')}</td><td>${escapeHtml(t.version)}</td></tr>`).join('') || '<tr><td colspan="7">No requests match.</td></tr>'}</tbody></table></div>
         <div class="form-section"><h3>Operations awaiting an outcome</h3>${pending.length ? `<ul>${pending.map(p => `<li><span class="mono">${escapeHtml(p.operationId)}</span> on ${escapeHtml(p.target)}, submitted ${escapeHtml(formatInstant(p.submitted))}: ${escapeHtml(p.outcome)}</li>`).join('')}</ul>` : '<p>None.</p>'}</div>
         <div class="form-section"><h3>Background jobs</h3>${state.jobs.length ? `<ul>${state.jobs.map(j => `<li><span class="mono">${escapeHtml(j.id)}</span> ${escapeHtml(j.title)}: ${escapeHtml(j.status)}</li>`).join('')}</ul>` : '<p>None.</p>'}</div>`;
     }
@@ -3578,9 +3599,10 @@
             Applies once, to the next request of a matching kind, then returns to normal.</fieldset>
           <fieldset><legend>Deliver message</legend><label>Intent <select id="protoMessage">${Object.keys(messageSamples).map(k => `<option>${k}</option>`).join('')}</select></label><label>Dataset for invalidateDataset and refreshScreen <input type="text" id="protoDataset" value="${escapeHtml(dataset)}"></label><label>Seconds for setPollingInterval <input type="text" id="protoSeconds" value="30"></label><button type="button" class="button" id="protoDeliver">Deliver message</button> <span id="protoDelivered" role="status"></span></fieldset>
           <fieldset><legend>Message dialog</legend><label>Button set <select id="protoButtons">${Object.keys(buttonSets).map(k => `<option>${k}</option>`).join('')}</select></label><label>Severity <select id="protoSeverity">${Object.keys(severityNames).map(k => `<option>${k}</option>`).join('')}</select></label><label><input type="checkbox" id="protoModeless"> Modeless</label><button type="button" class="button" id="protoShowBox">Show message dialog</button> <span id="protoBoxResult" role="status"></span></fieldset>
-          <fieldset><legend>Session</legend><label><input type="checkbox" id="protoSupport"${state.support ? ' checked' : ''}> Add the platform support role (shows Diagnostics and support detail on configuration errors)</label><button type="button" class="button" id="protoExpire">Expire the session now</button> <button type="button" class="button" data-proto-restart="connection-lost">Restart with the service unreachable at start-up</button> <button type="button" class="button" data-proto-restart="forbidden">Restart with an account that is not set up</button></fieldset>
+          <fieldset><legend>Session</legend><label><input type="checkbox" id="protoSupport"${state.support ? ' checked' : ''}> Show the support view (Diagnostics, and support detail on configuration errors). This is a prototype switch, not an application role.</label><button type="button" class="button" id="protoExpire">Expire the session now</button> <button type="button" class="button" data-proto-restart="connection-lost">Restart with the service unreachable at start-up</button> </fieldset>
+          <fieldset><legend>Start-up access to ${escapeHtml(app() ? app().name : 'this application')}</legend><label>Restart as if this person were <select id="protoAccess"><option value="not-a-user">not a user of this application</option><option value="inactive">an inactive user of it</option><option value="no-role">a user of it with no role</option></select></label><button type="button" class="button" id="protoAccessRestart">Restart with this access</button><br>Changes only this window's copy of this application's user list. The other application is not affected.</fieldset>
           <fieldset><legend>Another user</legend><button type="button" class="button" id="protoOther">Change the first order as another user</button> <span id="protoOtherDone" role="status"></span><br>The change shows on the Order register at its next refresh, marked Updated.</fieldset>
-          <fieldset><legend>Deep links</legend>#/&lt;application&gt;/&lt;screen&gt;[/&lt;record or node key&gt;] restores a screen. Add ?view=detached for the standalone route or ?view=print for the print document.<br>Prototype-only parameters: sim=&lt;mode&gt; arms a simulation (add at=startup to apply it to start-up, or when=after-load to arm it once the screen has loaded), support=1 adds the support role, do=&lt;step&gt; plays one step after loading (refresh, edit-save, run, new, edit, filter, search, customise, export, about, help, tools, messages, diagnostics).</fieldset>
+          <fieldset><legend>Deep links</legend>#/&lt;application&gt;/&lt;screen&gt;[/&lt;record or node key&gt;] restores a screen. Add ?view=detached for the standalone route or ?view=print for the print document.<br>Prototype-only parameters: sim=&lt;mode&gt; arms a simulation (add at=startup to apply it to start-up, or when=after-load to arm it once the screen has loaded), support=1 switches on the support view, access=not-a-user|inactive|no-role restarts the addressed application with that start-up access, do=&lt;step&gt; plays one step after loading (refresh, edit-save, run, new, edit, filter, search, customise, export, about, help, tools, messages, diagnostics).</fieldset>
           <fieldset><legend>Sample data and definitions</legend><button type="button" class="button" id="protoShowJson">Show JSON</button> <button type="button" class="button" id="protoDownloadJson">Download JSON</button><pre id="protoJson" hidden tabindex="0"></pre></fieldset>
           <fieldset><legend>Stored preferences</legend><button type="button" class="button" id="protoResetPrefs">Clear my stored preferences</button> <span id="protoPrefsDone" role="status"></span></fieldset></div>` });
       const body = dlg.body, snapshot = () => JSON.stringify({ ...source, dataSources: db, messages: state.messages }, null, 2);
@@ -3592,6 +3614,7 @@
       body.addEventListener('click', e => {
         const restart = e.target.closest('[data-proto-restart]');
         if (restart) { location.hash = '#/' + state.appId + '?sim=' + restart.dataset.protoRestart + '&at=startup'; location.reload(); return; }
+        if (e.target.id === 'protoAccessRestart') { location.hash = '#/' + state.appId + '?access=' + body.querySelector('#protoAccess').value; location.reload(); return; }
         if (e.target.id === 'protoDeliver') {
           const type = body.querySelector('#protoMessage').value, message = { ...messageSamples[type], id: 'MSG-' + nextId('m') };
           if ('dataset' in message) message.dataset = body.querySelector('#protoDataset').value.trim();
@@ -3902,7 +3925,7 @@
       const text = document.getElementById('splashText'), actions = document.getElementById('splashActions');
       document.getElementById('splashLine').style.display = 'none';
       actions.innerHTML = '';
-      if (error && error.kind === 'forbidden') text.textContent = 'Your account is not set up to use GD Workspace, so nothing has been loaded. Ask your administrator for access.' + (error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
+      if (error && error.kind === 'forbidden') text.textContent = 'You cannot start GD Workspace because access was refused, so nothing has been loaded.' + (error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
       else {
         text.textContent = 'GD Workspace could not start because the service could not be reached. Nothing has been loaded.' + (error && error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
         const retry = document.createElement('button');
@@ -3911,12 +3934,37 @@
         actions.appendChild(retry); retry.focus();
       }
     }
+    // Blocked start-up for one application. The reason comes from that application's own list of users.
+    function startupBlocked(application, reason, others, correlationId) {
+      const text = document.getElementById('splashText'), actions = document.getElementById('splashActions');
+      const detail = { 'Not a user of this application': 'You are not on its list of users.', 'Inactive': 'Your entry on its list of users is inactive.', 'No role': 'Your entry on its list of users holds no active role.' }[reason] || '';
+      document.getElementById('splashLine').style.display = 'none';
+      text.textContent = `You cannot start ${application.name}: ${reason}. ${detail} Nothing has been loaded for it. Ask the people who manage ${application.name} for access.` + (correlationId ? ' Support reference: ' + correlationId + '.' : '');
+      actions.innerHTML = '';
+      others.forEach(other => {
+        const open = document.createElement('button');
+        open.type = 'button'; open.className = 'button'; open.textContent = 'Open ' + other.name;
+        open.addEventListener('click', () => { location.hash = '#/' + other.id; location.reload(); });
+        actions.appendChild(open);
+      });
+      document.title = 'Cannot start ' + application.name + ' · GD Workspace';
+    }
+    // Prototype tools only: changes this window's copy of one application's entry for the signed-in person.
+    function simulateAccess(application, how) {
+      const entry = (application.users || []).find(u => u.subject === session.subject);
+      if (how === 'not-a-user') application.users = (application.users || []).filter(u => u !== entry);
+      else if (how === 'inactive' && entry) entry.active = false;
+      else if (how === 'no-role' && entry) entry.roles = [];
+    }
     async function start() {
       window.gdStarted = true;
       const route = parseRoute(location.hash), p = route.params;
       applyTheme();
       if (p.support === '1') state.support = true;
       if (p.sim && p.at === 'startup' && !state.startAttempted) sim.next = p.sim;
+      const entryIn = a => (a.users || []).find(u => u.subject === session.subject);
+      const addressed = source.applications.find(a => a.id === route.appId) || null;
+      if (p.access && !state.startAttempted) simulateAccess(addressed || source.applications.find(a => (entryIn(a) || {}).default === true) || source.applications[0], p.access);
       state.startAttempted = true;
       appContainer.inert = true;
       let info;
@@ -3924,7 +3972,12 @@
       catch (error) { startupFailed(error); return; }
       state.sessionCorrelation = info.correlationId;
       const known = id => source.applications.some(a => a.id === id);
-      state.appId = known(route.appId) ? route.appId : known(prefs.get(['shell', 'lastApplication'], '')) ? prefs.get(['shell', 'lastApplication']) : known(session.defaultApplication) ? session.defaultApplication : source.applications[0].id;
+      const blockedReason = a => (info.applications.find(x => x.id === a.id) || { blocked: 'Not a user of this application' }).blocked;
+      const startable = source.applications.filter(a => !blockedReason(a));
+      // With no address, the first application whose entry for this person is marked default opens; failing that, the first they can start.
+      const chosen = addressed || startable.find(a => entryIn(a).default === true) || startable[0] || source.applications[0];
+      if (blockedReason(chosen)) { startupBlocked(chosen, blockedReason(chosen), startable.filter(a => a !== chosen), info.correlationId); return; }
+      state.appId = chosen.id;
       state.view = p.view === 'detached' && route.screenId ? 'detached' : 'workspace';
       state.started = true;
       appContainer.inert = false;

@@ -1,13 +1,13 @@
 # GDFramework Rebuild Master Plan and Design
 
 **Status:** Controlled working baseline  
-**Version:** 0.12  
+**Version:** 0.13  
 **Date:** 10 October 2026  
 **Owner:** Migration technical lead  
 **Reference source baseline:** `${LEGACY_SOURCE_ROOT}`; see [section 23 Legacy baseline](#23-legacy-baseline). Nothing else exists: no deployed instance, metadata database, user, or consumer  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Functional baseline:** [GDFramework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Target design:** [GDFramework Modern Web System Design 0.9](GDF_MODERN_WEB_SYSTEM_DESIGN.md)  
+**Target design:** [GDFramework Modern Web System Design 0.10](GDF_MODERN_WEB_SYSTEM_DESIGN.md)  
 **Document control:** [GDF_DOCUMENT_CONTROL.md](GDF_DOCUMENT_CONTROL.md)  
 **Consolidates:** the former legacy-baseline, evidence-acquisition, component-inventory, dependency-inventory, provider-matrix, public-API-catalogue, dataset-catalogue, and ADR documents (now sections 23–30); and the superseded 0.1 design/plan drafts (deleted from the working tree; last present in git history at commit bb1991a)
 
@@ -26,6 +26,7 @@
 | 0.10 | 2026-10-04 | Quality/coherence review: default DataClass caching preserved; operation-outcome recovery, durable post-commit effects, scoped metadata caching, protected authoring, and withdrawal admission aligned with the design; D-021 registers pending dual-source scope and atomic execution evidence; obsolete deployed-evidence obligations removed. No decisions or dispositions approved by these edits. |
 | 0.11 | 2026-10-10 | Owner decisions recorded as ADR-001..ADR-006 (section 30): D-011 disposition policy approved and all DEF-* rows decided; D-017 approved as proposed, including Detach and responsive layout; D-020 decided out of scope; D-005 decided as OpenID Connect with a server-side session; D-013 and D-004 decided in direction as engine-agnostic and configurable, with the first qualified engines selected at Gate C; D-022 decided as live user administration outside publication. Gates C to E, Phases 2 to 4, sections 9.6, 10.1, 22, 29, and risk R-020 updated to match. The stack stays technology-neutral: D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged. Named owner recorded for every role. User records are live administration data outside publication (design section 15.6, WDES-027) |
 | 0.12 | 2026-10-10 | Administrative roles decided and recorded as ADR-007: D-023 fixed administrative roles granted in the authoring tool with second-person approval, no self-changes, and deployment-configured bootstrap platform administrators. Gate D cites WDES-028; section 3.5 prototype description updated |
+| 0.13 | 2026-10-10 | Access model corrected to the owner's direction and recorded as ADR-008, which supersedes ADR-006: each application configuration is self-contained and owns its roles and users, published with it; nothing is shared between applications. D-022 revised accordingly; D-023 and ADR-007 restated as Studio access, unrelated to any application. Gate D and section 3.5 aligned |
 
 ## 1. Document purpose and authority
 
@@ -58,7 +59,7 @@ working tree and remain in git history (last present at commit bb1991a).
 
 | Area | Status |
 |---|---|
-| Consolidated plan | Controlled working baseline 0.12 |
+| Consolidated plan | Controlled working baseline 0.13 |
 | Named owner | Mark Raysmith holds every section 6.4 role (GDF_DOCUMENT_CONTROL.md section 7) |
 | Behavior decisions | Decided on 10 October 2026: disposition policy D-011 with every DEF-* row, desktop-bound reinterpretation D-017, and specialist scope D-020 (section 30). Still open: D-009, D-019, D-021, and the `RUNTIME-VERIFY` and `DOCUMENT CONFLICT` rows |
 | Authentication | OpenID Connect with a server-side session (D-005, ADR-004) |
@@ -206,7 +207,7 @@ server. Where a prototype and the design document differ, the design governs
 | Prototype | What it demonstrates | Role in the plan |
 |---|---|---|
 | `gdframework-web-mockup.html` (GD Workspace) | The end-user shell, navigation with personal shortcuts, tabs, addressable routes, Detach and Reattach, personalization, the six message types, export jobs, the print document, About and support diagnostics, the conflict, unknown-outcome, unreachable, and withdrawn-definition states, responsive layout, and themes, with a sample application that exercises every screen family: Order register (grid), Customer records (field), Inventory by product (master-detail), Repricing action and Run limit check (action), Regional hierarchy (tree/detail), Customer products (junction), and Sales performance (chart) | Layout reference for design sections 7–9 and the definition of the first application (Phase 1) |
-| `gdframework-admin-mockup.html` (GD Studio) | Metadata authoring: applications, navigation, screens, fields, commands, DataClasses, connections with the neutral provider catalogue and read-only deployment mapping, value lists, reports, security, validation results, live user administration, administrative roles with second-person approval, version history and comparison, impact, digest-bound approvals, publication checklist, rollback with its withdrawal effects, and retirement | Reference for the D-015 authoring tool (design section 11.4) |
+| `gdframework-admin-mockup.html` (GD Studio) | Metadata authoring: applications, navigation, screens, fields, commands, DataClasses, connections with the neutral provider catalogue and read-only deployment mapping, value lists, reports, security, validation results, application roles and application users inside each application configuration, a separate version line and publication per application, Studio roles and Studio users with second-person approval, version history and comparison, impact, digest-bound approvals, publication checklist, rollback with its withdrawal effects, and retirement | Reference for the D-015 authoring tool (design section 11.4) |
 
 The sample application in the runtime prototype, called the *reference
 application* in this plan, is the first application to be authored. Both
@@ -1130,8 +1131,8 @@ identifier stays stable.
 | D-019 | Extension contract scope: decide which of the legacy helper contracts (validation, function, simple service, database helper; functional specification section 24 and FR-EXT-DB-001) become registered adapter contracts in the rebuild, and which are retired. | Migration technical lead | Phase 4 entry, before capability group 8 | Open | None raised (add as section 30.N) |
 | D-020 | PLM, aggregation, and limit-processing scope: decide whether any of the specialist components in functional specification sections 27 and 43 (FR-PLM-001, FR-PLM-006, FR-AGG-*, FR-LIMIT-*) is in scope for the rebuild; the default is out of scope. | Product/domain owner | Gate B | Decided 2026-10-10: out of scope | [ADR-003](#305-adr-003--plm-aggregation-and-limit-processing-out-of-scope) |
 | D-021 | Dual-source writes (FR-DC-004): decide functional scope, then qualify each admitted provider pair's routing, shared transaction or coordinated atomic commit, durable operation identity, participant-outcome proof, and recovery. Pending/unsupported definitions fail closed. A non-atomic alternative requires an approved behavior change; compensation is not atomic rollback. | Product/domain owner with Database owner and Migration technical lead; Security/Operations review | Gate B for scope; Gate C for strategy if needed by the first slice, otherwise before dependent Phase 4 implementation or publication | Open | None raised (add as section 30.N) |
-| D-022 | User administration model: user records, application assignments, role memberships, and user overrides are live administration data, changed by the security administrator with immediate effect and full audit, outside validation, approval, and publication (design section 15.6). Roles and their permissions stay versioned configuration. | Security owner with the Product/domain owner | Gate C | Decided 2026-10-10 (live administration) | [ADR-006](#308-adr-006--live-user-administration-outside-publication) |
-| D-023 | Administrative roles for the platform itself: a fixed platform set (platform administrator, configurator, approver, security administrator, support operator, database owner, integration owner), granted inside the authoring tool as live administration. A grant needs a second platform administrator's approval, revocation is immediate, nobody changes their own roles, and the bootstrap platform administrators come from deployment configuration (design section 15.7). | Security owner with the Operations owner | Gate C | Decided 2026-10-10 (managed in the authoring tool) | [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) |
+| D-022 | Application access model: each application configuration is self-contained and owns its own roles and users. They are versioned configuration, edited in that application's draft and effective only when it is published; nothing is shared between applications and there is no identity-provider group mapping (design sections 11.7 and 15.6). | Product/domain owner with the Security owner | Gate C | Decided 2026-10-10 as revised the same day (application-owned and published; the earlier live-administration choice is superseded) | [ADR-008](#3010-adr-008--roles-and-users-belong-to-each-application-configuration) |
+| D-023 | Studio access: who may do what in the authoring tool is unrelated to any application. Studio roles are a fixed platform set (platform administrator, configurator, approver, security administrator, support operator, database owner, integration owner), granted to Studio users inside the tool as live administration. A grant needs a second platform administrator's approval, revocation is immediate, nobody changes their own roles, and the bootstrap platform administrators come from deployment configuration (design section 15.7). | Security owner with the Operations owner | Gate C | Decided 2026-10-10 (managed in the authoring tool) | [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) |
 
 No engine is an input to D-004 or D-013 and none carries default status
 (ADR-005): the first qualified provider and platform-store engine are selected
@@ -1210,12 +1211,14 @@ criterion requires.
 - WDES-026 sign-in, session-cookie, CSRF, and next-request revocation tests
   pass, and the platform store conformance suite passes on the slice engine
   (WDES-025).
-- WDES-027 user-administration tests pass: a user change is effective on the
-  next request without publication, and a subject with no active user record
-  or application assignment is refused at start-up.
-- WDES-028 administrative-role tests pass: a grant confers nothing until a
-  second platform administrator approves it, self-changes are refused, and
-  bootstrap administrators come only from deployment configuration.
+- WDES-027 application-access tests pass: an application's roles and users
+  take effect only when that application's configuration is published,
+  nothing is shared between applications, and a subject who is not an active
+  user of the application holding one of its roles is refused.
+- WDES-028 Studio-access tests pass: a Studio role grant confers nothing
+  until a second platform administrator approves it, self-changes are
+  refused, bootstrap platform administrators come only from deployment
+  configuration, and a Studio role grants nothing in an application.
 - NFR-ACC-001 keyboard and screen-reader checks pass for the slice screens.
 - NFR-OBS-001 and NFR-OBS-002 met for the slice: every failed operation is
   diagnosable by authorized support without exposing sensitive values.
@@ -1690,8 +1693,9 @@ rollback procedure.
 | [ADR-003](#305-adr-003--plm-aggregation-and-limit-processing-out-of-scope) | D-020 specialist component scope | Approved | 2026-10-10 |
 | [ADR-004](#306-adr-004--openid-connect-sign-in-with-a-server-side-session) | D-005 authentication and session | Approved | 2026-10-10 |
 | [ADR-005](#307-adr-005--engine-agnostic-platform-store-and-configurable-providers) | D-013 and D-004 store and provider neutrality | Approved | 2026-10-10 |
-| [ADR-006](#308-adr-006--live-user-administration-outside-publication) | D-022 user administration model | Approved | 2026-10-10 |
-| [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) | D-023 administrative roles | Approved | 2026-10-10 |
+| [ADR-006](#308-adr-006--live-user-administration-outside-publication) | D-022 user administration model, first form | Superseded by ADR-008 | 2026-10-10 |
+| [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) | D-023 Studio access (Studio roles and Studio users) | Approved | 2026-10-10 |
+| [ADR-008](#3010-adr-008--roles-and-users-belong-to-each-application-configuration) | D-022 application access model, as revised | Approved | 2026-10-10 |
 
 Add each new record as `### 30.N ADR-NNN — Title` and link it from section 17.
 
@@ -1994,7 +1998,7 @@ move through the store contract with backup and verification.
 
 ### 30.8 ADR-006 — Live user administration outside publication
 
-**Status:** Approved  
+**Status:** Superseded by ADR-008 on 2026-10-10  
 **Date:** 2026-10-10  
 **Owner:** Security owner with the Product/domain owner, Mark Raysmith  
 **Decision register ID:** D-022  
@@ -2094,7 +2098,9 @@ person can do in it follows from the administrative roles they hold. A
 deployment must name at least two bootstrap platform administrators. The
 approver roles take their areas from the D-015 approval model, which is still
 to be recorded. Administrative access stays separate from business access:
-neither grants the other.
+neither grants the other. The design calls these Studio roles and Studio
+users. Since ADR-008 the security administrator role maintains the roles and
+users inside application drafts, not a platform-wide user list.
 
 #### Validation and rollback
 
@@ -2109,6 +2115,68 @@ ADR.
 |---|---|---|---|
 | Security owner | Mark Raysmith | Approved | 2026-10-10 |
 | Operations owner | Mark Raysmith | Approved | 2026-10-10 |
+
+### 30.10 ADR-008 — Roles and users belong to each application configuration
+
+**Status:** Approved
+**Date:** 2026-10-10
+**Owner:** Product/domain owner with the Security owner, Mark Raysmith
+**Decision register ID:** D-022 (supersedes ADR-006)
+**Affected requirements:** FR-SEC-002..006, FR-SEC-008, FR-SEC-009; FR-INV-001, FR-INV-002; NFR-SEC-002; WDES-007, WDES-023, WDES-027
+**Baseline manifest:** `../baseline/legacy-source-manifest.sha256`
+
+#### Context and evidence
+
+ADR-006 put users in one platform-wide list of live administration data,
+outside publication, beside one workspace-wide list of roles. On review the
+owner rejected that structure: an application's roles and users are part of
+that application's configuration, each application has its own set, and they
+are published with it. The reference system scoped roles, role memberships,
+and application assignments by application (functional specification section
+28: `dsp_role`, `dsp_role_users`, `dsp_user_app`).
+
+#### Options considered
+
+| Option | Benefits | Costs/risks | Evidence |
+|---|---|---|---|
+| Roles and users inside each application configuration, published with it | One self-contained unit per application; every access change is validated, approved, digested, comparable, and reversible | Adding or removing a user waits for a publication; a person in two applications is maintained twice | Owner direction; functional specification section 28 |
+| Roles per application, users live in a platform-wide list (ADR-006) | Joiners and leavers need no publication | Users sit outside the application they belong to; two lifecycles for one access model | ADR-006 |
+| Platform-wide roles and users shared by applications | Least duplication | Applications are not self-contained; a change for one application affects another | Design section 11.2 |
+
+#### Decision
+
+Each application configuration is self-contained and owns its own roles and
+users. They are versioned configuration: edited in that application's draft
+and effective only when it is validated, approved, and published. Nothing is
+shared between applications, and there is no mapping from identity-provider
+groups to application roles.
+
+#### Consequences
+
+The application configuration is the unit of drafts, validation, approval,
+publication, digest, and rollback, and it also holds its own connections,
+value lists, and reports; a reference across applications fails compilation
+(design section 11.7). A subject can start an application only if its
+published configuration lists them as an active user holding one of its
+roles. Urgent removal of access is done at the identity provider and by
+ending sessions, and the user list follows by publication. In the authoring
+tool the roles and users pages sit inside each application and are changed
+by a Studio user holding the security administrator role (ADR-007). ADR-006
+is superseded, and the policy revision of an application now changes only
+when that application is published.
+
+#### Validation and rollback
+
+WDES-027 and the NFR-SEC-002 role-matrix tests at Gate D, per application. A
+wrong user or role change is reversed by publishing a correction or by
+rolling the application back to its previous version.
+
+#### Approval
+
+| Role | Name | Decision | Date |
+|---|---|---|---|
+| Product/domain owner | Mark Raysmith | Approved | 2026-10-10 |
+| Security owner | Mark Raysmith | Approved | 2026-10-10 |
 
 ## Appendix A — Source-document disposition
 
