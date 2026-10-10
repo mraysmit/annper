@@ -46,7 +46,8 @@ Superseded drafts are not kept in the working tree; git history is the archive
 - [Open the single-file GD Studio administration mockup](prototype/gdframework-admin-mockup.html).
   It demonstrates metadata-driven application, navigation, screen, field,
   command, DataClass, connection and provider-catalogue, value-list, report,
-  security, live user administration, validation, impact-analysis,
+  security, live user administration, administrator roles, validation,
+  impact-analysis,
   version-comparison, approval,
   publication, rollback, retirement, and audit configuration workflows.
 
@@ -81,10 +82,10 @@ node tools/Test-Mockups.cjs                # contract regressions for both proto
 
 - Functional specification: Controlled working baseline 0.12; framework and
   metadata-schema scope reconstructed from source; applications are authored
-- Modern web system design: Controlled working baseline 0.8; complete,
+- Modern web system design: Controlled working baseline 0.9; complete,
   technology-neutral logical design
-- Migration master: Controlled working baseline 0.11
-- Document control: Controlled working baseline 0.8
+- Migration master: Controlled working baseline 0.12
+- Document control: Controlled working baseline 0.9
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Behavior decisions: all 38 legacy defect dispositions, the desktop-to-web

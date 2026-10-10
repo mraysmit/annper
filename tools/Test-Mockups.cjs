@@ -127,7 +127,7 @@ test('UI-04: snapshot payload cannot be changed by later draft edits', () => {
 });
 test('UI-04: publish supersedes old release and creates a fresh draft', () => {
   const s=studio();validCandidate(s);
-  s.run(`for(const [role,actor] of [['Product','Priya Raman'],['Security','Alex Morgan'],['Test','Dana Whitlock']]){state.actor=actor;recordApproval(role,'Reviewed');}state.publicationNote='September order export release';publish();`);
+  s.run(`for(const [role,actor] of [['Product','Priya Raman'],['Security','Alex Morgan'],['Test','Dana Whitlock']]){state.actor=actor;recordApproval(role,'Reviewed');}state.actor='Jordan Lee';state.publicationNote='September order export release';publish();`);
   assert.equal(s.dialogs.length,1);s.dialogs[0].buttons.find(b=>b.label==='Publish').action();
   assert.equal(s.run('releases[0].status'),'Published');assert.equal(s.run('releases[1].status'),'Superseded');
   assert.equal(s.run('model.draft.label'),'Draft 2026.09.3');assert.ok(s.run('Object.isFrozen(releases[0].snapshot.screens)'));
@@ -375,7 +375,9 @@ test('Studio 11.4/15.4: a secret reference must match a reference scheme; creden
   const s=studio();
   for(const bad of ['Password=hunter2;User Id=sa','Server=db01;Database=ops','secret://gd/x y','user:pw@host','hunter2'])assert.notEqual(s.run(`secretRefIssue(${JSON.stringify(bad)})`),'',bad);
   for(const good of ['secret://gd/connections/ops-db','identity://gd/workloads/risk-reader'])assert.equal(s.run(`secretRefIssue(${JSON.stringify(good)})`),'',good);
+  s.run("state.actor='Chris Doyle'");
   assert.equal(s.run("setProp('connections.ops-db','secretRef','Password=hunter2;User Id=sa','')"),false);
+  assert.match(s.messages.at(-1)[0],/looks like a credential/);
   assert.equal(s.run('model.connections[0].secretRef'),'secret://gd/connections/ops-db');
   assert.equal(s.run('audit[0].outcome'),'Denied');assert.doesNotMatch(s.run('JSON.stringify(audit)'),/hunter2/);
   s.run("model.connections[0].secretRef='Password=hunter2'");assert.ok(hasIssue(s,'CREDENTIAL_REJECTED','connections.ops-db.secretRef'));
@@ -404,7 +406,8 @@ test('Studio 11.2: lifecycle shows Draft, Validating, Approved and publishes wit
   assert.equal(s.run('draftStatus()'),'Approved');
   assert.equal(s.run("audit.find(a=>a.action==='Approved candidate').reason"),'Test review complete');
   assert.match(s.run('publicationBlockers()[0]'),/publication reason is required/);
-  s.run("state.publicationNote='Order export release';");assert.equal(s.run('performPublish()'),true);
+  s.run("state.publicationNote='Order export release';");assert.equal(s.run('performPublish()'),false,'an approver is not a configurator');
+  s.run("state.actor='Jordan Lee'");assert.equal(s.run('performPublish()'),true);
   assert.equal(s.run('releases[0].status+releases[1].status'),'PublishedSuperseded');
   assert.equal(s.run("audit.find(a=>a.action==='Published version').reason"),'Order export release');
   assert.equal(s.run('state.publicationRevision'),8);
@@ -445,14 +448,14 @@ test('Studio 11.2: rollback, retire and their reasons follow the allowed transit
 
 test('Studio 11.4: scheduled publication activates the approved candidate at its time; an edit cancels it', () => {
   const s=studio();validCandidate(s);
-  s.run(`for(const [role,actor] of [['Product','Priya Raman'],['Security','Alex Morgan'],['Test','Dana Whitlock']]){state.actor=actor;recordApproval(role,'Reviewed');}state.publicationNote='Night release';`);
+  s.run(`for(const [role,actor] of [['Product','Priya Raman'],['Security','Alex Morgan'],['Test','Dana Whitlock']]){state.actor=actor;recordApproval(role,'Reviewed');}state.actor='Jordan Lee';state.publicationNote='Night release';`);
   assert.equal(s.run("schedulePublication('2000-01-01T00:00')"),false,'a past time is refused');
   assert.equal(s.run("schedulePublication(new Date(Date.now()+3600000).toISOString())"),true);
   assert.equal(s.run('tickSchedule(Date.now())'),false);assert.equal(s.run('releases[0].status'),'Published');assert.equal(s.run('releases.length'),2);
   assert.equal(s.run('tickSchedule(Date.now()+7200000)'),true);
   assert.equal(s.run('releases.length+releases[0].summary+releases[1].status'),'3Night releaseSuperseded');
   const t=studio();validCandidate(t);
-  t.run(`for(const [role,actor] of [['Product','Priya Raman'],['Security','Alex Morgan'],['Test','Dana Whitlock']]){state.actor=actor;recordApproval(role,'Reviewed');}state.publicationNote='Night release';schedulePublication(new Date(Date.now()+3600000).toISOString());state.actor='Jordan Lee';setProp('screens.orders','caption','Orders','')`);
+  t.run(`for(const [role,actor] of [['Product','Priya Raman'],['Security','Alex Morgan'],['Test','Dana Whitlock']]){state.actor=actor;recordApproval(role,'Reviewed');}state.actor='Jordan Lee';state.publicationNote='Night release';schedulePublication(new Date(Date.now()+3600000).toISOString());state.actor='Jordan Lee';setProp('screens.orders','caption','Orders','')`);
   assert.equal(t.run('state.schedule'),null);assert.equal(t.run("audit.some(a=>a.action==='Cancelled scheduled publication')"),true);
 });
 
@@ -647,7 +650,8 @@ test('Studio 3.3/15.5: audit records the real target, outcome, reason and before
   s.run("checkpoint('Created screen',()=>model.screens.push(newScreen('exceptions','Exceptions','grid','orders')),'screens.exceptions')");
   assert.deepEqual([...s.run('[audit[0].action,audit[0].target,audit[0].application,audit[0].outcome,audit[0].before,audit[0].after===digest(),audit[0].version,audit[0].actor]')],['Created screen','screens.exceptions','ops','Succeeded',before,true,'ver-2026-09-2','Jordan Lee']);
   assert.match(s.run('audit[0].time'),/^\d{4}-\d\d-\d\dT/);
-  s.run("setProp('connections.risk-db','name','Risk data store','')");assert.equal(s.run('audit[0].target+\"|\"+audit[0].detail'),'connections.risk-db|name: Risk data to Risk data store');
+  assert.equal(s.run("setProp('connections.risk-db','name','Risk data store','')"),false,'a configurator does not change connections');
+  s.run("state.actor='Chris Doyle';setProp('connections.risk-db','name','Risk data store','');state.actor='Jordan Lee'");assert.equal(s.run('audit[0].target+\"|\"+audit[0].detail'),'connections.risk-db|name: Risk data to Risk data store');
   s.run("recordApproval('Product','x')");assert.equal(s.run('audit[0].action+audit[0].outcome'),'Refused approvalDenied');
   s.run('publish()');assert.equal(s.run('audit[0].action+audit[0].outcome'),'Refused publicationBlocked');
   assert.ok(initial.audit.every(a=>/^\d{4}-\d\d-\d\dT/.test(a.time)&&'outcome' in a&&'reason' in a));
@@ -762,7 +766,7 @@ test('Users: a change takes effect at once and never touches the draft, its dige
   assert.equal(s.run("userAccess(findUser('usr-102'),model.screens[0]).source"),'inactive','effective on the next evaluation');
   assert.deepEqual([...s.run('[audit[0].action,audit[0].target,audit[0].actor,audit[0].outcome,audit[0].reason,audit[0].version]')],['Deactivated user','users.usr-102','Alex Morgan','Succeeded','Extended leave','policy revision '+(revision+6)]);
   assert.equal(s.run('undo()'),false,'nothing of the user change is on the undo stack');
-  s.run("state.actor='Jordan Lee';setProp('screens.orders','caption','Orders','');state.actor='Alex Morgan';setUserProp('usr-103','name','Jay R. Patel');undo()");
+  s.run("state.actor='Jordan Lee';setProp('screens.orders','caption','Orders','');state.actor='Alex Morgan';setUserProp('usr-103','name','Jay R. Patel');state.actor='Jordan Lee';undo();state.actor='Alex Morgan'");
   assert.deepEqual([...s.run("[model.screens[0].caption,findUser('usr-103').name,findUser('usr-102').active]")],['Order register','Jay R. Patel',false]);
   assert.equal(s.run('fixtures.administration.users[1].email'),'maya.chen@example.test','the embedded sample is not written to');
   s.run("selectVersion('ver-2026-08-4')");assert.equal(s.run("setUserProp('usr-103','region','EU')"),true,'viewing a read-only version does not lock live administration');
@@ -807,7 +811,8 @@ test('Users: only a role of the active release, for an assigned application, can
   present(s.run('host.innerHTML'),/<code>retired-role<\/code> is not in the active release and grants nothing/);
   assert.deepEqual([...s.run("userRoles(findUser('usr-102')).map(x=>x.role.id)")],['operations-editor'],'a stale membership grants nothing');
   present(s.run('host.innerHTML'),/data-role="risk-manager" data-admin disabled> Risk manager <span class="muted">Risk &amp; Controls · assign the application first/);
-  assert.equal(s.run("performRetire('ver-2026-09-1','Application retired')&&setUserRole('usr-107','operations-reader',true)"),false,'no active release, no assignable role');
+  assert.equal(s.run("state.actor='Jordan Lee';performRetire('ver-2026-09-1','Application retired')"),true);
+  assert.equal(s.run("state.actor='Alex Morgan';setUserRole('usr-107','operations-reader',true)"),false,'no active release, no assignable role');
 });
 
 test('Users: only the security administrator can change users; everyone else is read-only', () => {
@@ -837,7 +842,7 @@ test('Users: start-up is refused when the record is inactive, has no application
   assert.equal(s.run("(()=>{const c=structuredClone(liveConfig());c.roles.find(r=>r.id==='operations-reader').active=false;return userStart(findUser('usr-107'),c).reason})()"),'No role','an inactive role grants nothing');
   s.run('renderUsers()');const html=s.run('host.innerHTML');
   for(const text of ['<th scope="col">Can start</th>','<th scope="col">Last sign-in</th>','Operations Hub \\(default\\), Risk &amp; Controls','<span class="status bad">No</span> Inactive','<span class="status bad">No</span> No application','<span class="status good">Yes</span>','Operations reader \\(group\\)','aria-label="Search users by name or subject"','policy revision <strong id="policyRevision">41</strong>'])present(html,new RegExp(text));
-  s.run("performRetire('ver-2026-09-1','Application retired')");assert.equal(start('usr-101'),'{"ok":false,"reason":"No role"}','nothing is live without an active release');
+  s.run("state.actor='Jordan Lee';performRetire('ver-2026-09-1','Application retired')");assert.equal(start('usr-101'),'{"ok":false,"reason":"No role"}','nothing is live without an active release');
 });
 
 test('Users: effective access is cumulative across roles, with the user override applied last', () => {
@@ -867,7 +872,7 @@ test('Users: effective access is cumulative across roles, with the user override
 test('Users: the module is reachable, linked from roles, and the role tabs explain group mappings', () => {
   const s=security();
   assert.equal(s.run("openPath('users.usr-104')"),true);assert.deepEqual([...s.run('[state.module,state.selectedUser]')],['users','usr-104']);
-  present(admin,/\['security','Security','◇'\],\['users','Users','◍'\],\['validation'/);present(admin,/\['user','selectedUser'\]/);present(admin,/parts\.push\(`user=\$\{state\.selectedUser\}`\)/);
+  present(admin,/\['security','Security','◇'\],\['users','Users','◍'\],\['administrators','Administrators','◉'\],\['validation'/);present(admin,/\['user','selectedUser'\]/);present(admin,/parts\.push\(`user=\$\{state\.selectedUser\}`\)/);
   s.run("state.selectedRole='operations-editor';state.securityTab='access';renderSecurity()");
   present(s.run('host.innerHTML'),/A group mapping grants this role to every member of the group, but it does not make anyone a user\. A person with no active user record, or with no application assignment, is refused at start-up\./);
   absent(s.run('host.innerHTML'),/User overrides/);
@@ -878,6 +883,146 @@ test('Users: the module is reachable, linked from roles, and the role tabs expla
   s.run("state.selectedUser='usr-101';renderUsers()");const html=s.run('host.innerHTML');
   for(const text of ['Identity-provider subject','Application assignments','Role memberships','User overrides','Last sign-out','Remove user','◉ Effective access','Deactivate','name="default-usr-101"','holds no credential'])present(html,new RegExp(text));
   s.run('renderAudit()');s.run("setUserProp('usr-101','region','UK');renderAudit()");present(s.run('host.innerHTML'),/data-action="open" data-path="users\.usr-101">users\.usr-101<\/button>/);
+});
+
+/* ---- Administrators: Studio's own identities, a fixed role set, two-person grants ---- */
+const as = (name, s = studio()) => { s.run(`state.actor=${JSON.stringify(name)}`); return s; };
+const heldBy = (s, name) => [...s.run(`adminRoles(administration.administrators.find(a=>a.name===${JSON.stringify(name)}))`)].join();
+const denied = (s, pattern) => { assert.match(s.messages.at(-1)[0], pattern); assert.deepEqual([...s.run('[audit[0].action,audit[0].outcome]')], ['Refused administrator change', 'Denied']); };
+
+test('Administrators: the fixed roles, the sample people and the bootstrap administrators are as decided', () => {
+  const s=studio(),people=fixtures.administration.administrators;
+  assert.deepEqual([...s.run('Object.keys(ADMIN_ROLES)')],['platform-administrator','configurator','approver-product','approver-security','approver-test','security-administrator','support-operator','database-owner','integration-owner']);
+  assert.deepEqual(fixtures.deployment.bootstrapAdministrators,['sam.okafor','elena.ruiz']);
+  for(const [name,roles] of [['Jordan Lee','configurator'],['Priya Raman','approver-product'],['Alex Morgan','approver-security,security-administrator'],['Dana Whitlock','approver-test'],['Sam Okafor','platform-administrator'],['Elena Ruiz','platform-administrator,support-operator'],['Chris Doyle','database-owner']])assert.equal(heldBy(s,name),roles,name);
+  assert.deepEqual([...s.run("pendingGrants().map(p=>[p.admin.name,p.grant.role,administratorName(p.grant.proposedBy),eligibleApprovers(p.admin,p.grant).map(x=>x.name).join()].join(':'))")],['Chris Doyle:integration-owner:Sam Okafor:Elena Ruiz']);
+  assert.ok(people.filter(a=>fixtures.deployment.bootstrapAdministrators.includes(a.subject)).every(a=>!a.grants.some(g=>g.role==='platform-administrator')),'a bootstrap role is not a stored grant');
+  for(const a of people)for(const g of a.grants.filter(x=>x.approvedBy))assert.ok(g.proposedBy!==g.approvedBy&&g.proposedBy!==a.subject&&g.approvedBy!==a.subject,`${a.name} ${g.role} was granted by two other people`);
+  present(admin,/actor:'Jordan Lee'/);absent(admin,/reviewers/);assert.ok(!('reviewers' in fixtures)&&!('administrators' in initial));
+  absent(s.run('canonical(configuration())'),/sam\.okafor|jordan\.lee|grant-0|platform-administrator/,'administrators are outside the digest input');
+});
+
+test('Administrators: a record holds no credential-like property', () => {
+  const keys=new Set();(function walk(v){if(Array.isArray(v))v.forEach(walk);else if(v&&typeof v==='object')for(const [k,x] of Object.entries(v)){keys.add(k);walk(x);}})(fixtures.administration.administrators);
+  assert.deepEqual([...keys].filter(k=>/pass|pwd|secret|credential|token|hash|salt|pin$/i.test(k)),[]);
+  assert.ok(fixtures.administration.administrators.every(a=>JSON.stringify(Object.keys(a))===JSON.stringify(['id','subject','name','email','grants'])));
+  const s=as('Sam Okafor');
+  assert.equal(s.run("registerAdministrator('lena.hoff','Lena Hoff','lena.hoff@example.test')"),true);
+  assert.equal(s.run('JSON.stringify(administration.administrators.at(-1))'),'{"id":"adm-08","subject":"lena.hoff","name":"Lena Hoff","email":"lena.hoff@example.test","grants":[]}');
+  assert.equal(heldBy(s,'Lena Hoff'),'','a new administrator holds nothing');
+  for(const [subject,name,email,why] of [['jordan.lee','J','j@example.test',/already an administrator/],['Bad Subject','B','b@example.test',/subject identifier/],['ok.one','','o@example.test',/display name is required/],['ok.two','Jordan Lee','o@example.test',/already has that display name/],['ok.three','Three','nope',/valid email/]]){
+    assert.equal(s.run(`registerAdministrator(${JSON.stringify(subject)},${JSON.stringify(name)},${JSON.stringify(email)})`),false);denied(s,why);
+  }
+  s.run('renderAdministrators()');absent(s.run('host.innerHTML'),/password|passphrase/i);
+});
+
+test('Administrators: a proposed grant gives nothing until a different platform administrator, not the recipient, approves it', () => {
+  const s=as('Sam Okafor'),revision=s.run('administration.policyRevision');
+  assert.equal(s.run("proposeGrant('adm-01','support-operator','')"),false);denied(s,/reason is required to propose/);
+  assert.equal(s.run("proposeGrant('adm-01','configurator','x')"),false);denied(s,/already holds configurator/);
+  assert.equal(s.run("proposeGrant('adm-01','root','x')"),false);denied(s,/not one of the fixed administrative roles/);
+  assert.equal(s.run("proposeGrant('adm-01','support-operator','Needs read access to diagnostics')"),true);
+  assert.equal(s.run("proposeGrant('adm-01','support-operator','again')"),false);denied(s,/already pending/);
+  const grant=s.run("findAdministrator('adm-01').grants.at(-1).id");
+  assert.deepEqual([heldBy(s,'Jordan Lee'),s.run('administration.policyRevision'),s.run("findAdministrator('adm-01').grants.at(-1).state")],['configurator',revision,'pending'],'pending gives nothing and is not an effective change');
+  assert.equal(s.run(`decideGrant('adm-01','${grant}',true,'Looks right')`),false);denied(s,/person who proposed a grant cannot decide it/);
+  s.run("proposeGrant('adm-06','database-owner','Cover for the database owner')");const own=s.run("findAdministrator('adm-06').grants.at(-1).id");
+  as('Elena Ruiz',s);assert.equal(s.run(`decideGrant('adm-06','${own}',true,'Fine')`),false);denied(s,/Nobody can change their own administrative roles/);
+  assert.equal(s.run(`withdrawGrant('adm-06','${own}')`),false);denied(s,/Only the person who proposed a grant can withdraw it/);
+  for(const name of ['Jordan Lee','Alex Morgan','Chris Doyle']){as(name,s);assert.equal(s.run("proposeGrant('adm-02','support-operator','x')"),false,name);denied(s,/Only a platform administrator can change administrative roles/);assert.equal(s.run(`decideGrant('adm-01','${grant}',true,'x')`),false,name);denied(s,/Only a platform administrator|Nobody can change their own/);}
+  as('Elena Ruiz',s);assert.equal(s.run(`decideGrant('adm-01','${grant}',true,'')`),false);denied(s,/reason is required to approve/);
+  assert.equal(s.run(`decideGrant('adm-01','${grant}',true,'Agreed with the support lead')`),true);
+  assert.deepEqual([heldBy(s,'Jordan Lee'),s.run('administration.policyRevision')],['configurator,support-operator',revision+1],'effective at once and the policy revision rises');
+  assert.deepEqual([...s.run('[audit[0].action,audit[0].target,audit[0].actor,audit[0].outcome,audit[0].reason,audit[0].version]')],['Approved administrative role','administrators.adm-01','Elena Ruiz','Succeeded','Agreed with the support lead','policy revision '+(revision+1)]);
+  assert.deepEqual([...s.run("(g=>[g.state,g.proposedBy,g.approvedBy,g.reason,g.approvalReason])(findAdministrator('adm-01').grants.at(-1))")],['granted','sam.okafor','elena.ruiz','Needs read access to diagnostics','Agreed with the support lead']);
+  assert.equal(s.run(`decideGrant('adm-01','${grant}',true,'twice')`),false);denied(s,/not pending/);
+  assert.equal(s.run("decideGrant('adm-07','grant-09',false,'Extension scope is not approved yet')"),true);
+  assert.deepEqual([heldBy(s,'Chris Doyle'),s.run("findAdministrator('adm-07').grants.at(-1).state"),s.run('administration.policyRevision'),s.run('audit[0].action')],['database-owner','rejected',revision+1,'Rejected administrative role']);
+  as('Sam Okafor',s);assert.equal(s.run(`withdrawGrant('adm-06','${own}')`),true);assert.deepEqual([s.run("findAdministrator('adm-06').grants.at(-1).state"),heldBy(s,'Elena Ruiz')],['withdrawn','platform-administrator,support-operator']);
+});
+
+test('Administrators: nobody changes their own roles; revocation is immediate with a reason; bootstrap and the floor of two hold', () => {
+  const s=as('Sam Okafor'),revision=s.run('administration.policyRevision');
+  for(const own of ["proposeGrant('adm-05','configurator','For myself')","revokeGrant('adm-05','platform-administrator','Stepping down')","removeAdministrator('adm-05','Leaving')"]){assert.equal(s.run(own),false,own);denied(s,/Nobody can change their own administrative roles\. Another platform administrator must do it\./);}
+  assert.equal(s.run("revokeGrant('adm-07','database-owner','  ')"),false);denied(s,/reason is required to revoke/);
+  assert.equal(s.run("revokeGrant('adm-07','configurator','x')"),false);denied(s,/does not hold configurator/);
+  assert.equal(s.run("can('connections',findAdministrator('adm-07'))"),true);
+  assert.equal(s.run("revokeGrant('adm-07','database-owner','Moved to another team')"),true);
+  assert.deepEqual([heldBy(s,'Chris Doyle'),s.run("can('connections',findAdministrator('adm-07'))"),s.run('administration.policyRevision')],['',false,revision+1],'immediate, with no second person');
+  assert.deepEqual([...s.run('[audit[0].action,audit[0].reason,audit[0].actor,audit[0].outcome]')],['Revoked administrative role','Moved to another team','Sam Okafor','Succeeded']);
+  assert.equal(s.run("revokeGrant('adm-06','platform-administrator','Trying')"),false);denied(s,/holds platform-administrator from deployment configuration\. It is read-only here/);
+  assert.equal(heldBy(s,'Elena Ruiz'),'platform-administrator,support-operator');
+  s.run(`fixtures.deployment.bootstrapAdministrators=['sam.okafor'];for(const id of ['adm-06','adm-07'])findAdministrator(id).grants.push({id:'grant-9'+id.slice(-1),role:'platform-administrator',state:'granted',proposedBy:'sam.okafor',proposedAt:'2026-09-01T00:00:00Z',reason:'Cover',approvedBy:'dana.whitlock',approvedAt:'2026-09-01T01:00:00Z',approvalReason:'Cover'})`);
+  assert.equal(s.run('platformAdministrators().length'),3);
+  assert.equal(s.run("revokeGrant('adm-07','platform-administrator','Reducing cover')"),true);assert.equal(s.run('platformAdministrators().length'),2);
+  assert.equal(s.run("revokeGrant('adm-06','platform-administrator','One too many')"),false);denied(s,/At least two platform administrators are required, because every grant needs a second one to approve it\./);
+  assert.equal(s.run('platformAdministrators().length'),2);
+  assert.equal(s.run("removeAdministrator('adm-01','x')"),false);denied(s,/still holds a role/);
+  assert.equal(s.run("removeAdministrator('adm-07','x')"),false);denied(s,/grant is still pending/);
+  assert.equal(s.run("withdrawGrant('adm-07','grant-09')&&!removeAdministrator('adm-07','')"),true);denied(s,/reason is required to remove/);
+  assert.equal(s.run("removeAdministrator('adm-07','Left the organization')"),true);assert.equal(s.run("Boolean(findAdministrator('adm-07'))"),false);
+});
+
+test('Administrators: grants are live administration and never touch the draft, its digest, validation, approvals or Undo', () => {
+  const s=studio();validCandidate(s);s.run("state.actor='Priya Raman';recordApproval('Product','Reviewed')");
+  const before=s.run(draftFacts),revision=s.run('administration.policyRevision');
+  as('Sam Okafor',s);s.run("proposeGrant('adm-04','support-operator','Covers the support rota');registerAdministrator('lena.hoff','Lena Hoff','lena.hoff@example.test')");
+  as('Elena Ruiz',s);s.run("decideGrant('adm-04',findAdministrator('adm-04').grants.at(-1).id,true,'Agreed');revokeGrant('adm-04','support-operator','Rota changed')");
+  assert.equal(s.run(draftFacts),before);assert.equal(s.run('administration.policyRevision'),revision+2,'approval and revocation are the effective changes');
+  assert.equal(s.run('undo()'),false);
+  as('Jordan Lee',s);s.run("setProp('screens.orders','caption','Orders','')");as('Sam Okafor',s);s.run("proposeGrant('adm-02','support-operator','Second line')");as('Jordan Lee',s);s.run('undo()');
+  assert.deepEqual([...s.run("[model.screens[0].caption,findAdministrator('adm-02').grants.at(-1).state,findAdministrator('adm-04').grants.at(-1).state]")],['Order register','pending','revoked']);
+  assert.equal(s.run('fixtures.administration.administrators[3].grants.length'),1,'the embedded sample is not written to');
+  s.run("selectVersion('ver-2026-08-4')");as('Sam Okafor',s);assert.equal(s.run("proposeGrant('adm-03','support-operator','Viewing an old version does not lock administration')"),true);
+});
+
+test('Studio capabilities follow the administrative roles by one shared rule', () => {
+  const s=studio(),caps=name=>s.run(`Object.keys(STUDIO_CAPABILITIES).filter(c=>can(c,administration.administrators.find(a=>a.name===${JSON.stringify(name)}))).join()`);
+  for(const [name,expected] of [['Jordan Lee','draft'],['Priya Raman','approve-Product'],['Alex Morgan','users,approve-Security'],['Dana Whitlock','approve-Test'],['Sam Okafor','administrators'],['Elena Ruiz','administrators'],['Chris Doyle','connections']])assert.equal(caps(name),expected,name);
+  validCandidate(s);as('Priya Raman',s);
+  for(const change of ["setProp('screens.orders','caption','X','')","rowAdd('dataClasses.orders.parameters','parameter')","deleteEntity('roles.risk-reader')","setFlag('roles.risk-reader.permissions','risks','export',false)","acceptWarning('COMMAND_NEVER_SHOWN',false)","completeValidation()","performClone('ver-2026-08-4')","performRollback('ver-2026-08-4','x')","performRetire('ver-2026-08-4','x')","schedulePublication(new Date(Date.now()+3600000).toISOString())","performPublish()"]){
+    assert.equal(s.run(change),false,change);assert.match(s.messages.at(-1)[0],/needs the configurator role\. Priya Raman does not hold it; Jordan Lee does\./);
+    assert.deepEqual([...s.run('[audit[0].action,audit[0].outcome,audit[0].actor]')],['Refused Studio action','Denied','Priya Raman']);
+  }
+  assert.throws(()=>s.run('importConfiguration(configuration())'),/Only a configurator can import a draft/);
+  assert.deepEqual([...s.run("[model.screens[0].caption,releases[0].status,state.validated,model.roles.length]")],['Order register','Published',true,4],'nothing changed');
+  assert.equal(s.run("recordApproval('Product','Reviewed')"),true);as('Dana Whitlock',s);assert.equal(s.run("recordApproval('Security','Reviewed')"),false);assert.match(s.messages.at(-1)[0],/Dana Whitlock does not hold the approver-security role/);
+  as('Jordan Lee',s);assert.equal(s.run("setProp('connections.ops-db','name','Ops','')"),false);assert.match(s.messages.at(-1)[0],/Changing a connection needs the database-owner role\. Jordan Lee does not hold it; Chris Doyle does\./);
+  assert.throws(()=>s.run("(()=>{const c=configuration();c.connections[0].name='Renamed';importConfiguration(c)})()"),/cannot change connections unless a database owner submits it/);
+  as('Chris Doyle',s);assert.equal(s.run("setProp('connections.ops-db','name','Ops','')"),true);assert.equal(s.run("setProp('screens.orders','caption','X','')"),false);
+  assert.equal(s.run('undo()'),true,'the database owner undoes a connection change');as('Jordan Lee',s);
+  assert.equal(s.run("setUserProp('usr-102','name','X')"),false);as('Alex Morgan',s);assert.equal(s.run("setUserProp('usr-102','name','Maya L. Chen')"),true);assert.equal(s.run("setProp('screens.orders','caption','X','')"),false);
+  as('Sam Okafor',s);assert.equal(s.run("revokeGrant('adm-01','configurator','Rotated off the workspace')"),true);
+  as('Jordan Lee',s);assert.equal(s.run("setProp('screens.orders','caption','X','')"),false,'a revoked role is gone on the next request');assert.match(s.messages.at(-1)[0],/Jordan Lee does not hold it\.$/);
+  const t=as('Priya Raman');
+  assert.match(t.run("accessNotice('screens')"),/<strong>Read-only\.<\/strong> Only a configurator \(Jordan Lee\) can change the draft, validate, publish, roll back or retire\. You are signed in as Priya Raman \(approver-product\)\.<\/div>/);
+  assert.match(t.run("accessNotice('versions')"),/You can record the Product approval below\./);assert.match(t.run("accessNotice('connections')"),/Only a database owner \(Chris Doyle\) can change connections; a configurator uses them from DataClasses\./);
+  assert.equal(t.run("accessNotice('users')+accessNotice('administrators')+accessNotice('audit')+accessNotice('overview')"),'');
+  as('Jordan Lee',t);assert.equal(t.run("accessNotice('screens')+accessNotice('versions')"),'');assert.match(t.run("accessNotice('connections')"),/signed in as Jordan Lee \(configurator\)/);
+  t.run('renderConnections()');for(const m of t.run('host.innerHTML').matchAll(/<[a-z]+\b[^>]*data-mutates[^>]*>/g))assert.ok(/data-needs="connections"/.test(m[0]),m[0].slice(0,140));
+  present(t.run('host.innerHTML'),/Connections are changed by a database owner\./);
+  t.run('renderVersions()');present(t.run('host.innerHTML'),/data-action="approve" data-role="Security" data-mutates data-needs="approve-Security"/);
+  present(admin,/if\(\(lock&&readOnly\(\)\)\|\|!can\(el\.dataset\.needs\|\|'draft'\)\)el\.disabled=true/);present(admin,/if\(!can\('administrators'\)\)root\.querySelectorAll\('\[data-platform\]'\)/);
+  present(admin,/id="signedInRoles">Signed in: /);
+});
+
+test('Administrators: the module shows people, pending approvals and history, and states who is who', () => {
+  const s=as('Elena Ruiz');
+  assert.equal(s.run("openPath('administrators.adm-07')"),true);assert.deepEqual([...s.run('[state.module,state.selectedAdmin]')],['administrators','adm-07']);
+  s.run('renderAdministrators()');let html=s.run('host.innerHTML');
+  for(const text of ['Administrators are people who run GD Studio\\.','<h2>Pending approvals</h2>','Awaiting Elena Ruiz','<th scope="col">Roles held</th>','<th scope="col">Pending changes</th>','<th scope="col">Last sign-in</th>','platform-administrator <span class="muted">\\(from deployment configuration\\)</span>','<code>integration-owner</code> pending','Grant history','Revoked by Sam Okafor','Moved to database ownership','The fixed administrative roles','two people for every grant','data-action="adminDecide" data-admin-id="adm-07" data-grant="grant-09" data-approve="1" data-platform'])present(html,new RegExp(text));
+  absent(html,/Read-only\./);
+  for(const m of html.matchAll(/<button\b[^>]*data-action="admin(?:Register|Propose|Decide|Withdraw|Revoke|Remove)"[^>]*>/g))assert.ok(/ data-platform/.test(m[0]),m[0].slice(0,120));
+  s.run("state.selectedAdmin='adm-06';renderAdministrators()");html=s.run('host.innerHTML');
+  present(html,/This is your own record\. Nobody can propose, approve, reject or revoke a change to their own administrative roles/);present(html,/From deployment configuration<\/td><td class="row-actions"><span class="muted">Read-only here<\/span>/);
+  as('Jordan Lee',s);s.run('renderAdministrators()');
+  present(s.run('host.innerHTML'),/<strong>Read-only\.<\/strong> Only a platform administrator \(Sam Okafor, Elena Ruiz\) can change administrative roles\. You are signed in as Jordan Lee \(configurator\)\./);
+  s.run('renderUsers()');present(s.run('host.innerHTML'),/Users are people who use GD Workspace; the people who run GD Studio are kept separately under Administrators\./);
+  present(admin,/\['administrators','Administrators','◉'\]/);present(admin,/\['admin','selectedAdmin'\]/);present(admin,/parts\.push\(`admin=\$\{state\.selectedAdmin\}`\)/);
+  as('Sam Okafor',s);s.run("revokeGrant('adm-07','database-owner','Moved');renderAudit()");present(s.run('host.innerHTML'),/data-action="open" data-path="administrators\.adm-07">administrators\.adm-07<\/button>/);
+  const hostile=`x" onfocus="alert(1)" y="`,tag='<img src=x onerror=alert(1)>';
+  s.run(`Object.assign(administration.administrators[6],{name:${JSON.stringify(tag)},email:${JSON.stringify(hostile)},subject:${JSON.stringify(hostile)}});Object.assign(administration.administrators[6].grants[0],{role:${JSON.stringify(hostile)},reason:${JSON.stringify(tag)},closedReason:${JSON.stringify(tag)},proposedBy:${JSON.stringify(hostile)}});administration.administrators[6].grants.push({id:${JSON.stringify(hostile)},role:${JSON.stringify(tag)},state:'pending',proposedBy:${JSON.stringify(tag)},proposedAt:${JSON.stringify(hostile)},reason:${JSON.stringify(hostile)}});state.selectedAdmin='adm-07';renderAdministrators()`);
+  absent(s.run('host.innerHTML'),/<img src=x/);absent(s.run('host.innerHTML'),/" onfocus="alert/);present(s.run('host.innerHTML'),/&lt;img src=x onerror=alert\(1\)&gt;/);
 });
 
 function inventory() {

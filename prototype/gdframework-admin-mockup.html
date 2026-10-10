@@ -535,6 +535,7 @@
         "risk-db":{"endpoint":"data-uat-03 / risk","pool":20,"timeoutSeconds":30,"encrypted":true,"health":"Degraded"}
       },
       "roleMembers":{"operations-reader":42,"operations-editor":18,"risk-reader":27,"risk-manager":6},
+      "bootstrapAdministrators":["sam.okafor","elena.ruiz"],
       "activity":{"openScreens":14,"dirtyScreens":3,"queuedJobs":2,"runningJobs":1,"admittedTransactions":4,"unknownOperations":1,"retainedOutputs":6}
     },
     "administration":{
@@ -548,6 +549,25 @@
         {"id":"usr-105","subject":"priya.raman","name":"Priya Raman","email":"priya.raman@example.test","region":"UK","active":true,"applications":[],"roles":[],"overrides":[]},
         {"id":"usr-106","subject":"daniel.weber","name":"Daniel Weber","email":"daniel.weber@example.test","region":"EU","active":false,"applications":[{"appId":"ops","default":true,"lastLogin":"2026-07-18T09:30:00Z","lastLogout":"2026-07-18T12:10:00Z"}],"roles":["operations-reader"],"overrides":[]},
         {"id":"usr-107","subject":"ken.ito","name":"Ken Ito","email":"ken.ito@example.test","region":"APAC","active":true,"applications":[{"appId":"ops","default":true,"lastLogin":null,"lastLogout":null}],"roles":[],"overrides":[]}
+      ],
+      "signIns":{"jordan.lee":"2026-09-06T08:05:00Z","priya.raman":"2026-09-05T16:22:00Z","alex.morgan":"2026-09-05T15:48:00Z","dana.whitlock":"2026-09-05T13:10:00Z","sam.okafor":"2026-09-05T09:02:00Z","elena.ruiz":"2026-09-04T17:30:00Z","chris.doyle":"2026-09-03T11:45:00Z"},
+      "administrators":[
+        {"id":"adm-01","subject":"jordan.lee","name":"Jordan Lee","email":"jordan.lee@example.test","grants":[
+          {"id":"grant-03","role":"configurator","state":"granted","proposedBy":"elena.ruiz","proposedAt":"2026-05-11T09:10:00Z","reason":"Leads configuration of the reference workspace","approvedBy":"sam.okafor","approvedAt":"2026-05-11T10:02:00Z","approvalReason":"Confirmed with the product owner"}]},
+        {"id":"adm-02","subject":"priya.raman","name":"Priya Raman","email":"priya.raman@example.test","grants":[
+          {"id":"grant-04","role":"approver-product","state":"granted","proposedBy":"sam.okafor","proposedAt":"2026-05-11T09:20:00Z","reason":"Product owner for Operations Hub","approvedBy":"elena.ruiz","approvedAt":"2026-05-11T11:15:00Z","approvalReason":"Named product approver"}]},
+        {"id":"adm-03","subject":"alex.morgan","name":"Alex Morgan","email":"alex.morgan@example.test","grants":[
+          {"id":"grant-05","role":"approver-security","state":"granted","proposedBy":"sam.okafor","proposedAt":"2026-05-11T09:25:00Z","reason":"Security reviewer for publications","approvedBy":"elena.ruiz","approvedAt":"2026-05-11T11:18:00Z","approvalReason":"Named security approver"},
+          {"id":"grant-06","role":"security-administrator","state":"granted","proposedBy":"sam.okafor","proposedAt":"2026-05-11T09:27:00Z","reason":"Administers workspace users","approvedBy":"elena.ruiz","approvedAt":"2026-05-11T11:20:00Z","approvalReason":"Agreed with the security owner"}]},
+        {"id":"adm-04","subject":"dana.whitlock","name":"Dana Whitlock","email":"dana.whitlock@example.test","grants":[
+          {"id":"grant-07","role":"approver-test","state":"granted","proposedBy":"sam.okafor","proposedAt":"2026-05-11T09:30:00Z","reason":"Test lead for acceptance evidence","approvedBy":"elena.ruiz","approvedAt":"2026-05-11T11:22:00Z","approvalReason":"Named test approver"}]},
+        {"id":"adm-05","subject":"sam.okafor","name":"Sam Okafor","email":"sam.okafor@example.test","grants":[]},
+        {"id":"adm-06","subject":"elena.ruiz","name":"Elena Ruiz","email":"elena.ruiz@example.test","grants":[
+          {"id":"grant-02","role":"support-operator","state":"granted","proposedBy":"sam.okafor","proposedAt":"2026-05-06T14:00:00Z","reason":"Covers first-line support","approvedBy":"chris.doyle","approvedAt":"2026-05-06T15:40:00Z","approvalReason":"Support rota agreed"}]},
+        {"id":"adm-07","subject":"chris.doyle","name":"Chris Doyle","email":"chris.doyle@example.test","grants":[
+          {"id":"grant-01","role":"platform-administrator","state":"revoked","proposedBy":"sam.okafor","proposedAt":"2026-05-04T10:00:00Z","reason":"Third administrator during rollout","approvedBy":"elena.ruiz","approvedAt":"2026-05-04T10:45:00Z","approvalReason":"Needed for two-person approval cover","closedBy":"sam.okafor","closedAt":"2026-08-21T09:00:00Z","closedReason":"Moved to database ownership"},
+          {"id":"grant-08","role":"database-owner","state":"granted","proposedBy":"elena.ruiz","proposedAt":"2026-08-20T13:05:00Z","reason":"Owns the connections and object catalogues","approvedBy":"sam.okafor","approvedAt":"2026-08-20T16:30:00Z","approvalReason":"Agreed with the data owner"},
+          {"id":"grant-09","role":"integration-owner","state":"pending","proposedBy":"sam.okafor","proposedAt":"2026-09-05T09:04:00Z","reason":"Will own the extension registry once extension scope is approved"}]}
       ]
     },
     "providerCatalogue":[
@@ -569,12 +589,6 @@
       {"id":"WR-02","code":"UNUSED_ENTITY","text":"An entity not yet referenced may be published ahead of its consumers."},
       {"id":"WR-03","code":"COMMAND_UNREACHABLE","text":"A command no role is granted yet stays denied by default."},
       {"id":"WR-04","code":"SCREEN_UNREACHABLE","text":"A screen no role is granted yet stays denied by default."}
-    ],
-    "reviewers":[
-      {"name":"Jordan Lee","role":"Author"},
-      {"name":"Priya Raman","role":"Product"},
-      {"name":"Alex Morgan","role":"Security"},
-      {"name":"Dana Whitlock","role":"Test"}
     ],
     "tests":[
       {"id":"AT-ORD-001","name":"Order register: grid, edit and export","covers":["screens.orders","dataClasses.orders","reports.order-export"]},
@@ -687,7 +701,7 @@
     'use strict';
     const initial=JSON.parse(document.getElementById('admin-metadata').textContent),model=structuredClone(initial);
     const fixtures=JSON.parse(document.getElementById('admin-fixtures').textContent);
-    const state={module:'overview',appId:'ops',selectedScreen:'orders',selectedField:'customer',selectedCommand:'New',selectedDataClass:'orders',selectedConnection:'ops-db',selectedList:'order-status',selectedReport:'order-export',selectedRole:'operations-editor',selectedUser:'usr-101',navSelection:null,inspectorTab:'properties',detailTab:'definition',securityTab:'permissions',systemTab:'settings',dirty:0,validated:false,validation:null,compiling:false,approvals:{},acceptedWarnings:{},schedule:null,actor:'Jordan Lee',publicationNote:'',viewVersion:null,compareBase:'',compareOther:'',previewRole:'',inspectorVisible:true,history:[],future:[],publicationRevision:7,focusPath:''};
+    const state={module:'overview',appId:'ops',selectedScreen:'orders',selectedField:'customer',selectedCommand:'New',selectedDataClass:'orders',selectedConnection:'ops-db',selectedList:'order-status',selectedReport:'order-export',selectedRole:'operations-editor',selectedUser:'usr-101',selectedAdmin:'adm-07',navSelection:null,inspectorTab:'properties',detailTab:'definition',securityTab:'permissions',systemTab:'settings',dirty:0,validated:false,validation:null,compiling:false,approvals:{},acceptedWarnings:{},schedule:null,actor:'Jordan Lee',publicationNote:'',viewVersion:null,compareBase:'',compareOther:'',previewRole:'',inspectorVisible:true,history:[],future:[],publicationRevision:7,focusPath:''};
     const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const app=()=>model.applications.find(x=>x.id===state.appId);
     const screen=()=>model.screens.find(x=>x.id===state.selectedScreen);
@@ -699,6 +713,20 @@
     const CAPABILITIES=['insert','update','delete','refresh','filter','search','export','print','personalize','detach'];
     const PERMISSIONS=['read','insert','update','delete','export','print','execute'];
     const REVIEW_ROLES=['Product','Security','Test'];
+    // Studio's administrative roles are fixed by the platform: never authored, never part of a version.
+    const ADMIN_ROLES={
+      'platform-administrator':'Grants and revokes administrative roles. Nothing else.',
+      'configurator':'Edits the draft, validates, publishes an approved candidate, rolls back and retires.',
+      'approver-product':'Records the Product publication approval.',
+      'approver-security':'Records the Security publication approval.',
+      'approver-test':'Records the Test publication approval.',
+      'security-administrator':'Administers GD Workspace users.',
+      'support-operator':'Read-only access to audit, versions and diagnostics.',
+      'database-owner':'Changes connections and maintains the approved object catalogue.',
+      'integration-owner':'Maintains the extension registry.'
+    };
+    // What each capability asked for anywhere in Studio requires.
+    const STUDIO_CAPABILITIES={draft:['configurator'],connections:['database-owner'],users:['security-administrator'],administrators:['platform-administrator'],extensions:['integration-owner'],'approve-Product':['approver-product'],'approve-Security':['approver-security'],'approve-Test':['approver-test']};
     const FIELD_TYPES=['text','textarea','number','currency','percentage','date','datetime','time','boolean','select','lookup','label','hidden','action','subscreen'];
     const ICONS={grid:'▦',user:'◉',table:'▤',action:'⚙',tree:'⌘',junction:'⇄',chart:'▥',risk:'◇'};
     const SCREEN_TYPES={grid:'Grid',field:'Field form',masterDetail:'Master-detail',action:'Command / action',treeDetail:'Tree-detail',junction:'Junction editor',chart:'Chart'};
@@ -734,7 +762,7 @@
       {section:'Application structure',items:[['applications','Applications','A'],['navigation','Navigation','≡'],['screens','Screen designer','▦']]},
       {section:'Data and behavior',items:[['dataclasses','DataClasses','D'],['connections','Connections','◎'],['values','Value lists','⌄']]},
       {section:'Output',items:[['reports','Reports & export','▥']]},
-      {section:'Access and release',items:[['security','Security','◇'],['users','Users','◍'],['validation','Validation','✓'],['impact','Impact analysis','◈'],['versions','Versions & publish','↑'],['audit','Audit history','◷']]},
+      {section:'Access and release',items:[['security','Security','◇'],['users','Users','◍'],['administrators','Administrators','◉'],['validation','Validation','✓'],['impact','Impact analysis','◈'],['versions','Versions & publish','↑'],['audit','Audit history','◷']]},
       {section:'Platform',items:[['system','System','⚙']]}
     ];
     const titles=Object.fromEntries(modules.flatMap(g=>g.items.map(([id,label])=>[id,label])));
@@ -944,8 +972,8 @@
       return (!c.capability||s.capabilities[c.capability]===true)&&(!role||roleGrants(role,s.id,permission));
     }
     function entityName(path,config=model){
-      const s=String(path).split('.'),e=s[0]==='users'?findUser(s[1]):resolvePath(config,entityOf(path));
-      const kinds={applications:'Application',navigation:'Navigation',screens:'Screen',dataClasses:'DataClass',connections:'Connection',valueLists:'Value list',reports:'Report',roles:'Role',users:'User',settings:'Setting',messages:'System message'};
+      const s=String(path).split('.'),e=s[0]==='users'?findUser(s[1]):s[0]==='administrators'?findAdministrator(s[1]):resolvePath(config,entityOf(path));
+      const kinds={applications:'Application',navigation:'Navigation',screens:'Screen',dataClasses:'DataClass',connections:'Connection',valueLists:'Value list',reports:'Report',roles:'Role',users:'User',administrators:'Administrator',settings:'Setting',messages:'System message'};
       const tail=s.slice(2).filter(x=>!['fields','commands','items','parameters','resultFields','permissions'].includes(x)).join(' › ');
       return `${kinds[s[0]]||s[0]} · ${e?.caption||e?.name||e?.subject||s[1]||''}${tail?' › '+tail:''}`;
     }
@@ -1204,6 +1232,8 @@
     }
     function checkpoint(label,fn,target,reason='',detail=''){
       if(readOnly()){toast('This version is immutable. Open the draft to edit.','warn');return false;}
+      const capability=String(target||'').startsWith('connections')?'connections':'draft';
+      if(!can(capability))return refuseCapability(capability,capability==='connections'?'Changing a connection':'Changing the draft',target||model.draft.id);
       const before=digest();
       state.history.push({config:configuration(),label,target:target||model.draft.id});if(state.history.length>30)state.history.shift();
       state.future=[];fn();state.dirty++;invalidate();draftConfig=configuration();
@@ -1212,6 +1242,8 @@
     }
     function undo(){
       if(readOnly()||!state.history.length)return false;
+      const needed=String(state.history.at(-1).target).startsWith('connections')?'connections':'draft';
+      if(!can(needed))return refuseCapability(needed,'Undoing that change',state.history.at(-1).target);
       const entry=state.history.pop(),before=digest();
       state.future.push({config:configuration(),label:entry.label,target:entry.target});restore(entry.config);draftConfig=configuration();
       state.dirty=Math.max(0,state.dirty-1);invalidate();
@@ -1219,6 +1251,8 @@
     }
     function redo(){
       if(readOnly()||!state.future.length)return false;
+      const needed=String(state.future.at(-1).target).startsWith('connections')?'connections':'draft';
+      if(!can(needed))return refuseCapability(needed,'Reapplying that change',state.future.at(-1).target);
       const entry=state.future.pop(),before=digest();
       state.history.push({config:configuration(),label:entry.label,target:entry.target});restore(entry.config);draftConfig=configuration();
       state.dirty++;invalidate();
@@ -1346,7 +1380,9 @@
     }
     function importConfiguration(data){
       if(readOnly())throw Error('Select the draft before importing.');
+      if(!can('draft'))throw Error('Only a configurator can import a draft.');
       const errors=configurationShapeIssues(data);if(errors.length)throw Error(errors.slice(0,3).join('; '));
+      if(!can('connections')&&canonical(data.connections)!==canonical(model.connections))throw Error('A draft import cannot change connections unless a database owner submits it.');
       checkpoint('Imported JSON draft',()=>restore(data),model.draft.id,'','Whole-draft submission; revalidation and approval required');
     }
     function reconcileSelection(){
@@ -1362,7 +1398,7 @@
       if(parts&&(!group||(parts[0]==='item'&&!group.items.some(i=>i.id===parts[2]))))state.navSelection=null;
     }
     function select(kind,id){
-      const key={app:'appId',screen:'selectedScreen',field:'selectedField',command:'selectedCommand',dataClass:'selectedDataClass',connection:'selectedConnection',list:'selectedList',report:'selectedReport',role:'selectedRole',user:'selectedUser',nav:'navSelection'}[kind];
+      const key={app:'appId',screen:'selectedScreen',field:'selectedField',command:'selectedCommand',dataClass:'selectedDataClass',connection:'selectedConnection',list:'selectedList',report:'selectedReport',role:'selectedRole',user:'selectedUser',admin:'selectedAdmin',nav:'navSelection'}[kind];
       if(!key)return;
       state[key]=id;
       if(kind==='app'){state.selectedScreen=model.screens.find(s=>s.appId===id)?.id;state.selectedDataClass=model.dataClasses.find(d=>d.appId===id)?.id;state.navSelection=null;}
@@ -1374,10 +1410,11 @@
     // Diagnostics, dependency links and audit targets all navigate with the same entity path.
     function openPath(path){
       const s=String(path).split('.'),kind=s[0],owner=resolvePath(model,entityOf(path));
-      const target={applications:'applications',navigation:'navigation',screens:'screens',dataClasses:'dataclasses',connections:'connections',valueLists:'values',reports:'reports',roles:'security',users:'users',settings:'system',messages:'system'}[kind];
+      const target={applications:'applications',navigation:'navigation',screens:'screens',dataClasses:'dataclasses',connections:'connections',valueLists:'values',reports:'reports',roles:'security',users:'users',administrators:'administrators',settings:'system',messages:'system'}[kind];
       if(!target)return false;
       state.module=target;
       if(kind==='users'&&findUser(s[1]))state.selectedUser=s[1];
+      if(kind==='administrators'&&findAdministrator(s[1]))state.selectedAdmin=s[1];
       const appId=['applications','navigation'].includes(kind)?s[1]:owner?.appId;
       if(model.applications.some(a=>a.id===appId))state.appId=appId;
       if(kind==='navigation')state.navSelection=s[4]?`item:${s[2]}:${s[4]}`:s[2]?`group:${s[2]}`:null;
@@ -1416,17 +1453,18 @@
     }
     function acceptWarning(code,accepted){
       if(readOnly()||!warningRule(code))return false;
+      if(!can('draft'))return refuseCapability('draft','Accepting a warning',model.draft.id);
       if(accepted)state.acceptedWarnings[code]=true;else delete state.acceptedWarnings[code];
       state.approvals={};state.schedule=null;
       appendAudit(accepted?'Accepted warning':'Withdrew warning acceptance',model.draft.id,`${code} under rule ${warningRule(code).id}`,{reason:warningRule(code).text});render();return true;
     }
     function recordApproval(role,reason=''){
-      const actor=fixtures.reviewers.find(r=>r.name===state.actor),serialized=canonical(configuration());
+      const actor=signedIn(),serialized=canonical(configuration());
       const refuse=text=>{appendAudit('Refused approval',model.draft.id,text,{outcome:'Denied'});toast(text,'warn');return false;};
       if(!state.validated||state.validation?.serialized!==serialized)return refuse('Validate the exact candidate before approval.');
       if(blockingWarnings().length)return refuse('Accept or resolve every warning before approval.');
       if(!actor||actor.name===model.draft.owner||model.draft.contributors.includes(actor.name))return refuse('The author or a contributor cannot approve this candidate; an independent checker is required.');
-      if(actor.role!==role)return refuse(`${actor.name} does not hold the ${role} review role.`);
+      if(!can(`approve-${role}`))return refuse(`${actor.name} does not hold the approver-${String(role).toLowerCase()} role.`);
       if(!String(reason).trim())return refuse('An approval reason is required.');
       state.approvals[role]={actor:actor.name,role,digest:digest(),serialized,reason:String(reason).trim(),time:new Date().toISOString()};
       appendAudit('Approved candidate',model.draft.id,`${role} review bound to digest ${digest()}`,{reason:String(reason).trim(),after:digest()});render();toast(`${role} approval recorded`);return true;
@@ -1439,8 +1477,10 @@
       if(!state.publicationNote.trim())return ['Publication blocked: a publication reason is required.'];
       return [];
     }
-    function performPublish(){
-      if(readOnly()||publicationBlockers().length)return false;
+    function performPublish(scheduled=false){
+      if(readOnly())return false;
+      if(!scheduled&&!can('draft'))return refuseCapability('draft','Publishing',model.draft.id);
+      if(publicationBlockers().length)return false;
       const config=freeze(configuration()),active=activeRelease(),candidate=digest(config),reason=state.publicationNote.trim();
       const majors=freeze(Object.fromEntries(compatibility(active?.snapshot,config,active?.majors).map(c=>[c.screenId,c.to])));
       const release={id:model.draft.id,label:model.draft.label.replace(/^Draft /,''),status:'Published',author:model.draft.owner,date:new Date().toISOString(),digest:candidate,snapshot:config,approvals:freeze(structuredClone(state.approvals)),acceptedWarnings:freeze(Object.keys(state.acceptedWarnings)),summary:reason,majors,scheduledFor:state.schedule?.when||''};
@@ -1451,6 +1491,7 @@
     }
     function schedulePublication(when){
       const blockers=publicationBlockers(),at=Date.parse(when);
+      if(!can('draft'))return refuseCapability('draft','Scheduling publication',model.draft.id);
       if(readOnly()||blockers.length){toast(blockers[0]||'Select the draft to schedule publication.','warn');return false;}
       if(Number.isNaN(at)||at<=Date.now()){toast('Choose a publication time in the future.','warn');return false;}
       state.schedule={when:new Date(at).toISOString(),serialized:canonical(configuration())};
@@ -1458,16 +1499,18 @@
     }
     function cancelSchedule(reason){
       if(!state.schedule||!String(reason).trim())return false;
+      if(!can('draft'))return refuseCapability('draft','Cancelling the schedule',model.draft.id);
       appendAudit('Cancelled scheduled publication',model.draft.id,`Was due ${state.schedule.when}`,{reason:String(reason).trim()});state.schedule=null;render();return true;
     }
     function tickSchedule(now=Date.now()){
       if(!state.schedule||readOnly()||Date.parse(state.schedule.when)>now)return false;
       if(state.schedule.serialized!==canonical(configuration())||publicationBlockers().length){state.schedule=null;return false;}
-      const ok=performPublish();if(ok){render();toast('Scheduled publication activated.');}return ok;
+      const ok=performPublish(true);if(ok){render();toast('Scheduled publication activated.');}return ok;
     }
     function performRollback(id,reason){
       const target=releases.find(v=>v.id===id),active=activeRelease();
       if(!target||target.status!=='Superseded'||!active||!String(reason).trim())return false;
+      if(!can('draft'))return refuseCapability('draft','Rolling back',id);
       if(!readOnly())draftConfig=configuration();
       active.status='Withdrawn';target.status='Published';state.publicationRevision++;
       appendAudit('Rolled back publication',active.id,`Withdrawn; reactivated ${target.id}; publication-state revision ${state.publicationRevision}`,{reason:String(reason).trim(),before:active.digest,after:target.digest,version:active.id});
@@ -1477,15 +1520,18 @@
     function performRetire(id,reason){
       const version=releases.find(v=>v.id===id);
       if(!retirable(version)||!String(reason).trim())return false;
+      if(!can('draft'))return refuseCapability('draft','Retiring a version',id);
       const from=version.status;version.status='Retired';state.publicationRevision++;
       appendAudit('Retired version',version.id,`${from} to Retired; publication-state revision ${state.publicationRevision}`,{reason:String(reason).trim(),before:version.digest,version:version.id});return true;
     }
     function performClone(id){
       const version=releases.find(v=>v.id===id);if(!version)return false;
+      if(!can('draft'))return refuseCapability('draft','Cloning a version into the draft',id);
       startNextDraft(version.snapshot,version.id);state.viewVersion=null;restore(draftConfig);state.dirty=1;
       appendAudit('Cloned version into new draft',model.draft.id,`Source ${version.id} (${version.status}); fresh validation and approval required`,{before:version.digest,after:digest()});return true;
     }
     function completeValidation(){
+      if(!can('draft'))return refuseCapability('draft','Validating the candidate',model.draft.id);
       const config=configuration(),issues=validationIssues();
       state.compiling=false;state.validation={digest:digest(config),serialized:canonical(config),issues,time:new Date().toISOString()};
       state.validated=!issues.some(i=>i.severity==='error');
@@ -1510,11 +1556,104 @@
       return role?{name:role.name,...subjectAccess([role],role.applications||[],[],s)}:null;
     }
 
+    // ---- Studio's own administrators: fixed roles, granted live by two people, never part of the draft ----
+    function findAdministrator(id){return administration.administrators.find(a=>a.id===id);}
+    function administratorBySubject(subject){return administration.administrators.find(a=>a.subject===subject);}
+    function administratorName(subject){return administratorBySubject(subject)?.name||String(subject||'');}
+    function signedIn(){return administration.administrators.find(a=>a.name===state.actor);}
+    // The first platform administrators exist because deployment configuration names them; Studio cannot change that.
+    function isBootstrap(admin,role){return role==='platform-administrator'&&Boolean(admin)&&fixtures.deployment.bootstrapAdministrators.includes(admin.subject);}
+    function adminRoles(admin){
+      if(!admin)return [];
+      const granted=admin.grants.filter(g=>g.state==='granted').map(g=>g.role);
+      return Object.keys(ADMIN_ROLES).filter(role=>granted.includes(role)||isBootstrap(admin,role));
+    }
+    function holdsRole(admin,role){return adminRoles(admin).includes(role);}
+    // The one rule every part of Studio asks: does this administrator hold a role that carries the capability?
+    function can(capability,admin=signedIn()){return (STUDIO_CAPABILITIES[capability]||[]).some(role=>holdsRole(admin,role));}
+    function capabilityHolders(capability){return administration.administrators.filter(a=>can(capability,a)).map(a=>a.name);}
+    function refuseCapability(capability,action,target){
+      const need=(STUDIO_CAPABILITIES[capability]||[]).join(' or '),holders=capabilityHolders(capability);
+      const text=`${action} needs the ${need} role. ${state.actor} does not hold it${holders.length?`; ${holders.join(', ')} ${holders.length===1?'does':'do'}`:''}.`;
+      appendAudit('Refused Studio action',target,text,{outcome:'Denied',reason:`Requires ${need}`});toast(text,'warn');return false;
+    }
+    // A plain notice for a module the signed-in administrator can read but not change.
+    function accessNotice(module=state.module){
+      const capability={applications:'draft',navigation:'draft',screens:'draft',dataclasses:'draft',values:'draft',reports:'draft',security:'draft',validation:'draft',versions:'draft',system:'draft',connections:'connections'}[module];
+      if(!capability||can(capability))return '';
+      const me=signedIn(),mine=adminRoles(me).join(', ')||'no administrative role',holders=capabilityHolders(capability).join(', ')||'nobody yet',approvals=REVIEW_ROLES.filter(r=>can(`approve-${r}`));
+      const what=capability==='connections'?`Only a database owner (${holders}) can change connections; a configurator uses them from DataClasses.`:`Only a configurator (${holders}) can change the draft, validate, publish, roll back or retire.`;
+      return `<div class="notice" role="note"><strong>Read-only.</strong> ${esc(what)} You are signed in as ${esc(state.actor)} (${esc(mine)}).${module==='versions'&&approvals.length?` You can record the ${esc(approvals.join(' and '))} approval below.`:''}</div>`;
+    }
+    function platformAdministrators(){return administration.administrators.filter(a=>holdsRole(a,'platform-administrator'));}
+    function pendingGrants(){return administration.administrators.flatMap(admin=>admin.grants.filter(grant=>grant.state==='pending').map(grant=>({admin,grant})));}
+    function eligibleApprovers(admin,grant){return platformAdministrators().filter(p=>p.subject!==grant.proposedBy&&p.subject!==admin.subject);}
+    function refuseAdministration(action,target,why){
+      appendAudit('Refused administrator change',target,action,{outcome:'Denied',reason:why,version:`policy revision ${administration.policyRevision}`});
+      toast(why,'warn');return false;
+    }
+    function recordAdministration(action,target,detail,reason,effective=false){
+      if(effective)administration.policyRevision++;
+      appendAudit(action,target,detail,{reason:String(reason||'').trim(),version:`policy revision ${administration.policyRevision}`});render();return true;
+    }
+    // Why the signed-in person may not act on this record, or '' when they may.
+    function administrationBar(admin){
+      const me=signedIn();
+      if(!holdsRole(me,'platform-administrator'))return `Only a platform administrator can change administrative roles. ${state.actor} does not hold that role.`;
+      if(admin&&admin.subject===me.subject)return 'Nobody can change their own administrative roles. Another platform administrator must do it.';
+      return '';
+    }
+    function registerAdministrator(subject,name,email){
+      const s=String(subject).trim().toLowerCase(),n=String(name).trim(),e=String(email).trim(),list=administration.administrators;
+      const why=administrationBar(null)||(!/^[a-z0-9][a-z0-9._-]*$/.test(s)?'Enter the subject identifier issued by the identity provider: lower-case letters, digits, dots, hyphens or underscores.':list.some(a=>a.subject===s)?'That subject is already an administrator.':!n?'A display name is required.':list.some(a=>a.name===n)?'Another administrator already has that display name.':!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)?'A valid email address is required.':'');
+      if(why)return refuseAdministration('Register administrator','administrators',why);
+      const id=`adm-${String(Math.max(0,...list.map(a=>Number(a.id.slice(4))||0))+1).padStart(2,'0')}`;
+      list.push({id,subject:s,name:n,email:e,grants:[]});state.selectedAdmin=id;
+      return recordAdministration('Registered administrator',`administrators.${id}`,`Subject ${s}; holds no role until one is proposed and approved`,'');
+    }
+    function proposeGrant(id,role,reason){
+      const admin=findAdministrator(id),target=`administrators.${id}`,text=String(reason||'').trim();
+      const why=administrationBar(admin)||(!admin?'That administrator record does not exist.':!ADMIN_ROLES[role]?'That is not one of the fixed administrative roles.':holdsRole(admin,role)?`${admin.name} already holds ${role}.`:admin.grants.some(g=>g.role===role&&g.state==='pending')?`A grant of ${role} to ${admin.name} is already pending.`:!text?'A reason is required to propose a grant.':'');
+      if(why)return refuseAdministration(`Propose ${role}`,target,why);
+      const next=Math.max(0,...administration.administrators.flatMap(a=>a.grants.map(g=>Number(g.id.slice(6))||0)))+1;
+      admin.grants.push({id:`grant-${String(next).padStart(2,'0')}`,role,state:'pending',proposedBy:signedIn().subject,proposedAt:new Date().toISOString(),reason:text});
+      return recordAdministration('Proposed administrative role',target,`${role}: pending; it grants nothing until a different platform administrator approves it`,text);
+    }
+    function decideGrant(id,grantId,approve,reason){
+      const admin=findAdministrator(id),grant=admin?.grants.find(g=>g.id===grantId),me=signedIn(),target=`administrators.${id}`,text=String(reason||'').trim();
+      const why=administrationBar(admin)||(!grant||grant.state!=='pending'?'That grant is not pending.':grant.proposedBy===me.subject?'The person who proposed a grant cannot decide it. A different platform administrator must approve or reject it.':!text?`A reason is required to ${approve?'approve':'reject'} a grant.`:'');
+      if(why)return refuseAdministration(`${approve?'Approve':'Reject'} ${grant?.role||'grant'}`,target,why);
+      if(approve)Object.assign(grant,{state:'granted',approvedBy:me.subject,approvedAt:new Date().toISOString(),approvalReason:text});
+      else Object.assign(grant,{state:'rejected',closedBy:me.subject,closedAt:new Date().toISOString(),closedReason:text});
+      return recordAdministration(approve?'Approved administrative role':'Rejected administrative role',target,approve?`${grant.role}: effective on the next request`:`${grant.role}: not granted`,text,approve);
+    }
+    function withdrawGrant(id,grantId){
+      const admin=findAdministrator(id),grant=admin?.grants.find(g=>g.id===grantId),me=signedIn(),target=`administrators.${id}`;
+      const why=!grant||grant.state!=='pending'?'That grant is not pending.':grant.proposedBy!==me?.subject?'Only the person who proposed a grant can withdraw it.':'';
+      if(why)return refuseAdministration('Withdraw proposed role',target,why);
+      Object.assign(grant,{state:'withdrawn',closedBy:me.subject,closedAt:new Date().toISOString(),closedReason:'Withdrawn by the proposer'});
+      return recordAdministration('Withdrew proposed role',target,`${grant.role}: withdrawn before approval`,'');
+    }
+    function revokeGrant(id,role,reason){
+      const admin=findAdministrator(id),grant=admin?.grants.find(g=>g.role===role&&g.state==='granted'),me=signedIn(),target=`administrators.${id}`,text=String(reason||'').trim();
+      const why=administrationBar(admin)||(isBootstrap(admin,role)?`${admin.name} holds ${role} from deployment configuration. It is read-only here and can only be changed in the deployment configuration.`:!grant?`${admin?.name||'That person'} does not hold ${role}.`:role==='platform-administrator'&&platformAdministrators().length<=2?'At least two platform administrators are required, because every grant needs a second one to approve it.':!text?'A reason is required to revoke a role.':'');
+      if(why)return refuseAdministration(`Revoke ${role}`,target,why);
+      Object.assign(grant,{state:'revoked',closedBy:me.subject,closedAt:new Date().toISOString(),closedReason:text});
+      return recordAdministration('Revoked administrative role',target,`${role}: revoked, effective on the next request`,text,true);
+    }
+    function removeAdministrator(id,reason){
+      const admin=findAdministrator(id),target=`administrators.${id}`,text=String(reason||'').trim();
+      const why=administrationBar(admin)||(!admin?'That administrator record does not exist.':adminRoles(admin).length?`${admin.name} still holds a role. Revoke every role first.`:admin.grants.some(g=>g.state==='pending')?'A grant is still pending for this person. Reject or withdraw it first.':!text?'A reason is required to remove an administrator.':'');
+      if(why)return refuseAdministration('Remove administrator',target,why);
+      administration.administrators=administration.administrators.filter(a=>a!==admin);state.selectedAdmin=administration.administrators[0]?.id;
+      return recordAdministration('Removed administrator',target,`${admin.name} (${admin.subject}); the audit keeps the history`,text);
+    }
+
     // ---- users: live administration (takes effect on the next request; never part of the draft) ----
     function liveConfig(){return activeRelease()?.snapshot||null;}
     function findUser(id){return administration.users.find(u=>u.id===id);}
-    function securityAdministrator(){return fixtures.reviewers.find(r=>r.role==='Security');}
-    function canAdministerUsers(){return Boolean(state.actor)&&securityAdministrator()?.name===state.actor;}
+    function securityAdministrator(){return administration.administrators.find(a=>holdsRole(a,'security-administrator'));}
+    function canAdministerUsers(){return can('users');}
     function userGroups(user){return administration.directory[user.subject]||[];}
     // Roles a user holds in a configuration: direct membership, or a mapping to one of the user's identity-provider groups.
     function userRoles(user,config=liveConfig()){
@@ -1637,7 +1776,7 @@
     }
     function control(path,prop,label,opts={}){
       const value=resolvePath(model,path)?.[prop],id=controlId(path,prop);
-      const bind=`id="${id}" data-change="prop" data-path="${esc(path)}" data-prop="${esc(prop)}" data-kind="${esc(opts.kind||'')}" data-mutates`;
+      const bind=`id="${id}" data-change="prop" data-path="${esc(path)}" data-prop="${esc(prop)}" data-kind="${esc(opts.kind||'')}" data-mutates${String(path).startsWith('connections')?' data-needs="connections"':''}`;
       const help=opts.help?`<div class="property-help">${esc(opts.help)}</div>`:'';
       if(opts.kind==='boolean')return `<label class="check"><input type="checkbox" ${bind}${value?' checked':''}> ${esc(label)}</label>`;
       let input;
@@ -1670,7 +1809,7 @@
     }
     function link(path,text){return `<button class="link" data-action="open" data-path="${esc(path)}">${esc(text??entityName(path))}</button>`;}
     function chip(status){
-      const tone={Draft:'draft',Validating:'warn',Approved:'info',Published:'good',Superseded:'superseded',Withdrawn:'bad',Retired:'retired',Healthy:'good',Degraded:'warn',Succeeded:'good',Denied:'bad',Blocked:'bad',Active:'good',Inactive:'bad'}[status]||'';
+      const tone={Draft:'draft',Validating:'warn',Approved:'info',Published:'good',Superseded:'superseded',Withdrawn:'bad',Retired:'retired',Healthy:'good',Degraded:'warn',Succeeded:'good',Denied:'bad',Blocked:'bad',Active:'good',Inactive:'bad',Pending:'warn',Granted:'good',Rejected:'bad',Revoked:'bad'}[status]||'';
       return `<span class="status ${tone}">${esc(status)}</span>`;
     }
     function refList(refs,empty){return refs.length?`<ul class="ref-list">${refs.map(r=>`<li>${link(r.from)} <span class="muted">${esc(r.via)}</span></li>`).join('')}</ul>`:`<p class="muted">${esc(empty)}</p>`;}
@@ -1880,9 +2019,9 @@
       const provider=id=>{const x=fixtures.providerCatalogue.find(y=>y.id===id);return x?`${esc(x.name)}${x.qualified?'':' <span class="status bad">not qualified</span>'}`:`<span class="status bad">unknown: ${esc(id)}</span>`;};
       const mapped=m=>m?`<td>${esc(m.endpoint)}</td><td>${esc(m.pool)}</td><td>${esc(m.timeoutSeconds)} s</td><td>${m.encrypted?'Required':'Off'}</td><td>${chip(m.health)}</td>`:'<td colspan="5" class="muted">Not mapped in this environment: the connection fails closed.</td>';
       const p=`connections.${selected?.id}`;
-      host.innerHTML=`<div class="toolbar"><button class="button" data-action="addConnection" data-mutates>＋ Register connection</button><button class="button" data-action="checkConnection">⌁ Check selected</button><span class="right muted">A draft holds a logical ID, a provider and a secret reference. Endpoints, pools and health belong to the environment.</span></div>
+      host.innerHTML=`<div class="toolbar"><button class="button" data-action="addConnection" data-mutates data-needs="connections">＋ Register connection</button><button class="button" data-action="checkConnection">⌁ Check selected</button><span class="right muted">A draft holds a logical ID, a provider and a secret reference. Endpoints, pools and health belong to the environment. Connections are changed by a database owner.</span></div>
         <section class="panel"><div class="table-wrap"><table class="data-grid"><thead><tr><th colspan="4" scope="colgroup">Connection draft (versioned)</th><th colspan="5" scope="colgroup">Deployment mapping for ${esc(env.name)} (read-only; outside the digest)</th></tr><tr><th scope="col">Connection</th><th scope="col">Provider</th><th scope="col">Secret reference</th><th scope="col">State</th><th scope="col">Endpoint</th><th scope="col">Pool</th><th scope="col">Timeout</th><th scope="col">Encryption</th><th scope="col">Health</th></tr></thead><tbody>${model.connections.map(c=>`<tr class="${c.id===selected?.id?'selected':''}"><td><button class="link" data-action="select" data-kind="connection" data-id="${esc(c.id)}" aria-pressed="${c.id===selected?.id}"><strong>${esc(c.name)}</strong></button><br><span class="muted">${esc(c.id)}</span></td><td>${provider(c.providerId)}</td><td><code>${esc(c.secretRef)}</code></td><td>${c.active?'Active':'<span class="status bad">Inactive</span>'}</td>${mapped(fixtures.deployment.connections[c.id])}</tr>`).join('')||'<tr><td colspan="9" class="muted">No connections registered.</td></tr>'}<tr><td><strong>Platform store</strong><br><span class="muted">${esc(store.id)}</span></td><td>${provider(store.providerId)}</td><td colspan="2" class="muted">Deployment configuration only</td>${mapped(store)}</tr></tbody></table></div></section>
-        ${selected?`<section class="panel" style="margin-top:12px"><div class="panel-head"><h2>${esc(selected.name)}</h2><span class="status ${selected.active?'good':'bad'}">${selected.active?'Active':'Inactive'}</span><button class="button small danger right" data-action="deleteEntity" data-path="${esc(p)}" data-mutates>Delete</button></div><div class="panel-body"><div class="form-grid">${fixed('Logical ID',selected.id)}${control(p,'name','Name')}${control(p,'providerId','Provider (registered catalogue)',{options:fixtures.providerCatalogue.map(x=>[x.id,`${x.name}${x.qualified?'':' — not qualified'}`])})}${control(p,'secretRef','Secret or workload-identity reference',{help:'A reference such as secret://… or identity://…. A value that looks like a credential or a connection string is refused and never stored.'})}<div class="wide">${control(p,'active','Connection is active',{kind:'boolean'})}</div></div><div class="section-title">Approved object catalogue (maintained by the connection owner)</div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Stable key</th><th scope="col">Kind</th><th scope="col">Server-owned identifier</th></tr></thead><tbody>${catalogueObjects(selected.id).map(o=>`<tr><td><code>${esc(o.key)}</code></td><td>${esc(o.kind)}</td><td>${esc(o.identifier)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">No approved objects: no DataClass can use this connection yet.</td></tr>'}</tbody></table></div><div class="section-title">Used by</div>${refList(dependents(p),'No DataClass uses this connection.')}</div></section>`:''}`;
+        ${selected?`<section class="panel" style="margin-top:12px"><div class="panel-head"><h2>${esc(selected.name)}</h2><span class="status ${selected.active?'good':'bad'}">${selected.active?'Active':'Inactive'}</span><button class="button small danger right" data-action="deleteEntity" data-path="${esc(p)}" data-mutates data-needs="connections">Delete</button></div><div class="panel-body"><div class="form-grid">${fixed('Logical ID',selected.id)}${control(p,'name','Name')}${control(p,'providerId','Provider (registered catalogue)',{options:fixtures.providerCatalogue.map(x=>[x.id,`${x.name}${x.qualified?'':' — not qualified'}`])})}${control(p,'secretRef','Secret or workload-identity reference',{help:'A reference such as secret://… or identity://…. A value that looks like a credential or a connection string is refused and never stored.'})}<div class="wide">${control(p,'active','Connection is active',{kind:'boolean'})}</div></div><div class="section-title">Approved object catalogue (maintained by the connection owner)</div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Stable key</th><th scope="col">Kind</th><th scope="col">Server-owned identifier</th></tr></thead><tbody>${catalogueObjects(selected.id).map(o=>`<tr><td><code>${esc(o.key)}</code></td><td>${esc(o.kind)}</td><td>${esc(o.identifier)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">No approved objects: no DataClass can use this connection yet.</td></tr>'}</tbody></table></div><div class="section-title">Used by</div>${refList(dependents(p),'No DataClass uses this connection.')}</div></section>`:''}`;
     }
     function renderValues(){
       if(!model.valueLists.length){host.innerHTML=emptyState('No value lists configured.','addList','＋ Add value list');return;}
@@ -1951,7 +2090,7 @@
         :`<p>${chip(status)} ${esc(draftStatusNote())}</p><ul class="check-list">${steps.map(x=>`<li class="${x.done?'done':''}"><span aria-hidden="true">${x.done?'✓':'○'}</span> ${esc(x.label)} <span class="muted">${esc(x.detail)}</span></li>`).join('')}</ul>
           ${warnings.length?`<div class="section-title">Warnings</div>${[...new Set(warnings.map(w=>w.code))].map(code=>{const rule=warningRule(code);return rule?`<label class="check"><input type="checkbox" data-change="acceptWarning" data-code="${esc(code)}" data-mutates${state.acceptedWarnings[code]?' checked':''}${state.validated?'':' disabled'}> Accept ${esc(code)} under ${esc(rule.id)}</label>`:`<p class="notice bad">${esc(code)} has no approved rule and blocks publication.</p>`;}).join('')}`:''}
           <div class="section-title">Independent approvals</div><p class="muted">A checker is not the author (${esc(model.draft.owner)}) or a contributor, holds the named review role, and approves this exact digest. Any edit clears every approval.</p>
-          ${REVIEW_ROLES.map(role=>{const a=state.approvals[role];return `<div class="relation-box" style="margin-bottom:8px"><strong>${role} approval</strong>${a?`<p>${esc(a.actor)} · ${esc(a.digest)} · ${esc(formatTime(a.time))}<br><span class="muted">${esc(a.reason)}</span></p>`:`<div class="field"><label for="approvalReason-${role}">Reason for ${role.toLowerCase()} approval</label><input id="approvalReason-${role}" placeholder="What was reviewed"></div><button class="button small" data-action="approve" data-role="${role}" data-mutates${state.validated?'':' disabled'}>Record ${role.toLowerCase()} approval</button>`}</div>`;}).join('')}
+          ${REVIEW_ROLES.map(role=>{const a=state.approvals[role];return `<div class="relation-box" style="margin-bottom:8px"><strong>${role} approval</strong>${a?`<p>${esc(a.actor)} · ${esc(a.digest)} · ${esc(formatTime(a.time))}<br><span class="muted">${esc(a.reason)}</span></p>`:`<div class="field"><label for="approvalReason-${role}">Reason for ${role.toLowerCase()} approval</label><input id="approvalReason-${role}" placeholder="What was reviewed"></div><button class="button small" data-action="approve" data-role="${role}" data-mutates data-needs="approve-${role}"${state.validated?'':' disabled'}>Record ${role.toLowerCase()} approval</button>`}</div>`;}).join('')}
           <div class="field"><label for="publishNote">Publication reason</label><textarea id="publishNote" placeholder="Business purpose of this version">${esc(state.publicationNote)}</textarea></div>
           ${state.schedule?`<div class="notice"><strong>Scheduled for ${esc(formatTime(state.schedule.when))}</strong><br>The approved candidate activates at that time. An edit cancels the schedule.<div class="field-actions"><button class="button small" data-action="cancelSchedule" data-mutates>Cancel schedule</button></div></div>`:`<div class="field"><label for="scheduleAt">Schedule publication (optional)</label><input id="scheduleAt" type="datetime-local"></div>`}
           <div class="field-actions"><button class="button primary" data-action="publish" data-mutates>Publish now</button>${state.schedule?'':'<button class="button" data-action="schedule" data-mutates>Schedule</button>'}</div>`;
@@ -1962,7 +2101,7 @@
         <section class="panel" style="margin-top:12px"><div class="panel-head"><h2>Side-by-side comparison</h2><span class="right inline-field"><label for="compareBase">Base</label><select id="compareBase" class="select" data-change="compare" data-which="compareBase">${options(state.compareBase||active?.id||'')}</select><label for="compareOther">Compared</label><select id="compareOther" class="select" data-change="compare" data-which="compareOther">${options(state.compareOther||state.viewVersion||'draft')}</select></span></div><div class="panel-body">${comparison()}</div></section>`;
     }
     function auditRow(a){
-      return `<tr><td>${esc(formatTime(a.time))}</td><td><strong>${esc(a.actor)}</strong></td><td>${esc(a.application||'—')}</td><td>${esc(a.action)}</td><td>${resolvePath(model,entityOf(a.target))||(a.target.startsWith('users.')&&findUser(a.target.split('.')[1]))?link(a.target,a.target):`<code>${esc(a.target)}</code>`}</td><td>${chip(a.outcome||'Succeeded')}</td><td>${esc(a.reason||'—')}</td><td>${esc(a.detail||'')}${a.before||a.after?`<br><code>${esc(a.before||'—')} → ${esc(a.after||'—')}</code>`:''}</td><td><code>${esc(a.version||'')}</code></td><td><code>${esc(a.correlation)}</code></td></tr>`;
+      return `<tr><td>${esc(formatTime(a.time))}</td><td><strong>${esc(a.actor)}</strong></td><td>${esc(a.application||'—')}</td><td>${esc(a.action)}</td><td>${resolvePath(model,entityOf(a.target))||(a.target.startsWith('users.')&&findUser(a.target.split('.')[1]))||(a.target.startsWith('administrators.')&&findAdministrator(a.target.split('.')[1]))?link(a.target,a.target):`<code>${esc(a.target)}</code>`}</td><td>${chip(a.outcome||'Succeeded')}</td><td>${esc(a.reason||'—')}</td><td>${esc(a.detail||'')}${a.before||a.after?`<br><code>${esc(a.before||'—')} → ${esc(a.after||'—')}</code>`:''}</td><td><code>${esc(a.version||'')}</code></td><td><code>${esc(a.correlation)}</code></td></tr>`;
     }
     function renderAudit(){
       host.innerHTML=`<div class="toolbar"><input class="entity-search" style="max-width:320px;margin:0" data-filter="audit" placeholder="Filter actor, action, target or reason" aria-label="Filter audit records"><button class="button" data-action="exportAudit">Export audit</button><span class="right muted">Append-only: a correction is a new record, never an edit</span></div><section class="panel"><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Time</th><th scope="col">Actor</th><th scope="col">Application</th><th scope="col">Action</th><th scope="col">Target</th><th scope="col">Outcome</th><th scope="col">Reason</th><th scope="col">Detail and digests (before → after)</th><th scope="col">Version</th><th scope="col">Correlation</th></tr></thead><tbody>${audit.map(a=>auditRow(a).replace('<tr>','<tr data-filterable="audit">')).join('')}</tbody></table></div></section>`;
@@ -1986,7 +2125,7 @@
       host.innerHTML=`${can?'':`<div class="notice" role="note"><strong>Read-only.</strong> Only the security administrator (${esc(admin?.name||'not configured')}) can change users. You are signed in as ${esc(state.actor)}.</div>`}
         <div class="toolbar"><input class="entity-search" style="max-width:300px;margin:0" data-filter="user" placeholder="Search by name or subject" aria-label="Search users by name or subject"><button class="button" data-action="registerUser" data-admin>＋ Register user</button><span class="right muted">Live administration · policy revision <strong id="policyRevision">${administration.policyRevision}</strong> · a change applies on the next request</span></div>
         <section class="panel"><div class="table-wrap"><table class="data-grid"><caption class="sr-only">Users</caption><thead><tr><th scope="col">User</th><th scope="col">Subject</th><th scope="col">State</th><th scope="col">Applications</th><th scope="col">Roles</th><th scope="col">Last sign-in</th><th scope="col">Can start</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="muted">No users registered. Nobody can start an application.</td></tr>'}</tbody></table></div></section>
-        <p class="muted">Users are administration data, not configuration: nothing here is validated, approved, published or undone with the draft. Sign-in belongs to the organization's identity provider, so a user record holds no credential.</p>${user?userDetail(user):''}`;
+        <p class="muted">Users are people who use GD Workspace; the people who run GD Studio are kept separately under Administrators. Users are administration data, not configuration: nothing here is validated, approved, published or undone with the draft. Sign-in belongs to the organization's identity provider, so a user record holds no credential.</p>${user?userDetail(user):''}`;
     }
     function userDetail(user){
       const live=liveConfig(),start=userStart(user),assigned=user.applications.map(a=>a.appId),groups=userGroups(user),held=userRoles(user),id=esc(user.id);
@@ -2027,6 +2166,42 @@
       }}]);
     }
 
+    function renderAdministrators(){
+      const allowed=can('administrators'),me=signedIn(),admin=findAdministrator(state.selectedAdmin)||administration.administrators[0],pending=pendingGrants(),when=t=>t?formatTime(t):'Never';
+      if(admin)state.selectedAdmin=admin.id;
+      const held=a=>adminRoles(a).map(r=>`${esc(r)}${isBootstrap(a,r)?' <span class="muted">(from deployment configuration)</span>':''}`).join(', ')||'<span class="muted">None</span>';
+      const waiting=p=>{const who=eligibleApprovers(p.admin,p.grant).map(x=>x.name);return who.length?`Awaiting ${who.join(' or ')}`:'Nobody can approve this yet: it needs a platform administrator who is neither the proposer nor the recipient';};
+      const pendingRow=p=>`<tr><td>${link(`administrators.${p.admin.id}`,p.admin.name)}</td><td><code>${esc(p.grant.role)}</code></td><td>${esc(administratorName(p.grant.proposedBy))}<br><span class="muted">${esc(when(p.grant.proposedAt))}</span></td><td>${esc(p.grant.reason)}</td><td>${esc(waiting(p))}</td><td class="row-actions"><button class="button small primary" data-action="adminDecide" data-admin-id="${esc(p.admin.id)}" data-grant="${esc(p.grant.id)}" data-approve="1" data-platform aria-label="Approve ${esc(p.grant.role)} for ${esc(p.admin.name)}">Approve</button><button class="button small" data-action="adminDecide" data-admin-id="${esc(p.admin.id)}" data-grant="${esc(p.grant.id)}" data-approve="0" data-platform aria-label="Reject ${esc(p.grant.role)} for ${esc(p.admin.name)}">Reject</button><button class="button small" data-action="adminWithdraw" data-admin-id="${esc(p.admin.id)}" data-grant="${esc(p.grant.id)}" data-platform aria-label="Withdraw ${esc(p.grant.role)} for ${esc(p.admin.name)}">Withdraw</button></td></tr>`;
+      const rows=administration.administrators.map(a=>`<tr data-filterable="admin" class="${a.id===admin?.id?'selected':''}"><td><button class="link" data-action="select" data-kind="admin" data-id="${esc(a.id)}" aria-pressed="${a.id===admin?.id}"><strong>${esc(a.name)}</strong></button>${a.subject===me?.subject?' <span class="status info">you</span>':''}<br><span class="muted">${esc(a.id)}</span></td><td><code>${esc(a.subject)}</code></td><td>${held(a)}</td><td>${a.grants.filter(g=>g.state==='pending').map(g=>`<code>${esc(g.role)}</code> pending`).join(', ')||'—'}</td><td>${esc(when(administration.signIns[a.subject]))}</td></tr>`).join('');
+      host.innerHTML=`${allowed?'':`<div class="notice" role="note"><strong>Read-only.</strong> Only a platform administrator (${esc(platformAdministrators().map(a=>a.name).join(', ')||'none')}) can change administrative roles. You are signed in as ${esc(state.actor)} (${esc(adminRoles(me).join(', ')||'no administrative role')}).</div>`}
+        <p class="muted">Administrators are people who run GD Studio. An administrative role grants nothing in GD Workspace, and an administrator needs no Workspace user record.</p>
+        ${pending.length?`<section class="panel" style="margin-bottom:12px" aria-label="Pending approvals"><div class="panel-head"><h2>Pending approvals</h2><span class="status warn">${pending.length}</span><p class="right">A pending grant gives nothing until a different platform administrator approves it</p></div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Person</th><th scope="col">Role</th><th scope="col">Proposed by</th><th scope="col">Reason</th><th scope="col">Waiting for</th><th scope="col"><span class="sr-only">Row actions</span></th></tr></thead><tbody>${pending.map(pendingRow).join('')}</tbody></table></div></section>`:''}
+        <div class="toolbar"><input class="entity-search" style="max-width:300px;margin:0" data-filter="admin" placeholder="Search by name or subject" aria-label="Search administrators by name or subject"><button class="button" data-action="adminRegister" data-platform>＋ Register administrator</button><span class="right muted">Live administration · policy revision <strong id="adminPolicyRevision">${administration.policyRevision}</strong> · two people for every grant</span></div>
+        <section class="panel"><div class="table-wrap"><table class="data-grid"><caption class="sr-only">Administrators</caption><thead><tr><th scope="col">Person</th><th scope="col">Subject</th><th scope="col">Roles held</th><th scope="col">Pending changes</th><th scope="col">Last sign-in</th></tr></thead><tbody>${rows}</tbody></table></div></section>
+        ${admin?administratorDetail(admin):''}
+        <section class="panel" style="margin-top:12px"><div class="panel-head"><h2>The fixed administrative roles</h2><p class="right">Defined by the platform; not authored and not part of any version</p></div><div class="panel-body">${Object.entries(ADMIN_ROLES).map(([role,text])=>`<div class="detail-kv"><span><code>${esc(role)}</code></span><span>${esc(text)}</span></div>`).join('')}</div></section>`;
+    }
+    function administratorDetail(admin){
+      const me=signedIn(),own=admin.subject===me?.subject,roles=adminRoles(admin),when=t=>t?formatTime(t):'—',id=esc(admin.id),since=role=>admin.grants.find(g=>g.role===role&&g.state==='granted')?.approvedAt;
+      const history=[...admin.grants].sort((a,b)=>String(b.proposedAt).localeCompare(String(a.proposedAt)));
+      return `<section class="panel" style="margin-top:12px" aria-label="Administrator ${esc(admin.name)}"><div class="panel-head"><h2>${esc(admin.name)}</h2><span class="status ${roles.length?'good':'warn'}">${roles.length} role${roles.length===1?'':'s'}</span><span class="right"><button class="button small" data-action="adminPropose" data-admin-id="${id}" data-platform>＋ Propose a role</button> <button class="button small danger" data-action="adminRemove" data-admin-id="${id}" data-platform>Remove administrator</button></span></div><div class="panel-body">
+        ${own?'<div class="notice">This is your own record. Nobody can propose, approve, reject or revoke a change to their own administrative roles; another platform administrator must do it.</div>':''}
+        <div class="form-grid">${fixed('Administrator ID',admin.id)}${fixed('Identity-provider subject',admin.subject)}${fixed('Display name',admin.name)}${fixed('Email',admin.email)}</div>
+        <p class="property-help">Sign-in belongs to the organization's identity provider, so an administrator record holds no credential. Last sign-in: ${esc(when(administration.signIns[admin.subject]))}.</p>
+        <div class="section-title">Roles held</div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Role</th><th scope="col">What it allows</th><th scope="col">Source</th><th scope="col"><span class="sr-only">Row actions</span></th></tr></thead><tbody>${roles.map(role=>`<tr><td><code>${esc(role)}</code></td><td>${esc(ADMIN_ROLES[role])}</td><td>${isBootstrap(admin,role)?'From deployment configuration':`Granted ${esc(when(since(role)))}`}</td><td class="row-actions">${isBootstrap(admin,role)?'<span class="muted">Read-only here</span>':`<button class="button small danger" data-action="adminRevoke" data-admin-id="${id}" data-role="${esc(role)}" data-platform aria-label="Revoke ${esc(role)} from ${esc(admin.name)}">Revoke</button>`}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">No role is held: this person can read Studio and change nothing.</td></tr>'}</tbody></table></div>
+        <div class="section-title">Grant history</div><div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Role</th><th scope="col">State</th><th scope="col">Proposed</th><th scope="col">Decision</th><th scope="col">Ended</th></tr></thead><tbody>${history.map(g=>`<tr><td><code>${esc(g.role)}</code></td><td>${chip(capitalise(g.state))}</td><td>${esc(administratorName(g.proposedBy))} · ${esc(when(g.proposedAt))}<br><span class="muted">${esc(g.reason)}</span></td><td>${g.approvedBy?`Approved by ${esc(administratorName(g.approvedBy))} · ${esc(when(g.approvedAt))}<br><span class="muted">${esc(g.approvalReason)}</span>`:g.state==='rejected'?`Rejected by ${esc(administratorName(g.closedBy))} · ${esc(when(g.closedAt))}<br><span class="muted">${esc(g.closedReason)}</span>`:'—'}</td><td>${g.closedBy&&g.state!=='rejected'?`${esc(capitalise(g.state))} by ${esc(administratorName(g.closedBy))} · ${esc(when(g.closedAt))}<br><span class="muted">${esc(g.closedReason)}</span>`:'—'}</td></tr>`).join('')||`<tr><td colspan="5" class="muted">${isBootstrap(admin,'platform-administrator')?'No grant has been proposed; the platform-administrator role comes from deployment configuration.':'No grant has been proposed for this person.'}</td></tr>`}</tbody></table></div></div></section>`;
+    }
+    function proposeGrantDialog(id){
+      const admin=findAdministrator(id);if(!admin)return;
+      const open=Object.keys(ADMIN_ROLES).filter(r=>!holdsRole(admin,r)&&!admin.grants.some(g=>g.role===r&&g.state==='pending'));
+      if(!open.length)return toast(`${admin.name} already holds or awaits every administrative role.`,'warn');
+      formDialog(`Propose a role for ${admin.name}`,[{id:'grantRole',label:'Administrative role',options:open.map(r=>[r,`${r}: ${ADMIN_ROLES[r]}`]),wide:true},{id:'grantReason',label:'Reason',wide:true}],'Propose grant',v=>proposeGrant(admin.id,v.grantRole,v.grantReason)?'':false,'<p class="muted">A proposed grant is pending and gives nothing. A different platform administrator, who is not the person receiving the role, must approve it.</p>');
+    }
+    function grantDecisionDialog(id,grantId,approve){
+      const admin=findAdministrator(id),grant=admin?.grants.find(g=>g.id===grantId);if(!grant)return;
+      formDialog(`${approve?'Approve':'Reject'} ${grant.role} for ${admin.name}`,[{id:'decisionReason',label:'Reason',wide:true}],approve?'Approve grant':'Reject grant',v=>decideGrant(admin.id,grant.id,approve,v.decisionReason)?'':false,`<p>Proposed by <strong>${esc(administratorName(grant.proposedBy))}</strong> on ${esc(formatTime(grant.proposedAt))}: ${esc(grant.reason)}</p><p class="muted">${approve?`On approval ${esc(admin.name)} holds ${esc(grant.role)} from the next request, and the policy revision rises.`:'A rejected grant gives nothing and stays in the history.'} The approver must be neither the proposer nor the person receiving the role.</p>`);
+    }
+
     // ---- chrome, dialogs and feedback ----------------------------------------------------------------
     function toast(text,type=''){
       const region=document.getElementById('toasts'),item=document.createElement('div'),sticky=type==='warn'||type==='error',message=document.createElement('span');
@@ -2058,8 +2233,9 @@
       if(modalFocus?.isConnected)modalFocus.focus();else document.getElementById('pageTitle').focus();
     }
     function enhanceUI(root,lock=true){
-      if(lock&&readOnly())root.querySelectorAll('[data-mutates]').forEach(el=>{el.disabled=true;});
+      root.querySelectorAll('[data-mutates]').forEach(el=>{if((lock&&readOnly())||!can(el.dataset.needs||'draft'))el.disabled=true;});
       if(!canAdministerUsers())root.querySelectorAll('[data-admin]').forEach(el=>{el.disabled=true;});
+      if(!can('administrators'))root.querySelectorAll('[data-platform]').forEach(el=>{el.disabled=true;});
       root.querySelectorAll('input,select,textarea').forEach((el,i)=>{
         if(el.labels?.length||el.hasAttribute('aria-label')||el.type==='file')return;
         el.setAttribute('aria-label',el.placeholder||'Configuration value '+(i+1));
@@ -2070,16 +2246,18 @@
       const env=environment(),current=readOnly()?releases.find(v=>v.id===state.viewVersion)?.status:draftStatus(),set=(id,text)=>{document.getElementById(id).textContent=text;};
       set('environmentBadge',`${env.name} environment`);set('statusEnvironment',`● ${env.name} · ${env.kind}`);set('statusVersions',`Schema ${env.schemaVersion} · Compiler ${env.compilerVersion} · API ${env.apiVersion}`);
       set('changeChip',readOnly()?`Read-only · ${current}`:`${current} · ${state.dirty} change${state.dirty===1?'':'s'}`);
-      document.getElementById('undoButton').disabled=readOnly()||!state.history.length;document.getElementById('redoButton').disabled=readOnly()||!state.future.length;
+      const editor=can('draft')||can('connections'),mine=adminRoles(signedIn()).join(', ')||'no administrative role';
+      document.getElementById('undoButton').disabled=readOnly()||!editor||!state.history.length;document.getElementById('redoButton').disabled=readOnly()||!editor||!state.future.length;
       const fill=(id,html,value)=>{const el=document.getElementById(id);el.innerHTML=html;el.value=value;};
       fill('applicationSelect',model.applications.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''),state.appId);
       fill('versionSelect',`<option value="draft">${esc(draftStatus())} ${esc(model.draft.label.replace(/^Draft /,''))}</option>`+releases.map(v=>`<option value="${esc(v.id)}">${esc(v.status)} ${esc(v.label)}</option>`).join(''),state.viewVersion||'draft');
-      fill('actorSelect',fixtures.reviewers.map(r=>`<option value="${esc(r.name)}">${esc(r.name)} — ${esc(r.role)}</option>`).join(''),state.actor);
-      document.getElementById('sideFoot').innerHTML=`<strong>${esc(model.draft.label)}</strong><br>${esc(draftStatus())} · based on ${esc(releases.find(v=>v.id===model.draft.basedOn)?.label||model.draft.basedOn)}<br><span>Digest ${esc(digest(readOnly()?draftConfig:configuration()))}</span>`;
-      document.getElementById('publishButton').disabled=readOnly();document.getElementById('validateButton').disabled=readOnly();
+      fill('actorSelect',administration.administrators.map(a=>`<option value="${esc(a.name)}">${esc(a.name)} — ${esc(adminRoles(a).join(', ')||'no role')}</option>`).join(''),state.actor);
+      document.getElementById('actorSelect').title=`${state.actor}: ${mine}`;
+      document.getElementById('sideFoot').innerHTML=`<strong>${esc(model.draft.label)}</strong><br>${esc(draftStatus())} · based on ${esc(releases.find(v=>v.id===model.draft.basedOn)?.label||model.draft.basedOn)}<br><span>Digest ${esc(digest(readOnly()?draftConfig:configuration()))}</span><br><span id="signedInRoles">Signed in: ${esc(state.actor)} · ${esc(mine)}</span>`;
+      document.getElementById('publishButton').disabled=readOnly()||!can('draft');document.getElementById('validateButton').disabled=readOnly()||!can('draft');
       syncTopbar();
     }
-    const renderers={overview:renderOverview,applications:renderApplications,navigation:renderNavigation,screens:renderScreens,dataclasses:renderDataClasses,connections:renderConnections,values:renderValues,reports:renderReports,security:renderSecurity,users:renderUsers,validation:renderValidation,impact:renderImpact,versions:renderVersions,audit:renderAudit,system:renderSystem};
+    const renderers={overview:renderOverview,applications:renderApplications,navigation:renderNavigation,screens:renderScreens,dataclasses:renderDataClasses,connections:renderConnections,values:renderValues,reports:renderReports,security:renderSecurity,users:renderUsers,administrators:renderAdministrators,validation:renderValidation,impact:renderImpact,versions:renderVersions,audit:renderAudit,system:renderSystem};
     // A re-render replaces the editor markup, so keyboard focus is carried over to the equivalent control.
     function focusKey(el){
       if(!el||!document.getElementById('app').contains(el))return null;
@@ -2096,6 +2274,7 @@
       if(!renderers[state.module])state.module='overview';
       document.getElementById('pageTitle').textContent=titles[state.module];document.getElementById('breadcrumbs').textContent=`${app().name} / ${titles[state.module]}`;
       document.getElementById('pageActions').innerHTML=pageActions();renderers[state.module]();
+      host.insertAdjacentHTML('afterbegin',accessNotice());
       enhanceUI(host);enhanceUI(document.getElementById('pageActions'));updateChrome();writeRoute();
       if(state.focusPath){
         const wanted=state.focusPath,controls=[...host.querySelectorAll('[data-path]')];state.focusPath='';
@@ -2124,6 +2303,7 @@
     function confirmRow(title,text,action){showModal(title,`<p>${esc(text)}</p>`,[{label:'Cancel',action:closeModal},{label:'Delete',danger:true,action:()=>{closeModal();action();}}]);}
     function runValidation(){
       if(readOnly())return toast('Select the draft to validate.','warn');
+      if(!can('draft'))return refuseCapability('draft','Validating the candidate',model.draft.id);
       const serialized=canonical(configuration()),draftId=model.draft.id,run=state.validationRun=(state.validationRun||0)+1;
       state.module='validation';state.compiling=true;state.validated=false;state.approvals={};render();status('Validating…');
       setTimeout(()=>{
@@ -2136,6 +2316,7 @@
     }
     function publish(){
       if(readOnly())return toast('Select the draft to publish.','warn');
+      if(!can('draft'))return refuseCapability('draft','Publishing',model.draft.id);
       const blockers=publicationBlockers();
       if(blockers.length){
         appendAudit('Refused publication',model.draft.id,blockers[0],{outcome:'Blocked'});
@@ -2154,6 +2335,7 @@
     function rollbackTo(id){
       const target=releases.find(v=>v.id===id),active=activeRelease(),now=fixtures.deployment.activity;
       if(!target||target.status!=='Superseded'||!active)return toast('Rollback needs an active version and a superseded known-good version.','warn');
+      if(!can('draft'))return refuseCapability('draft','Rolling back',id);
       const effect=(what,count,text)=>`<tr><th scope="row">${what}</th><td class="number">${count}</td><td>${text}</td></tr>`;
       showModal('Roll back the active publication',`<p>Reactivate <strong>${esc(target.label)}</strong> (<code>${esc(target.digest)}</code>) and mark <strong>${esc(active.label)}</strong> Withdrawn. Publication state changes atomically from revision ${state.publicationRevision} to ${state.publicationRevision+1}; every admission after that revision is refused under ${esc(active.label)}, whether or not a notification has arrived.</p>
         <table class="data-grid"><caption>What withdrawal does to work under ${esc(active.label)} in ${esc(environment().name)}</caption><thead><tr><th scope="col">Work</th><th scope="col">Now</th><th scope="col">Effect</th></tr></thead><tbody>
@@ -2174,6 +2356,7 @@
     }
     function retireVersion(id){
       const version=releases.find(v=>v.id===id);if(!retirable(version))return toast('Only a published, superseded or withdrawn version can be retired.','warn');
+      if(!can('draft'))return refuseCapability('draft','Retiring a version',id);
       const why={Withdrawn:'A withdrawn version is retired once nothing needs to reconcile against it.',Superseded:'A superseded version is retired when its retention period has expired. It can then no longer be a rollback target.',Published:'Retiring the active version retires its applications: no definition stays executable and every new request is refused until another version is published.'}[version.status];
       showModal(`Retire ${version.label}`,`<p>${chip(version.status)} → ${chip('Retired')}</p><p>${why}</p><p class="muted">Retirement is permanent. The version stays in history for audit and cannot be reactivated or downloaded from.</p><div class="field"><label for="retireReason">Reason for retirement</label><textarea id="retireReason" placeholder="Retention expired, application retired, …"></textarea></div><label class="check"><input id="retireConfirm" type="checkbox"> Confirm retirement of ${esc(version.label)}</label>`,[
         {label:'Cancel',action:closeModal},{label:'Retire',danger:true,action:()=>{
@@ -2198,7 +2381,7 @@
       showModal(`Effective access: ${role.name}`,`<p class="muted">What a subject holding only this role receives in ${esc(app().name)}. The server rechecks every request.</p>${role.active?'':'<div class="notice bad">This role is inactive: it grants nothing.</div>'}${(role.applications||[]).includes(state.appId)?'':'<div class="notice bad">This role has no access to this application: every screen is denied.</div>'}<div class="table-wrap"><table class="data-grid"><thead><tr><th scope="col">Screen</th><th scope="col">Granted</th><th scope="col">Commands shown</th><th scope="col">Fields withheld</th></tr></thead><tbody>${screens.map(s=>{const access=subjectAccess([role],role.applications||[],[],s),granted=access.permissions;return `<tr><th scope="row">${esc(s.caption)}</th><td>${granted.map(esc).join(', ')||'<span class="status bad">Hidden</span>'}</td><td>${granted.length?s.commands.filter(c=>commandShown(s,c,null)&&granted.includes(policyParts(c.policy).permission)).map(c=>esc(c.label)).join(', ')||'none':'—'}</td><td>${access.hiddenFields.map(esc).join(', ')||'—'}</td></tr>`;}).join('')}</tbody></table></div><div class="section-title">Row scope</div>${scopes.length?`<ul class="ref-list">${scopes.map(x=>`<li><code>${esc(x)}</code></li>`).join('')}</ul>`:'<p class="muted">No row scope: every row the DataClass returns is in scope.</p>'}<div class="section-title">Users</div><p class="muted">A user's result is the combination of every role the user holds, with any user-specific override applied last. Open a user in ${link('users.','Users')} to see it.</p>`,[{label:'Close',primary:true,action:closeModal}]);
     }
     function aboutPrototype(){
-      showModal('About this prototype',`<p><strong>GD Studio</strong> is the reference prototype of the governed metadata authoring tool. It is one self-contained page: nothing is sent to a server and nothing is saved when the page closes.</p><ul><li>The reference application (Operations Hub and Risk &amp; Controls), its sample rows, the provider catalogue, the object catalogues and the ${esc(environment().name)} deployment mapping are embedded sample data.</li><li>"Signed in as" switches between four sample administrators so that the author and three independent checkers can be exercised. In the product, identity comes from the organization's identity provider and cannot be chosen.</li><li>The Users module holds sample user records, their identity-provider groups and their sign-in times as embedded administration data. The administrator with the Security role stands in for the security administrator, the only identity that can change users.</li><li>The digest is a short non-cryptographic fingerprint, enough to show that approval is bound to exact content. Previews and connection checks answer from the embedded sample data.</li><li>One version line covers the whole workspace. The design's unit of publication is an application scope; the publish dialog states the scope this prototype activates.</li><li>Deep links: <code>#module=&lt;module&gt;&amp;app=&lt;id&gt;&amp;screen=&lt;id&gt;&amp;tab=&lt;tab&gt;&amp;version=&lt;id&gt;&amp;user=&lt;id&gt;&amp;actor=&lt;name&gt;&amp;dialog=rollback|retire|about|json|preview|access|useraccess&amp;theme=dark</code>.</li></ul>`,[{label:'Close',primary:true,action:closeModal}]);
+      showModal('About this prototype',`<p><strong>GD Studio</strong> is the reference prototype of the governed metadata authoring tool. It is one self-contained page: nothing is sent to a server and nothing is saved when the page closes.</p><ul><li>The reference application (Operations Hub and Risk &amp; Controls), its sample rows, the provider catalogue, the object catalogues and the ${esc(environment().name)} deployment mapping are embedded sample data.</li><li>"Signed in as" switches between the sample administrators so that every administrative role and the two-person rules can be exercised. In the product, identity comes from the organization's identity provider and cannot be chosen. You are signed in as ${esc(state.actor)} with ${esc(adminRoles(signedIn()).join(', ')||'no administrative role')}.</li><li>The Users and Administrators modules hold sample records, identity-provider groups and sign-in times as embedded administration data, and the bootstrap platform administrators as embedded deployment configuration.</li><li>The digest is a short non-cryptographic fingerprint, enough to show that approval is bound to exact content. Previews and connection checks answer from the embedded sample data.</li><li>One version line covers the whole workspace. The design's unit of publication is an application scope; the publish dialog states the scope this prototype activates.</li><li>Deep links: <code>#module=&lt;module&gt;&amp;app=&lt;id&gt;&amp;screen=&lt;id&gt;&amp;tab=&lt;tab&gt;&amp;version=&lt;id&gt;&amp;user=&lt;id&gt;&amp;admin=&lt;id&gt;&amp;actor=&lt;name&gt;&amp;dialog=rollback|retire|about|json|preview|access|useraccess|proposegrant|approvegrant|selfchange&amp;theme=dark</code>.</li></ul>`,[{label:'Close',primary:true,action:closeModal}]);
     }
     function showJson(){
       const viewing=readOnly();
@@ -2316,6 +2499,18 @@
       effectiveAccess:()=>effectiveAccess(),
       registerUser:()=>formDialog('Register user',[{id:'newSubject',label:'Subject identifier from the identity provider',placeholder:'first.last'},{id:'newName',label:'Display name'},{id:'newEmail',label:'Email',type:'email'},{id:'newRegion',label:'Region',options:[['','Not set'],...(liveConfig()?.valueLists.find(v=>v.id==='regions')?.values||[]).map(v=>[v.value,v.label])]}],'Register user',v=>registerUser(v.newSubject,v.newName,v.newEmail,v.newRegion)?'':false,'<p class="muted">A user record maps one identity-provider subject to this platform. It holds no credential: the person signs in through the organization\'s identity provider. A new record is inactive until it is activated.</p>'),
       userAccess:d=>userEffectiveAccess(d.user),
+      adminRegister:()=>formDialog('Register administrator',[{id:'newSubject',label:'Subject identifier from the identity provider',placeholder:'first.last'},{id:'newName',label:'Display name'},{id:'newEmail',label:'Email',type:'email',wide:true}],'Register administrator',v=>registerAdministrator(v.newSubject,v.newName,v.newEmail)?'':false,'<p class="muted">A new administrator holds no role and can change nothing until a role is proposed and approved by two different platform administrators. The record holds no credential.</p>'),
+      adminPropose:d=>proposeGrantDialog(d.adminId),
+      adminDecide:d=>grantDecisionDialog(d.adminId,d.grant,d.approve==='1'),
+      adminWithdraw:d=>showModal('Withdraw proposed role','<p>Withdraw this pending grant? It has given nothing, and it stays in the history as withdrawn.</p>',[{label:'Cancel',action:closeModal},{label:'Withdraw',danger:true,action:()=>{closeModal();withdrawGrant(d.adminId,d.grant);}}]),
+      adminRevoke:d=>{
+        const admin=findAdministrator(d.adminId);if(!admin)return;
+        formDialog(`Revoke ${d.role} from ${admin.name}`,[{id:'revokeReason',label:'Reason',wide:true}],'Revoke role',v=>revokeGrant(admin.id,d.role,v.revokeReason)?'':false,'<p>Revocation is immediate: the role is gone on the next request and needs no second person. Granting it again needs a new proposal and approval.</p>');
+      },
+      adminRemove:d=>{
+        const admin=findAdministrator(d.adminId);if(!admin)return;
+        formDialog(`Remove ${admin.name}`,[{id:'removeReason',label:'Reason',wide:true}],'Remove administrator',v=>removeAdministrator(admin.id,v.removeReason)?'':false,`<p>Remove the administrator record of <strong>${esc(admin.name)}</strong> (<code>${esc(admin.subject)}</code>)? Only a person who holds no role and has no pending grant can be removed. The audit keeps the history.</p>`);
+      },
       userActive:d=>{
         const user=findUser(d.user),activate=d.active==='1';if(!user)return;
         formDialog(`${activate?'Activate':'Deactivate'} ${user.name}`,[{id:'activeReason',label:'Reason',wide:true}],activate?'Activate':'Deactivate',v=>setUserActive(user.id,activate,v.activeReason)?'':false,`<p>${activate?'The user may start on the next request, provided an application and a role are assigned.':'Every session of this user ends on the next request, and start-up is refused until the record is activated again.'}</p>`);
@@ -2362,6 +2557,7 @@
       if(!el){if(e.target===modal)closeModal();return;}
       if(el.disabled||!actions[el.dataset.action])return;
       if(readOnly()&&el.hasAttribute('data-mutates'))return toast('This version is immutable. Open the draft to edit.','warn');
+      if(el.hasAttribute('data-mutates')&&!can(el.dataset.needs||'draft'))return refuseCapability(el.dataset.needs||'draft','This change',model.draft.id);
       actions[el.dataset.action](el.dataset,el);
     });
     document.addEventListener('change',e=>{
@@ -2372,6 +2568,7 @@
       if(el.id==='importJson')return readImport(el.files[0]);
       if(el.dataset.change&&changes[el.dataset.change]){
         if(readOnly()&&el.hasAttribute('data-mutates')){render();return toast('This version is immutable. Open the draft to edit.','warn');}
+        if(el.hasAttribute('data-mutates')&&!can(el.dataset.needs||'draft')){render();return refuseCapability(el.dataset.needs||'draft','This change',model.draft.id);}
         // A change committed by leaving the control waits until focus has landed, so the re-render can keep it there.
         const apply=()=>changes[el.dataset.change](el.dataset,el);
         if(document.activeElement===el)apply();else setTimeout(apply,0);
@@ -2430,8 +2627,8 @@
       if(releases.some(v=>v.id===version)&&state.viewVersion!==version)selectVersion(version);
       if(model.applications.some(a=>a.id===params.get('app')))state.appId=params.get('app');
       if(titles[params.get('module')])state.module=params.get('module');
-      for(const [key,target] of [['screen','selectedScreen'],['field','selectedField'],['command','selectedCommand'],['dataclass','selectedDataClass'],['connection','selectedConnection'],['list','selectedList'],['report','selectedReport'],['role','selectedRole'],['user','selectedUser'],['as','previewRole']])if(params.get(key))state[target]=params.get(key);
-      if(fixtures.reviewers.some(r=>r.name===params.get('actor')))state.actor=params.get('actor');
+      for(const [key,target] of [['screen','selectedScreen'],['field','selectedField'],['command','selectedCommand'],['dataclass','selectedDataClass'],['connection','selectedConnection'],['list','selectedList'],['report','selectedReport'],['role','selectedRole'],['user','selectedUser'],['admin','selectedAdmin'],['as','previewRole']])if(params.get(key))state[target]=params.get(key);
+      if(administration.administrators.some(a=>a.name===params.get('actor')))state.actor=params.get('actor');
       const group={screens:'inspectorTab',dataclasses:'detailTab',security:'securityTab',system:'systemTab'}[state.module];
       if(group&&params.get('tab'))state[group]=params.get('tab');
       if(params.get('theme'))setTheme(params.get('theme'));
@@ -2443,6 +2640,7 @@
       if(state.module==='dataclasses'&&state.selectedDataClass)parts.push(`dataclass=${state.selectedDataClass}`,`tab=${state.detailTab}`);
       if(state.module==='security'&&state.selectedRole)parts.push(`role=${state.selectedRole}`,`tab=${state.securityTab}`);
       if(state.module==='users'&&state.selectedUser)parts.push(`user=${state.selectedUser}`);
+      if(state.module==='administrators'&&state.selectedAdmin)parts.push(`admin=${state.selectedAdmin}`);
       if(state.viewVersion)parts.push(`version=${state.viewVersion}`);
       try{history.replaceState(null,'','#'+parts.map(encodeURI).join('&'));}catch(error){/* some hosts forbid it for local files; deep links still load */}
     }
@@ -2455,6 +2653,9 @@
       if(name==='preview')previewScreen();
       if(name==='access')effectiveAccess();
       if(name==='useraccess')userEffectiveAccess(state.selectedUser);
+      if(name==='approvegrant'&&pendingGrants()[0])grantDecisionDialog(pendingGrants()[0].admin.id,pendingGrants()[0].grant.id,true);
+      if(name==='proposegrant')proposeGrantDialog(state.selectedAdmin);
+      if(name==='selfchange'&&signedIn())proposeGrant(signedIn().id,'support-operator','Requested for my own record');
     }
     window.addEventListener('hashchange',()=>{const dialog=readRoute();render();openRouteDialog(dialog);});
     new ResizeObserver(syncTopbar).observe(document.querySelector('.topbar'));

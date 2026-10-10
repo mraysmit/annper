@@ -1,12 +1,12 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.8  
+**Status:** Controlled working design baseline 0.9  
 **Date:** 10 October 2026  
 **Owner:** Migration technical lead  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
 **Functional authority:** [GD Framework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.11](GDF_MIGRATION_MASTER.md)  
+**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.12](GDF_MIGRATION_MASTER.md)  
 **Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 17)
 
 **Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
@@ -23,6 +23,7 @@
 | 0.6 | 2026-09-13 | Design-review corrections: explicit pending layout scope, safe mutations and keys, authored capabilities, messages, startup and security, lifecycle, preference identity, gate alignment, and citations; no pending product or defect decision approved |
 | 0.7 | 2026-10-04 | Coherence review: preserve default DataClass caching; register pending D-021 dual-source scope; define uncertain-save reconciliation, durable post-commit effects, protected authoring, filtered-definition cache isolation, and withdrawal admission rules; record source-manifest identity and new verification requirements. No product, defect, or technology approval implied |
 | 0.8 | 2026-10-10 | Owner decisions recorded. D-017 approved: section 7.7 and 8.5 reinterpretations, Detach and Reattach, two-level navigation, and legacy control scope are requirements, not candidates. D-011 approved with every DEF-* row decided, so the DEF-003, DEF-005, DEF-012, DEF-013, and DEF-038 behaviors are binding. D-020 decided: aggregation, limit processing, and PLM are out of scope. D-005 decided: OpenID Connect with a server-side session and an HttpOnly cookie (sections 10.1, 15.1, 15.3). D-013 and D-004 decided in direction: engine-agnostic, configurable platform store and providers (new section 11.6). User records are live administration data outside publication (D-022, new section 15.6). WDES-025, WDES-026, and WDES-027 added. The stack stays technology-neutral; D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged |
+| 0.9 | 2026-10-10 | Administrative roles decided. D-023: a fixed set of platform administrative roles governs the authoring tool itself, separate from application roles and business access, granted inside the tool with a second-person approval, immediate revocation, no self-changes, and bootstrap platform administrators from deployment configuration (new section 15.7). WDES-028 added |
 
 ## 1. Purpose and authority
 
@@ -1049,7 +1050,7 @@ file for audit does not make it downloadable by a business user.
 ### 12.9 Administration service
 
 Provides policy-controlled metadata publication, user administration
-(section 15.6), cache invalidation, job management, system-message
+(section 15.6), administrative role grants (section 15.7), cache invalidation, job management, system-message
 administration, safe diagnostics, configuration status, and support actions. Operational access is separate from business-user
 access and is never enabled by a client-side flag.
 
@@ -1114,6 +1115,7 @@ DataClass.
 | `POST /api/v1/admin/metadata/drafts` | Submit control-plane definition data under section 11.4 and start non-executing validation |
 | `POST /api/v1/admin/metadata/versions/{versionId}/publish` | Publish an immutable candidate only after its separate digest-bound approval requirements are met |
 | `GET/PUT/DELETE /api/v1/admin/users/{userId}` | Read or change a user record, its application assignments, role memberships, and overrides; effective on the next request and audited, with no publication (section 15.6) |
+| `GET /api/v1/admin/administrators`, `POST /api/v1/admin/administrators/{administratorId}/grants`, `POST /api/v1/admin/grants/{grantId}/approval` | List administrators; propose, approve, reject, withdraw, or revoke an administrative role grant under the section 15.7 rules |
 | `GET /api/v1/health/live` | Process liveness only |
 | `GET /api/v1/health/ready` | Readiness of required platform dependencies, access restricted as appropriate |
 
@@ -1590,6 +1592,61 @@ no active application assignment, is refused at start-up (section 7.6 step
 3). An override cannot bypass an inactive record, a missing application
 assignment, row scope, or revocation (section 15.2).
 
+### 15.7 Administrative roles
+
+The people who run the platform are governed separately from the people who
+use its applications (decision D-023; ADR-007, GDF_MIGRATION_MASTER.md section
+30.9). Administrative roles are a fixed set defined by the platform. They are
+not authored, are not part of the versioned configuration, and are distinct
+from the application roles of section 15.2.
+
+| Administrative role | May |
+|---|---|
+| Platform administrator | Grant and revoke administrative roles; nothing else |
+| Configurator | Change a draft other than its connections, validate it, publish an approved candidate, roll back, and retire (section 11) |
+| Approver | Record one of the publication approvals the D-015 approval model requires, for the approval area the role names |
+| Security administrator | Administer users (section 15.6) |
+| Support operator | Read audit, versions, and diagnostics (section 23.3) |
+| Database owner | Register and change the connections in a draft, and maintain the approved object catalogue (sections 11.4 and 14.3) |
+| Integration owner | Maintain the registered extension adapters (section 20.1) |
+
+A person may hold several administrative roles. An administrative role
+grants nothing in a business application, and being a user of a business
+application grants nothing in administration; an administrator needs no user
+record under section 15.6. An administrator record holds the
+identity-provider subject, display name, email, and role grants, and no
+credential.
+
+Grants are live administration data, like users: outside drafts, digests,
+validation, and publication, audited at every step, and raising the policy
+revision when they take effect. They follow these rules:
+
+- **Two people to grant.** A platform administrator proposes a grant with a
+  reason. A pending grant confers nothing. A different platform administrator
+  approves or rejects it, and on approval it takes effect on the next request.
+- **Immediate revocation.** A platform administrator revokes a role with a
+  reason and it takes effect on the next request; revocation is the fail-safe
+  direction and does not wait for a second person.
+- **No self-administration.** Nobody may propose, approve, reject, or revoke
+  a change to their own administrative roles, and the approver is neither the
+  proposer nor the recipient.
+- **Bootstrap.** Deployment configuration names the bootstrap platform
+  administrators by identity-provider subject (section 27.3). That is how the
+  first administrators exist without anyone granting them. A bootstrap role
+  is read-only in the authoring tool and changes only by a controlled
+  deployment change.
+- **Never fewer than two.** A platform administrator role cannot be revoked
+  if fewer than two platform administrators would remain, because every grant
+  needs a second one. A grant to a platform administrator needs a third,
+  since the approver can be neither the proposer nor the recipient; a
+  deployment whose platform administrators are to hold other administrative
+  roles names at least three.
+
+The server evaluates administrative policy on every administrative request
+(WDES-003); the authoring tool only reflects it. The separation-of-duties
+rule that an author cannot approve their own candidate (section 11.4) applies
+in addition to these roles.
+
 ## 16. Personalization
 
 **Satisfies:** FR-SEC-* personalization rows, FR-NAV-*, FR-CUSTOM-* (spec §§8, 10, 20); NFR-SEC-002, NFR-UI-001.
@@ -1952,8 +2009,8 @@ approved sanitization.
 ### 27.3 Runtime configuration
 
 Environment configuration contains public endpoints, identity authority/client
-settings, logical connection mappings, secret references, feature/routing
-flags, limits, telemetry destinations, retention, locale defaults, and dependency
+settings, the bootstrap platform administrators (section 15.7), logical
+connection mappings, secret references, feature/routing flags, limits, telemetry destinations, retention, locale defaults, and dependency
 timeouts. Configuration is schema-validated at startup. Machine paths and
 developer registry state are prohibited.
 
@@ -2141,6 +2198,7 @@ security, and data boundaries is not sufficient evidence.
 | WDES-025 | The platform store and every application provider shall be reached only through adapters selected by deployment configuration. No platform service shall contain engine-specific SQL or driver types; every engine offered as a platform store shall pass the same store conformance suite; an unknown or unqualified engine shall fail startup validation; and the suite shall pass on at least two engines before the platform is described as engine-agnostic. |
 | WDES-026 | Interactive sign-in shall use OpenID Connect with a server-side session. Browser script shall never hold identity-provider tokens or read the session cookie; the cookie shall be HttpOnly, Secure, and SameSite with its identifier regenerated at sign-in; every state-changing request shall pass CSRF validation; and sign-out, expiry, and revocation shall take effect on the next request on every instance. |
 | WDES-027 | User records, application assignments, role memberships, and user overrides shall be administered live, outside publication: a change shall take effect on the next request on every instance, raise the policy revision, be audited, and leave every draft, published definition, and definition digest unchanged. A subject without an active user record and an active application assignment shall be refused at start-up, and a user record shall hold no credential. |
+| WDES-028 | Administrative roles shall be a fixed platform set, separate from application roles and from business access. A grant shall confer nothing until a second platform administrator, who is neither the proposer nor the recipient, approves it; revocation shall be immediate; nobody shall change their own administrative roles; bootstrap platform administrators shall come only from deployment configuration; fewer than two platform administrators shall never remain; and every step shall be audited and rechecked by the server. |
 
 ## 34. Decisions and their status
 
@@ -2167,6 +2225,7 @@ assumption.
 | Extension contract scope | D-019 | Which legacy helper contracts (section 20.1; spec §24) become registered adapter contracts and which are retired |
 | Specialist component scope | D-020 (decided: out of scope; ADR-003) | PLM, aggregation, and limit processing (sections 20.3–20.4; spec §§27, 43) are excluded; reopening requires a new decision |
 | User administration model | D-022 (decided: live administration outside publication, section 15.6; ADR-006) | WDES-027 |
+| Administrative roles for the platform itself | D-023 (decided: fixed roles granted in the authoring tool with second-person approval and deployment-configured bootstrap, section 15.7; ADR-007) | WDES-028; the approver areas follow the D-015 approval model |
 | Dual-source write scope and execution | D-021 | Gate B scope decision for FR-DC-004; atomicity domain, coordinator/provider capabilities, durable participant outcomes, and recovery proof before any admitted dual-source capability is implemented or published |
 
 None of these decisions may weaken the logical boundaries, functional

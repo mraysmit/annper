@@ -1,13 +1,13 @@
 # GDFramework Rebuild Master Plan and Design
 
 **Status:** Controlled working baseline  
-**Version:** 0.11  
+**Version:** 0.12  
 **Date:** 10 October 2026  
 **Owner:** Migration technical lead  
 **Reference source baseline:** `${LEGACY_SOURCE_ROOT}`; see [section 23 Legacy baseline](#23-legacy-baseline). Nothing else exists: no deployed instance, metadata database, user, or consumer  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Functional baseline:** [GDFramework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Target design:** [GDFramework Modern Web System Design 0.8](GDF_MODERN_WEB_SYSTEM_DESIGN.md)  
+**Target design:** [GDFramework Modern Web System Design 0.9](GDF_MODERN_WEB_SYSTEM_DESIGN.md)  
 **Document control:** [GDF_DOCUMENT_CONTROL.md](GDF_DOCUMENT_CONTROL.md)  
 **Consolidates:** the former legacy-baseline, evidence-acquisition, component-inventory, dependency-inventory, provider-matrix, public-API-catalogue, dataset-catalogue, and ADR documents (now sections 23–30); and the superseded 0.1 design/plan drafts (deleted from the working tree; last present in git history at commit bb1991a)
 
@@ -25,6 +25,7 @@
 | 0.9 | 2026-09-13 | Design-review reconciliation: coordinate scope in D-017, Gate C deferral consistency, Phase 3 threat-model work, test-layer mapping, and baseline references; historical phase references retained in change history |
 | 0.10 | 2026-10-04 | Quality/coherence review: default DataClass caching preserved; operation-outcome recovery, durable post-commit effects, scoped metadata caching, protected authoring, and withdrawal admission aligned with the design; D-021 registers pending dual-source scope and atomic execution evidence; obsolete deployed-evidence obligations removed. No decisions or dispositions approved by these edits. |
 | 0.11 | 2026-10-10 | Owner decisions recorded as ADR-001..ADR-006 (section 30): D-011 disposition policy approved and all DEF-* rows decided; D-017 approved as proposed, including Detach and responsive layout; D-020 decided out of scope; D-005 decided as OpenID Connect with a server-side session; D-013 and D-004 decided in direction as engine-agnostic and configurable, with the first qualified engines selected at Gate C; D-022 decided as live user administration outside publication. Gates C to E, Phases 2 to 4, sections 9.6, 10.1, 22, 29, and risk R-020 updated to match. The stack stays technology-neutral: D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged. Named owner recorded for every role. User records are live administration data outside publication (design section 15.6, WDES-027) |
+| 0.12 | 2026-10-10 | Administrative roles decided and recorded as ADR-007: D-023 fixed administrative roles granted in the authoring tool with second-person approval, no self-changes, and deployment-configured bootstrap platform administrators. Gate D cites WDES-028; section 3.5 prototype description updated |
 
 ## 1. Document purpose and authority
 
@@ -57,7 +58,7 @@ working tree and remain in git history (last present at commit bb1991a).
 
 | Area | Status |
 |---|---|
-| Consolidated plan | Controlled working baseline 0.11 |
+| Consolidated plan | Controlled working baseline 0.12 |
 | Named owner | Mark Raysmith holds every section 6.4 role (GDF_DOCUMENT_CONTROL.md section 7) |
 | Behavior decisions | Decided on 10 October 2026: disposition policy D-011 with every DEF-* row, desktop-bound reinterpretation D-017, and specialist scope D-020 (section 30). Still open: D-009, D-019, D-021, and the `RUNTIME-VERIFY` and `DOCUMENT CONFLICT` rows |
 | Authentication | OpenID Connect with a server-side session (D-005, ADR-004) |
@@ -205,7 +206,7 @@ server. Where a prototype and the design document differ, the design governs
 | Prototype | What it demonstrates | Role in the plan |
 |---|---|---|
 | `gdframework-web-mockup.html` (GD Workspace) | The end-user shell, navigation with personal shortcuts, tabs, addressable routes, Detach and Reattach, personalization, the six message types, export jobs, the print document, About and support diagnostics, the conflict, unknown-outcome, unreachable, and withdrawn-definition states, responsive layout, and themes, with a sample application that exercises every screen family: Order register (grid), Customer records (field), Inventory by product (master-detail), Repricing action and Run limit check (action), Regional hierarchy (tree/detail), Customer products (junction), and Sales performance (chart) | Layout reference for design sections 7–9 and the definition of the first application (Phase 1) |
-| `gdframework-admin-mockup.html` (GD Studio) | Metadata authoring: applications, navigation, screens, fields, commands, DataClasses, connections with the neutral provider catalogue and read-only deployment mapping, value lists, reports, security, validation results, live user administration, version history and comparison, impact, digest-bound approvals, publication checklist, rollback with its withdrawal effects, and retirement | Reference for the D-015 authoring tool (design section 11.4) |
+| `gdframework-admin-mockup.html` (GD Studio) | Metadata authoring: applications, navigation, screens, fields, commands, DataClasses, connections with the neutral provider catalogue and read-only deployment mapping, value lists, reports, security, validation results, live user administration, administrative roles with second-person approval, version history and comparison, impact, digest-bound approvals, publication checklist, rollback with its withdrawal effects, and retirement | Reference for the D-015 authoring tool (design section 11.4) |
 
 The sample application in the runtime prototype, called the *reference
 application* in this plan, is the first application to be authored. Both
@@ -1130,6 +1131,7 @@ identifier stays stable.
 | D-020 | PLM, aggregation, and limit-processing scope: decide whether any of the specialist components in functional specification sections 27 and 43 (FR-PLM-001, FR-PLM-006, FR-AGG-*, FR-LIMIT-*) is in scope for the rebuild; the default is out of scope. | Product/domain owner | Gate B | Decided 2026-10-10: out of scope | [ADR-003](#305-adr-003--plm-aggregation-and-limit-processing-out-of-scope) |
 | D-021 | Dual-source writes (FR-DC-004): decide functional scope, then qualify each admitted provider pair's routing, shared transaction or coordinated atomic commit, durable operation identity, participant-outcome proof, and recovery. Pending/unsupported definitions fail closed. A non-atomic alternative requires an approved behavior change; compensation is not atomic rollback. | Product/domain owner with Database owner and Migration technical lead; Security/Operations review | Gate B for scope; Gate C for strategy if needed by the first slice, otherwise before dependent Phase 4 implementation or publication | Open | None raised (add as section 30.N) |
 | D-022 | User administration model: user records, application assignments, role memberships, and user overrides are live administration data, changed by the security administrator with immediate effect and full audit, outside validation, approval, and publication (design section 15.6). Roles and their permissions stay versioned configuration. | Security owner with the Product/domain owner | Gate C | Decided 2026-10-10 (live administration) | [ADR-006](#308-adr-006--live-user-administration-outside-publication) |
+| D-023 | Administrative roles for the platform itself: a fixed platform set (platform administrator, configurator, approver, security administrator, support operator, database owner, integration owner), granted inside the authoring tool as live administration. A grant needs a second platform administrator's approval, revocation is immediate, nobody changes their own roles, and the bootstrap platform administrators come from deployment configuration (design section 15.7). | Security owner with the Operations owner | Gate C | Decided 2026-10-10 (managed in the authoring tool) | [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) |
 
 No engine is an input to D-004 or D-013 and none carries default status
 (ADR-005): the first qualified provider and platform-store engine are selected
@@ -1211,6 +1213,9 @@ criterion requires.
 - WDES-027 user-administration tests pass: a user change is effective on the
   next request without publication, and a subject with no active user record
   or application assignment is refused at start-up.
+- WDES-028 administrative-role tests pass: a grant confers nothing until a
+  second platform administrator approves it, self-changes are refused, and
+  bootstrap administrators come only from deployment configuration.
 - NFR-ACC-001 keyboard and screen-reader checks pass for the slice screens.
 - NFR-OBS-001 and NFR-OBS-002 met for the slice: every failed operation is
   diagnosable by authorized support without exposing sensitive values.
@@ -1686,6 +1691,7 @@ rollback procedure.
 | [ADR-004](#306-adr-004--openid-connect-sign-in-with-a-server-side-session) | D-005 authentication and session | Approved | 2026-10-10 |
 | [ADR-005](#307-adr-005--engine-agnostic-platform-store-and-configurable-providers) | D-013 and D-004 store and provider neutrality | Approved | 2026-10-10 |
 | [ADR-006](#308-adr-006--live-user-administration-outside-publication) | D-022 user administration model | Approved | 2026-10-10 |
+| [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) | D-023 administrative roles | Approved | 2026-10-10 |
 
 Add each new record as `### 30.N ADR-NNN — Title` and link it from section 17.
 
@@ -2045,6 +2051,64 @@ rollback. The model changes only through a new ADR.
 |---|---|---|---|
 | Security owner | Mark Raysmith | Approved | 2026-10-10 |
 | Product/domain owner | Mark Raysmith | Approved | 2026-10-10 |
+
+### 30.9 ADR-007 — Administrative roles granted in the authoring tool
+
+**Status:** Approved
+**Date:** 2026-10-10
+**Owner:** Security owner with the Operations owner, Mark Raysmith
+**Decision register ID:** D-023
+**Affected requirements:** FR-INV-002; NFR-SEC-001, NFR-SEC-002; WDES-003, WDES-019, WDES-027, WDES-028
+**Baseline manifest:** `../baseline/legacy-source-manifest.sha256`
+
+#### Context and evidence
+
+The design names the people who run the platform (configurator, security
+administrator, support operator, database owner, integration owner) and
+requires administrative policy to be rechecked by the server, but it did not
+say where those roles are defined, who assigns them, or how the first
+administrator exists. The GD Studio prototype held its four identities as
+fixed sample data. ADR-006 settled who administers users; this record settles
+who administers the administrators.
+
+#### Options considered
+
+| Option | Benefits | Costs/risks | Evidence |
+|---|---|---|---|
+| Identity-provider groups mapped to roles in deployment configuration | No bootstrap administrator and no self-granting; joiners and leavers handled in the identity provider | Every change of administrator depends on a deployment change or on the identity-provider team | Design section 27.3 |
+| Managed in the authoring tool with second-person approval and a deployment-configured bootstrap | Administrators are visible and changed where the work is done, with a full audit | Needs a bootstrap, a no-self-change rule, and at least two platform administrators | Design sections 11.4 and 15.6 use the same live, audited pattern |
+| Leave undecided | No work now | The platform has no defined way to appoint the people who publish, approve, and administer users | Design section 5 |
+
+#### Decision
+
+Administrative roles are a fixed platform set, granted inside the authoring
+tool as live administration data under the rules of design section 15.7: two
+people to grant, immediate revocation, no self-administration, bootstrap
+platform administrators named in deployment configuration, and never fewer
+than two platform administrators.
+
+#### Consequences
+
+The authoring tool gains an Administrators screen, and what each signed-in
+person can do in it follows from the administrative roles they hold. A
+deployment must name at least two bootstrap platform administrators. The
+approver roles take their areas from the D-015 approval model, which is still
+to be recorded. Administrative access stays separate from business access:
+neither grants the other.
+
+#### Validation and rollback
+
+WDES-028 and the NFR-SEC-002 role-matrix tests at Gate D, including the
+refused self-change, the unapproved grant, and the two-administrator floor.
+A wrong grant is reversed by revocation; the model changes only through a new
+ADR.
+
+#### Approval
+
+| Role | Name | Decision | Date |
+|---|---|---|---|
+| Security owner | Mark Raysmith | Approved | 2026-10-10 |
+| Operations owner | Mark Raysmith | Approved | 2026-10-10 |
 
 ## Appendix A — Source-document disposition
 
