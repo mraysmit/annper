@@ -60,6 +60,16 @@ Controls) is the first application the rebuilt platform will carry. They are
 non-normative for behavior: where they and the design differ, the design
 governs (migration master section 3.5).
 
+## Guides
+
+Working guides restate part of the controlled set for the people who use it.
+They are not controlled documents; where a guide and a controlled document
+differ, the controlled document governs.
+
+- [Deployment guide](guides/GDF_DEPLOYMENT_GUIDE.md): how an application
+  configuration, with its application roles and application users, is
+  published from GD Studio to GD Workspace, for the first time and afterwards.
+
 ## Source system
 
 Set `LEGACY_SOURCE_ROOT` to the root of the read-only legacy GDFramework source.
@@ -83,10 +93,10 @@ node tools/Test-Mockups.cjs                # contract regressions for both proto
 
 - Functional specification: Controlled working baseline 0.12; framework and
   metadata-schema scope reconstructed from source; applications are authored
-- Modern web system design: Controlled working baseline 0.10; complete,
+- Modern web system design: Controlled working baseline 0.11; complete,
   technology-neutral logical design
-- Migration master: Controlled working baseline 0.13
-- Document control: Controlled working baseline 0.10
+- Migration master: Controlled working baseline 0.14
+- Document control: Controlled working baseline 0.11
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Behavior decisions: all 38 legacy defect dispositions, the desktop-to-web

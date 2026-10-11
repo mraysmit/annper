@@ -1,13 +1,13 @@
 # GDFramework Rebuild Master Plan and Design
 
 **Status:** Controlled working baseline  
-**Version:** 0.13  
-**Date:** 10 October 2026  
+**Version:** 0.14  
+**Date:** 11 October 2026  
 **Owner:** Migration technical lead  
 **Reference source baseline:** `${LEGACY_SOURCE_ROOT}`; see [section 23 Legacy baseline](#23-legacy-baseline). Nothing else exists: no deployed instance, metadata database, user, or consumer  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Functional baseline:** [GDFramework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Target design:** [GDFramework Modern Web System Design 0.10](GDF_MODERN_WEB_SYSTEM_DESIGN.md)  
+**Target design:** [GDFramework Modern Web System Design 0.11](GDF_MODERN_WEB_SYSTEM_DESIGN.md)  
 **Document control:** [GDF_DOCUMENT_CONTROL.md](GDF_DOCUMENT_CONTROL.md)  
 **Consolidates:** the former legacy-baseline, evidence-acquisition, component-inventory, dependency-inventory, provider-matrix, public-API-catalogue, dataset-catalogue, and ADR documents (now sections 23–30); and the superseded 0.1 design/plan drafts (deleted from the working tree; last present in git history at commit bb1991a)
 
@@ -27,6 +27,7 @@
 | 0.11 | 2026-10-10 | Owner decisions recorded as ADR-001..ADR-006 (section 30): D-011 disposition policy approved and all DEF-* rows decided; D-017 approved as proposed, including Detach and responsive layout; D-020 decided out of scope; D-005 decided as OpenID Connect with a server-side session; D-013 and D-004 decided in direction as engine-agnostic and configurable, with the first qualified engines selected at Gate C; D-022 decided as live user administration outside publication. Gates C to E, Phases 2 to 4, sections 9.6, 10.1, 22, 29, and risk R-020 updated to match. The stack stays technology-neutral: D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged. Named owner recorded for every role. User records are live administration data outside publication (design section 15.6, WDES-027) |
 | 0.12 | 2026-10-10 | Administrative roles decided and recorded as ADR-007: D-023 fixed administrative roles granted in the authoring tool with second-person approval, no self-changes, and deployment-configured bootstrap platform administrators. Gate D cites WDES-028; section 3.5 prototype description updated |
 | 0.13 | 2026-10-10 | Access model corrected to the owner's direction and recorded as ADR-008, which supersedes ADR-006: each application configuration is self-contained and owns its roles and users, published with it; nothing is shared between applications. D-022 revised accordingly; D-023 and ADR-007 restated as Studio access, unrelated to any application. Gate D and section 3.5 aligned |
+| 0.14 | 2026-10-11 | D-024 registered: promotion of application configurations between environments, including whether the application user list is environment-specific; required before the first deployment to production (Phase 5 entry) and added to the review agenda. A non-controlled deployment guide under `guides/` restates the publication process |
 
 ## 1. Document purpose and authority
 
@@ -59,7 +60,7 @@ working tree and remain in git history (last present at commit bb1991a).
 
 | Area | Status |
 |---|---|
-| Consolidated plan | Controlled working baseline 0.13 |
+| Consolidated plan | Controlled working baseline 0.14 |
 | Named owner | Mark Raysmith holds every section 6.4 role (GDF_DOCUMENT_CONTROL.md section 7) |
 | Behavior decisions | Decided on 10 October 2026: disposition policy D-011 with every DEF-* row, desktop-bound reinterpretation D-017, and specialist scope D-020 (section 30). Still open: D-009, D-019, D-021, and the `RUNTIME-VERIFY` and `DOCUMENT CONFLICT` rows |
 | Authentication | OpenID Connect with a server-side session (D-005, ADR-004) |
@@ -1007,6 +1008,8 @@ Security owner. **Gate:** F.
 - Gate E passed.
 - Production environment, secrets, identity integration, monitoring, backup,
   and on-call ownership exist (design section 27).
+- D-024 decided, so that the way an application configuration and its user
+  list reach production is defined before the first deployment there.
 
 **Activities**
 
@@ -1133,6 +1136,7 @@ identifier stays stable.
 | D-021 | Dual-source writes (FR-DC-004): decide functional scope, then qualify each admitted provider pair's routing, shared transaction or coordinated atomic commit, durable operation identity, participant-outcome proof, and recovery. Pending/unsupported definitions fail closed. A non-atomic alternative requires an approved behavior change; compensation is not atomic rollback. | Product/domain owner with Database owner and Migration technical lead; Security/Operations review | Gate B for scope; Gate C for strategy if needed by the first slice, otherwise before dependent Phase 4 implementation or publication | Open | None raised (add as section 30.N) |
 | D-022 | Application access model: each application configuration is self-contained and owns its own roles and users. They are versioned configuration, edited in that application's draft and effective only when it is published; nothing is shared between applications and there is no identity-provider group mapping (design sections 11.7 and 15.6). | Product/domain owner with the Security owner | Gate C | Decided 2026-10-10 as revised the same day (application-owned and published; the earlier live-administration choice is superseded) | [ADR-008](#3010-adr-008--roles-and-users-belong-to-each-application-configuration) |
 | D-023 | Studio access: who may do what in the authoring tool is unrelated to any application. Studio roles are a fixed platform set (platform administrator, configurator, approver, security administrator, support operator, database owner, integration owner), granted to Studio users inside the tool as live administration. A grant needs a second platform administrator's approval, revocation is immediate, nobody changes their own roles, and the bootstrap platform administrators come from deployment configuration (design section 15.7). | Security owner with the Operations owner | Gate C | Decided 2026-10-10 (managed in the authoring tool) | [ADR-007](#309-adr-007--administrative-roles-granted-in-the-authoring-tool) |
+| D-024 | Promotion between environments: decide how an application configuration version moves from one environment to another (promoted unchanged, or authored and published in each environment), and in particular whether the application user list is specific to each environment or moves with the rest of the configuration. Evidence: identity-provider subjects and tenancy per environment, who tests, and the audit the promotion needs. The design defines publication within one environment until this is decided. | Operations owner with the Product/domain owner and the Security owner | Phase 5 entry, before the first deployment to production; earlier if an application is deployed to more than one environment | Open | None raised (add as section 30.N) |
 
 No engine is an input to D-004 or D-013 and none carries default status
 (ADR-005): the first qualified provider and platform-store engine are selected
@@ -1357,6 +1361,8 @@ answer:
 5. Which identity-provider product and deployment boundaries are available
    (D-003), and how do automated clients authenticate (D-005, remaining part)?
 6. Which browser framework candidates enter the D-001 spike?
+7. How does an application configuration move between environments, and is
+   the application user list specific to each environment (D-024)?
 
 Replacement implementation begins only after the applicable decisions, entry
 criteria, and quality gates are approved.

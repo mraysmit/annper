@@ -1,12 +1,12 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.10  
-**Date:** 10 October 2026  
+**Status:** Controlled working design baseline 0.11  
+**Date:** 11 October 2026  
 **Owner:** Migration technical lead  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
 **Functional authority:** [GD Framework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.13](GDF_MIGRATION_MASTER.md)  
+**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.14](GDF_MIGRATION_MASTER.md)  
 **Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 17)
 
 **Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
@@ -25,6 +25,7 @@
 | 0.8 | 2026-10-10 | Owner decisions recorded. D-017 approved: section 7.7 and 8.5 reinterpretations, Detach and Reattach, two-level navigation, and legacy control scope are requirements, not candidates. D-011 approved with every DEF-* row decided, so the DEF-003, DEF-005, DEF-012, DEF-013, and DEF-038 behaviors are binding. D-020 decided: aggregation, limit processing, and PLM are out of scope. D-005 decided: OpenID Connect with a server-side session and an HttpOnly cookie (sections 10.1, 15.1, 15.3). D-013 and D-004 decided in direction: engine-agnostic, configurable platform store and providers (new section 11.6). User records are live administration data outside publication (D-022, new section 15.6). WDES-025, WDES-026, and WDES-027 added. The stack stays technology-neutral; D-001, D-002, D-003, D-007, D-008, and D-014 are unchanged |
 | 0.9 | 2026-10-10 | Administrative roles decided. D-023: a fixed set of platform administrative roles governs the authoring tool itself, separate from application roles and business access, granted inside the tool with a second-person approval, immediate revocation, no self-changes, and bootstrap platform administrators from deployment configuration (new section 15.7). WDES-028 added |
 | 0.10 | 2026-10-10 | Access model corrected to the owner's direction. An application configuration is self-contained and is the unit of drafts, validation, approval, publication, digest, and rollback (new section 11.7). Each application owns its roles and users, which are versioned and published with it; the live, platform-wide user list of 0.8 and identity-provider group mappings are withdrawn (section 15.6 rewritten; D-022 revised, ADR-008 supersedes ADR-006). Section 15.7 restated as Studio access, unrelated to any application, with the security administrator maintaining roles and users in application drafts. Sections 5, 7.6, 11.1, 12.9, 13.2, 14.7, 15.2, and Appendix C aligned; WDES-027 and WDES-028 restated |
+| 0.11 | 2026-10-11 | Deployment of application access made explicit. Section 15.6 states that rolling an application back restores the roles and users of the reactivated version. Section 27.1 states that this design defines publication within one environment and registers open decision D-024 for promotion between environments, including whether the application user list is environment-specific |
 
 ## 1. Purpose and authority
 
@@ -1606,6 +1607,13 @@ be compared and rolled back, and its publication changes the application's
 policy revision, which invalidates filtered definitions and capability caches
 for that application (section 14.7).
 
+Rollback restores access as well. Rolling an application back (section 11.2)
+reactivates the roles and users of the restored version together with
+everything else in it: a user removed in the withdrawn version can start the
+application again, and a user added in it cannot. An access change that must
+survive the rollback is published again, and the urgent-removal path below
+applies in the meantime.
+
 A subject can start an application only when that application's published
 configuration lists them as an active user holding at least one of its active
 roles (FR-SEC-002, FR-SEC-003; section 7.6 step 3). The application that
@@ -2026,6 +2034,12 @@ and production environments exist. Each has independent credentials and data
 policy. Production metadata/data is not copied to lower environments without
 approved sanitization.
 
+This design defines publication of an application configuration within one
+environment. How a version moves from one environment to another, and whether
+the application user list (section 15.6) is specific to each environment or
+moves with the rest of the configuration, is open decision D-024
+(GDF_MIGRATION_MASTER.md section 17).
+
 ### 27.2 Build and release
 
 - A clean checkout on a pinned build image restores, builds, tests, scans, and
@@ -2260,6 +2274,7 @@ assumption.
 | Specialist component scope | D-020 (decided: out of scope; ADR-003) | PLM, aggregation, and limit processing (sections 20.3–20.4; spec §§27, 43) are excluded; reopening requires a new decision |
 | Application access model | D-022 (decided as revised: each application configuration owns its roles and users, published with it, sections 11.7 and 15.6; ADR-008 supersedes ADR-006) | WDES-027 |
 | Studio access | D-023 (decided: fixed Studio roles, unrelated to any application, granted in the authoring tool with second-person approval and deployment-configured bootstrap, section 15.7; ADR-007) | WDES-028; the approver areas follow the D-015 approval model |
+| Promotion of application configurations between environments | D-024 (open) | Whether a version is promoted unchanged or authored in each environment; whether the application user list is environment-specific; identity-provider subjects per environment; audit of the promotion |
 | Dual-source write scope and execution | D-021 | Gate B scope decision for FR-DC-004; atomicity domain, coordinator/provider capabilities, durable participant outcomes, and recovery proof before any admitted dual-source capability is implemented or published |
 
 None of these decisions may weaken the logical boundaries, functional
