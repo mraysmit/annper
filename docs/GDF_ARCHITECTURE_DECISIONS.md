@@ -1,19 +1,19 @@
 # GDFramework Architecture Decision Records
 
-**Status:** Controlled working baseline 0.1
-**Version:** 0.1
-**Date:** 12 October 2026
-**Owner:** Migration technical lead
-**Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`
-**Decision register:** [GDF_MIGRATION_MASTER.md section 7](GDF_MIGRATION_MASTER.md#7-decision-register)
-**Document control:** [GDF_DOCUMENT_CONTROL.md](GDF_DOCUMENT_CONTROL.md)
+**Version:** 0.1\
+**Date:** 2026-10-12\
+**Author:** Mark Ray-Smith — Cityline Ltd\
+**Status:** Controlled working baseline\
+**Scope:** Architecture, security, and compatibility decisions
 
 ## 1. Authority and record format
 
 This document contains the durable rationale and approval evidence for
-architecture, security, and compatibility decisions. The migration master
-section 7 owns live status, delivery timing, and open decisions. An ADR cannot
-silently override the functional specification or modern system design.
+architecture, security, and compatibility decisions. [Migration master
+section 7](GDF_MIGRATION_MASTER.md#7-decision-register) owns live status,
+delivery timing, and open decisions. An ADR cannot silently override the
+functional specification or modern system design. Document versions and
+approvals are governed by [document control](GDF_DOCUMENT_CONTROL.md).
 
 A new record must state its status, date, owner, decision-register ID, affected
 requirements, context, decision, consequences, validation or reversal path,

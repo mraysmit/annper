@@ -1,10 +1,10 @@
 # GDFramework Migration Document Control
 
-**Status:** Controlled working baseline
-**Version:** 0.12
-**Control date:** 12 October 2026
-**Owner:** Test/quality owner
-**Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`
+**Version:** 0.12\
+**Date:** 2026-10-12\
+**Author:** Mark Ray-Smith — Cityline Ltd\
+**Status:** Controlled working baseline\
+**Scope:** Document authority, versions, evidence, traceability, and approvals
 
 ## 1. Authority and precedence
 
@@ -55,7 +55,7 @@ functional specification and migration-master gates define completeness.
 | Document | Version/status | Owner | Required baseline approval |
 |---|---|---|---|
 | Functional specification | 0.13 / controlled working baseline | Product/domain owner | Product, legacy technical, security, test/quality |
-| Modern web system design | 0.12 / controlled working design baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
+| Modern web system design | 0.12 / controlled working baseline | Migration technical lead | Product, security, database, operations, UI/workflow, test/quality |
 | Migration master | 0.15 / controlled working baseline | Migration technical lead | Product, security, database, operations, legacy technical, test/quality |
 | Architecture decision records | 0.1 / controlled working baseline | Migration technical lead | Owners named by each ADR |
 | Document control | 0.12 / controlled working baseline | Test/quality owner | Owners of linked evidence and tests |
@@ -68,9 +68,11 @@ functional specification and migration-master gates define completeness.
 | `GDF_DEPLOYMENT_GUIDE.md` | Working guide | Controlled documents govern if wording differs |
 | `../baseline/legacy-file-inventory.csv` | Generated evidence | Regenerate only from the reviewed source root |
 | `../baseline/legacy-source.sha256` | Generated evidence | Contents identify the reviewed snapshot |
-| `../baseline/legacy-source-manifest.sha256` | Generated evidence | Its SHA-256 identity appears in every controlled-document header |
+| `../baseline/legacy-source-manifest.sha256` | Generated evidence | Its SHA-256 identity is recorded below and in generated traceability |
 
 ## 4. Portable evidence-root convention
+
+**Reviewed source-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`
 
 `LEGACY_SOURCE_ROOT` means the root of the read-only legacy GDFramework tree.
 Functional-specification source paths resolve from

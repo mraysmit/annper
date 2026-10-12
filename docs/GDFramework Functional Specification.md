@@ -1,15 +1,10 @@
 # GD Framework Functional Specification
 
-Document status: Controlled working baseline 0.13 (framework scope covered from source; metadata schema reconstructed; no deployed configuration exists, so applications are authored in the rebuild)
-Prepared: 1 August 2026; reviewed and controlled: 6 September 2026; consolidated: 9 September 2026; corrected: 4 October 2026; decisions recorded: 10 October 2026; references updated: 12 October 2026
-System lineage reviewed: GD Framework 1.0–1.2, GFDGUI, GFDClient, GFDServer, GFDGUICtls  
-Primary purpose: technology-neutral behavioral reference for rebuilding the framework as a web platform
-
-Document home: `docs/GDFramework Functional Specification.md`  
-Document control: [GDF_DOCUMENT_CONTROL.md](GDF_DOCUMENT_CONTROL.md)  
-Legacy evidence-path base: `${LEGACY_SOURCE_ROOT}/Docs`
-Legacy checksum-manifest SHA-256: `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
-Change history: see GDF_DOCUMENT_CONTROL.md section 6
+**Version:** 0.13\
+**Date:** 2026-10-12\
+**Author:** Mark Ray-Smith — Cityline Ltd\
+**Status:** Controlled working baseline\
+**Scope:** Observable behavior, functional scope, compatibility, non-functional requirements, and legacy defects
 
 | Version | Date | Summary |
 |---|---|---|
@@ -25,14 +20,12 @@ Change history: see GDF_DOCUMENT_CONTROL.md section 6
 | 0.12 | 2026-10-10 | Owner decisions recorded: D-011 disposition policy approved and every DEF-001..DEF-038 row decided (32 Fix, 6 Retire, none Preserve); every section 32.1 row and the legacy control scope approved under D-017; D-020 decided out of scope. Affected rows carry the `decided` classification suffix; DEF-035 disposition reworded to drop a legacy-resource import; document file names updated to the `GDF_` prefix |
 | 0.13 | 2026-10-12 | Updated delivery-plan, ADR, and generated-traceability links after the governing documents were reduced and split by responsibility; no functional behavior or disposition changed |
 
-Relative source paths in this specification are intentionally preserved from
-the legacy review. Resolve paths such as `../AppControls` and
-`../../GenData/AppGUI` against the legacy evidence-path base above, not against
-this document's new migration-project location.
-
 ## 1. Document purpose
 
 This document specifies the externally observable and configuration-driven behavior of the complete repository-visible GD Framework, including its application shell, generic user interface, client and server libraries, data layer, custom controls, extension contracts, and specialist components. It is the normative functional baseline for rebuilding the system on a modern technology stack.
+
+The reviewed lineage covers GD Framework 1.0–1.2, GFDGUI, GFDClient,
+GFDServer, and GFDGUICtls.
 
 This is not a transcription of the VB6 implementation. Requirements describe behavior that the replacement must preserve unless a behavior is explicitly classified as a legacy defect, dormant feature, unsupported design, or open decision.
 
@@ -60,6 +53,12 @@ The legacy system is therefore a behavioral reference, not a system to be migrat
 ## 3. Evidence and classification
 
 ### 3.1 Evidence sources
+
+Relative source paths are preserved from the legacy review. Resolve paths such
+as `../AppControls` and `../../GenData/AppGUI` from
+`${LEGACY_SOURCE_ROOT}/Docs`, as defined in [document control section
+4](GDF_DOCUMENT_CONTROL.md#4-portable-evidence-root-convention), rather than
+from this migration repository.
 
 | Evidence ID | Source | Role |
 |---|---|---|

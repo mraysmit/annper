@@ -1,15 +1,10 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.12
-**Date:** 12 October 2026
-**Owner:** Migration technical lead  
-**Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
-**Target:** Modern web-based equivalent of the GDFramework application platform  
-**Functional authority:** [GD Framework Functional Specification 0.13](GDFramework%20Functional%20Specification.md)
-**Delivery authority:** [GDFramework Rebuild Delivery and Governance Plan 0.15](GDF_MIGRATION_MASTER.md)
-**Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 7)
-
-**Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 2.3). They are non-normative for behavior: where they and this document differ, this document governs.
+**Version:** 0.12\
+**Date:** 2026-10-12\
+**Author:** Mark Ray-Smith — Cityline Ltd\
+**Status:** Controlled working baseline\
+**Scope:** Target web architecture, component boundaries, interfaces, and verification
 
 ## Change history
 
@@ -47,6 +42,11 @@ remains normative for observable behavior and functional scope. If this design a
 a functional requirement conflict, the functional requirement prevails until
 an approved decision changes it. Legacy defects are not preserved: every row of
 the defect disposition table (DEF-001..DEF-038) in [functional specification section 31](GDFramework%20Functional%20Specification.md#31-legacy-defects-and-compatibility-decisions) was decided as Fix or Retire under policy decision D-011 on 10 October 2026, and those dispositions bind this design.
+
+Delivery status and quality gates are maintained in the
+[rebuild delivery and governance plan](GDF_MIGRATION_MASTER.md). Approved
+decision rationale is maintained in
+[the architecture decision records](GDF_ARCHITECTURE_DECISIONS.md).
 
 ## 2. Design scope
 
@@ -539,7 +539,8 @@ An indeterminate status remains blocked; it is not permission to use a new key.
 An unsupported or internally inconsistent type is rejected during metadata
 publication. The runtime shall not silently substitute a grid.
 
-The runtime prototype implements each family with sample data and is the
+The [runtime prototype](../prototype/gdframework-web-mockup.html) implements
+each family with sample data and is the
 layout reference: Order register (grid), Customer records (field), Inventory
 by product (master-detail), Repricing action and Run limit check (action),
 Regional hierarchy (tree/detail), Customer products (junction), and Sales
@@ -861,7 +862,8 @@ validation pipeline as programmatic submission or promotion of newly authored co
 - scheduled publication and one-action rollback; and
 - complete audit history with reasons.
 
-The GD Studio prototype is the reference implementation of this workflow:
+The [GD Studio prototype](../prototype/gdframework-admin-mockup.html) is the
+reference implementation of this workflow:
 applications, navigation, screens, fields, commands, DataClasses, connections,
 value lists, reports, security, validation results, version history, draft
 comparison, impact analysis, publication checklist, and rollback.

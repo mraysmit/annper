@@ -94,6 +94,7 @@ $traceabilityRaw = Get-Content -LiteralPath $TraceabilityPath -Raw
 function Get-HeaderVersion {
     param([string]$Raw)
     if ($Raw -match '(?m)^\*\*Version:\*\*\s*(\d+\.\d+)') { return $Matches[1] }
+    if ($Raw -match '(?m)^\|\s*Version\s*\|\s*(\d+\.\d+)\s*\|') { return $Matches[1] }
     if ($Raw -match '(?m)^(?:\*\*Status:\*\*|Document status:)[^\r\n]*?baseline (\d+\.\d+)') { return $Matches[1] }
     return $null
 }
@@ -231,13 +232,13 @@ $identityPath = Join-Path $ProjectRoot 'baseline\legacy-source-manifest.sha256'
 $expectedIdentity = ((Get-Content -LiteralPath $identityPath -Raw).Trim() -split '\s+')[0]
 $actualIdentity = (Get-FileHash -LiteralPath $checksumPath -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actualIdentity -ne $expectedIdentity) { $errors += "Checksum manifest identity mismatch: expected $expectedIdentity; actual $actualIdentity" }
-foreach ($doc in @($SpecPath, $DesignPath, $MasterPath, $AdrPath, $ControlPath, $TraceabilityPath)) {
-    $documentRaw = Get-Content -LiteralPath $doc -Raw
-    $firstSection = [regex]::Match($documentRaw, '(?m)^##\s')
-    $documentHeader = if ($firstSection.Success) { $documentRaw.Substring(0, $firstSection.Index) } else { $documentRaw }
-    $manifestHeader = [regex]::Match($documentHeader, '(?m)^(?:\*\*)?Legacy checksum-manifest SHA-256:(?:\*\*)?\s*`([a-f0-9]{64})`')
-    if (-not $manifestHeader.Success -or $manifestHeader.Groups[1].Value -ne $actualIdentity) {
-        $errors += "$([IO.Path]::GetFileName($doc)) header does not record the current manifest identity $actualIdentity"
+foreach ($record in @(
+    @{ Name = 'GDF_DOCUMENT_CONTROL.md'; Raw = $controlRaw; Label = 'Reviewed source-manifest SHA-256' },
+    @{ Name = 'GDF_REQUIREMENTS_TRACEABILITY.md'; Raw = $traceabilityRaw; Label = 'Legacy manifest SHA-256' }
+)) {
+    $manifestRecord = [regex]::Match($record.Raw, ('(?m)^\*\*{0}:\*\*\s*`([a-f0-9]{{64}})`' -f [regex]::Escape($record.Label)))
+    if (-not $manifestRecord.Success -or $manifestRecord.Groups[1].Value -ne $actualIdentity) {
+        $errors += "$($record.Name) does not record the current manifest identity $actualIdentity"
     }
 }
 

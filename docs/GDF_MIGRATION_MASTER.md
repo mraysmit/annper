@@ -1,21 +1,19 @@
 # GDFramework Rebuild Delivery and Governance Plan
 
-**Status:** Controlled working baseline 0.15
-**Version:** 0.15
-**Date:** 12 October 2026
-**Owner:** Migration technical lead
-**Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`
-**Functional authority:** [GD Framework Functional Specification 0.13](GDFramework%20Functional%20Specification.md)
-**Design authority:** [GDFramework Modern Web System Design 0.12](GDF_MODERN_WEB_SYSTEM_DESIGN.md)
-**Decision records:** [GDFramework Architecture Decision Records 0.1](GDF_ARCHITECTURE_DECISIONS.md)
-**Document control:** [GDF_DOCUMENT_CONTROL.md](GDF_DOCUMENT_CONTROL.md)
+**Version:** 0.15\
+**Date:** 2026-10-12\
+**Author:** Mark Ray-Smith — Cityline Ltd\
+**Status:** Controlled working baseline\
+**Scope:** Delivery sequence, ownership, decisions, risks, and quality gates
 
 ## 1. Purpose, authority, and current position
 
 This document governs delivery of the GDFramework rebuild: sequencing,
 ownership, decisions, risks, and quality gates. It does not restate the
-functional specification or target design. Where a summary here differs from
-either higher-precedence document, those documents govern.
+[functional specification](GDFramework%20Functional%20Specification.md) or
+[target design](GDF_MODERN_WEB_SYSTEM_DESIGN.md). Where a summary here differs
+from either higher-precedence document, those documents govern. Versions and
+approvals are governed by [document control](GDF_DOCUMENT_CONTROL.md).
 
 The legacy VB6 system is not deployed. No production instance, populated
 metadata store, application database, user population, helper binary, or

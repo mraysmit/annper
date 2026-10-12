@@ -1,9 +1,12 @@
 # GDFramework Deployment Guide
 
-**Status:** Working guide. It is not one of the five controlled documents. It restates, in one place, the deployment process those documents define; where this guide and a controlled document differ, the controlled document governs.
-**Derived from:** modern web system design 0.12, rebuild delivery and governance plan 0.15, functional specification 0.13, architecture decision records 0.1
-**Date:** 12 October 2026
-**For:** the people who author, approve, and publish application configurations in GD Studio, and the team building the platform
+**Date:** 2026-10-12\
+**Author:** Mark Ray-Smith — Cityline Ltd\
+**Status:** Working guide\
+**Scope:** Authoring, approval, and publication of application configurations
+
+This guide summarizes the controlled documents listed in [document
+control](GDF_DOCUMENT_CONTROL.md). Those documents govern if wording differs.
 
 ## 1. Summary
 
