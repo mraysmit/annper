@@ -11,7 +11,7 @@ and phase exit criteria have approved evidence.
 
 ## Controlled document set
 
-The controlled set is exactly four documents under `docs/`, in precedence order:
+The controlled set is five documents under `docs/`, in precedence order:
 
 1. [Functional specification](docs/GDFramework%20Functional%20Specification.md)
    is normative for observable behavior, compatibility, and functional scope.
@@ -20,15 +20,18 @@ The controlled set is exactly four documents under `docs/`, in precedence order:
 2. [Modern web system design](docs/GDF_MODERN_WEB_SYSTEM_DESIGN.md) is normative for
    the target web architecture, design-verification requirements, and
    implementation boundaries.
-3. [Rebuild master plan and design](docs/GDF_MIGRATION_MASTER.md) is normative for
-   governance, sequencing, decisions, risks, and quality gates. It also holds
-   the reference baseline and evidence boundary (sections 23–24), the
-   component, dependency, public API, dataset, and provider inventories
-   (sections 25–29), and the architecture decision records (section 30). It
-   may not silently override a functional requirement.
-4. [Document control](docs/GDF_DOCUMENT_CONTROL.md) defines approval, versioning,
-   precedence, and change history, and carries the generated requirement
-   traceability matrix (section 8).
+3. [Rebuild delivery and governance plan](docs/GDF_MIGRATION_MASTER.md) is
+   normative for current status, sequencing, decisions, risks, quality gates,
+   and the compact reference baseline. It links to authoritative functional and
+   design detail instead of repeating it.
+4. [Architecture decision records](docs/GDF_ARCHITECTURE_DECISIONS.md) preserve
+   approved rationale, consequences, validation, and approvals. The master
+   remains the live decision-status register.
+5. [Document control](docs/GDF_DOCUMENT_CONTROL.md) defines approval, versioning,
+   precedence, and current baseline history.
+
+The generated [requirements traceability matrix](docs/GDF_REQUIREMENTS_TRACEABILITY.md)
+is a derived controlled artifact, not another source of policy.
 
 Superseded drafts are not kept in the working tree; git history is the archive
 (the 0.1 design and plan drafts were last present at commit `bb1991a`).
@@ -54,11 +57,11 @@ Superseded drafts are not kept in the working tree; git history is the archive
 
 Both prototypes run locally without a server or external assets and embed their
 metadata and representative data sources as JSON. They are the reference
-implementations of the target layouts and of the authoring workflow, and the
+implementations of the target layouts and of the authoring workflow. The
 sample application inside the runtime mockup (Operations Hub and Risk &
-Controls) is the first application the rebuilt platform will carry. They are
+Controls) is the proposed first application, pending Gate B confirmation. They are
 non-normative for behavior: where they and the design differ, the design
-governs (migration master section 3.5).
+governs (migration master section 2.3).
 
 ## Guides
 
@@ -66,7 +69,7 @@ Working guides restate part of the controlled set for the people who use it.
 They are not controlled documents; where a guide and a controlled document
 differ, the controlled document governs.
 
-- [Deployment guide](guides/GDF_DEPLOYMENT_GUIDE.md): how an application
+- [Deployment guide](docs/GDF_DEPLOYMENT_GUIDE.md): how an application
   configuration, with its application roles and application users, is
   published from GD Studio to GD Workspace, for the first time and afterwards.
 
@@ -74,7 +77,7 @@ differ, the controlled document governs.
 
 Set `LEGACY_SOURCE_ROOT` to the root of the read-only legacy GDFramework source.
 The reviewed snapshot is identified by the checksum baseline under `baseline/`
-and described in the migration master, section 23. The tools embed no share or
+and described in the migration master, section 9. The tools embed no share or
 machine path; when the root is unreachable, the generator reuses the committed
 baseline and the validator reports source-path checks as skipped.
 
@@ -85,23 +88,24 @@ modified.
 
 ```powershell
 pwsh tools/Build-ControlledArtifacts.ps1   # regenerate baseline (if reachable) and the traceability matrix
-pwsh tools/Test-Documentation.ps1          # validate the four-document set
+pwsh tools/Test-Documentation.ps1          # validate the controlled document set
 node tools/Test-Mockups.cjs                # contract regressions for both prototypes, and that they agree
 ```
 
 ## Current status
 
-- Functional specification: Controlled working baseline 0.12; framework and
+- Functional specification: Controlled working baseline 0.13; framework and
   metadata-schema scope reconstructed from source; applications are authored
-- Modern web system design: Controlled working baseline 0.11; complete,
+- Modern web system design: Controlled working baseline 0.12; complete,
   technology-neutral logical design
-- Migration master: Controlled working baseline 0.14
-- Document control: Controlled working baseline 0.11
+- Migration master: Controlled working baseline 0.15
+- Architecture decision records: Controlled working baseline 0.1
+- Document control: Controlled working baseline 0.12
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Behavior decisions: all 38 legacy defect dispositions, the desktop-to-web
   reinterpretations (D-017), and specialist scope (D-020, out of scope) are
-  approved; see the ADRs in the migration master section 30
+  approved; see `docs/GDF_ARCHITECTURE_DECISIONS.md`
 - Target UI: Modern web application selected (D-001); framework left open
 - Sign-in: OpenID Connect with a server-side session (D-005)
 - Data stores: engine-agnostic and configurable (D-013, D-004); first

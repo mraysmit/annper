@@ -1,8 +1,8 @@
 # GDFramework Deployment Guide
 
-**Status:** Working guide. It is not one of the four controlled documents. It restates, in one place, the deployment process those documents define; where this guide and a controlled document differ, the controlled document governs.  
-**Derived from:** modern web system design 0.11, rebuild master plan 0.14, functional specification 0.12  
-**Date:** 11 October 2026  
+**Status:** Working guide. It is not one of the five controlled documents. It restates, in one place, the deployment process those documents define; where this guide and a controlled document differ, the controlled document governs.
+**Derived from:** modern web system design 0.12, rebuild delivery and governance plan 0.15, functional specification 0.13, architecture decision records 0.1
+**Date:** 12 October 2026
 **For:** the people who author, approve, and publish application configurations in GD Studio, and the team building the platform
 
 ## 1. Summary
@@ -155,6 +155,6 @@ Steps 1 and 2 stop the access. Step 3 makes the configuration say so.
 | Effect on open screens and sessions | Design, sections 7.4, 11.2, 11.5, and 15.2 |
 | Publication sequence | Design, Appendix A.3 |
 | Start-up, default application, overrides, last login | [Functional specification](../docs/GDFramework%20Functional%20Specification.md), section 8 (FR-SEC-002 to FR-SEC-009) |
-| Decisions and their records | [Rebuild master plan](../docs/GDF_MIGRATION_MASTER.md), sections 17 and 30 (ADR-007, ADR-008) |
+| Decisions and their records | [Decision register](GDF_MIGRATION_MASTER.md#7-decision-register) and [architecture decision records](GDF_ARCHITECTURE_DECISIONS.md) (ADR-007, ADR-008) |
 
 The [GD Studio prototype](../prototype/gdframework-admin-mockup.html) shows every step of sections 5, 6, and 10 with sample data.

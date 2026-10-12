@@ -13,17 +13,24 @@ $DocsRoot = Join-Path $ProjectRoot 'docs'
 $SpecPath = Join-Path $DocsRoot 'GDFramework Functional Specification.md'
 $DesignPath = Join-Path $DocsRoot 'GDF_MODERN_WEB_SYSTEM_DESIGN.md'
 $MasterPath = Join-Path $DocsRoot 'GDF_MIGRATION_MASTER.md'
+$AdrPath = Join-Path $DocsRoot 'GDF_ARCHITECTURE_DECISIONS.md'
 $ControlPath = Join-Path $DocsRoot 'GDF_DOCUMENT_CONTROL.md'
+$TraceabilityPath = Join-Path $DocsRoot 'GDF_REQUIREMENTS_TRACEABILITY.md'
 $errors = @()
 
-# ---- the controlled set is exactly four documents
-$expectedDocs = @('GDF_DOCUMENT_CONTROL.md', 'GDFramework Functional Specification.md', 'GDF_MIGRATION_MASTER.md', 'GDF_MODERN_WEB_SYSTEM_DESIGN.md')
+# ---- required controlled documents and allowed working guides
+$expectedDocs = @('GDF_DOCUMENT_CONTROL.md', 'GDFramework Functional Specification.md', 'GDF_MIGRATION_MASTER.md', 'GDF_MODERN_WEB_SYSTEM_DESIGN.md', 'GDF_ARCHITECTURE_DECISIONS.md')
+$allowedDocs = @($expectedDocs) + @('GDF_DEPLOYMENT_GUIDE.md', 'GDF_REQUIREMENTS_TRACEABILITY.md')
 $actualDocs = Get-ChildItem -LiteralPath $DocsRoot -Recurse -File | ForEach-Object { $_.Name } | Sort-Object
-$diff = Compare-Object -ReferenceObject $expectedDocs -DifferenceObject @($actualDocs)
-foreach ($d in $diff) { $errors += "docs folder must contain exactly the four controlled documents; unexpected/missing: $($d.InputObject)" }
+foreach ($name in $expectedDocs) {
+    if ($name -notin $actualDocs) { $errors += "docs folder is missing controlled document: $name" }
+}
+foreach ($name in $actualDocs) {
+    if ($name -notin $allowedDocs) { $errors += "docs folder contains an unclassified document: $name" }
+}
 
 # ---- tables, links, machine paths
-$markdownFiles = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Filter '*.md' | Where-Object { $_.FullName -notlike '*\.git\*' }
+$markdownFiles = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Filter '*.md' | Where-Object { $_.FullName -notlike '*\.git\*' -and $_.FullName -notlike '*\.history\*' }
 $pipeRegex = [regex]'(?<!\\)\|'
 foreach ($file in $markdownFiles) {
     $lines = Get-Content -LiteralPath $file.FullName
@@ -64,14 +71,14 @@ foreach ($tool in $toolFiles) {
     }
 }
 # Documents may not carry share paths either. The one exemption is the reviewed-location
-# record in GDF_MIGRATION_MASTER.md section 23.1 (the ${LEGACY_SOURCE_ROOT} evidence-root row),
+# record in GDF_MIGRATION_MASTER.md section 9.1 (the ${LEGACY_SOURCE_ROOT} evidence-root row),
 # which CONTRIBUTING.md names explicitly.
 $uncExemptRow = '^\|\s*`\$\{LEGACY_SOURCE_ROOT\}`\s*\|'
 foreach ($file in $markdownFiles) {
     $docLines = Get-Content -LiteralPath $file.FullName
     for ($i = 0; $i -lt $docLines.Count; $i++) {
         if ($file.Name -eq 'GDF_MIGRATION_MASTER.md' -and $docLines[$i] -match $uncExemptRow) { continue }
-        if ($uncPattern.IsMatch($docLines[$i])) { $errors += "$($file.Name):$($i + 1) embeds a share path; only GDF_MIGRATION_MASTER.md section 23.1 may record the reviewed location" }
+        if ($uncPattern.IsMatch($docLines[$i])) { $errors += "$($file.Name):$($i + 1) embeds a share path; only GDF_MIGRATION_MASTER.md section 9.1 may record the reviewed location" }
     }
 }
 
@@ -79,7 +86,9 @@ foreach ($file in $markdownFiles) {
 $specRaw = Get-Content -LiteralPath $SpecPath -Raw
 $designRaw = Get-Content -LiteralPath $DesignPath -Raw
 $masterRaw = Get-Content -LiteralPath $MasterPath -Raw
+$adrRaw = Get-Content -LiteralPath $AdrPath -Raw
 $controlRaw = Get-Content -LiteralPath $ControlPath -Raw
+$traceabilityRaw = Get-Content -LiteralPath $TraceabilityPath -Raw
 
 # ---- document versions: header, register (control section 3), and cross-document citations agree
 function Get-HeaderVersion {
@@ -92,6 +101,7 @@ $headerVersions = @{
     'GDFramework Functional Specification.md' = Get-HeaderVersion $specRaw
     'GDF_MODERN_WEB_SYSTEM_DESIGN.md' = Get-HeaderVersion $designRaw
     'GDF_MIGRATION_MASTER.md' = Get-HeaderVersion $masterRaw
+    'GDF_ARCHITECTURE_DECISIONS.md' = Get-HeaderVersion $adrRaw
     'GDF_DOCUMENT_CONTROL.md' = Get-HeaderVersion $controlRaw
 }
 foreach ($name in $headerVersions.Keys) { if (-not $headerVersions[$name]) { $errors += "$name header does not state a version" } }
@@ -100,6 +110,7 @@ $registerMap = @{
     'GDFramework Functional Specification.md' = '^\|\s*Functional specification'
     'GDF_MODERN_WEB_SYSTEM_DESIGN.md' = '^\|\s*Modern web system design'
     'GDF_MIGRATION_MASTER.md' = '^\|\s*Migration master'
+    'GDF_ARCHITECTURE_DECISIONS.md' = '^\|\s*Architecture decision records'
     'GDF_DOCUMENT_CONTROL.md' = '^\|\s*Document control'
 }
 foreach ($name in $registerMap.Keys) {
@@ -113,6 +124,7 @@ $readmeMap = @{
     'GDFramework Functional Specification.md' = 'Functional specification: Controlled working baseline (\d+\.\d+)'
     'GDF_MODERN_WEB_SYSTEM_DESIGN.md' = 'Modern web system design: Controlled working baseline (\d+\.\d+)'
     'GDF_MIGRATION_MASTER.md' = 'Migration master: Controlled working baseline (\d+\.\d+)'
+    'GDF_ARCHITECTURE_DECISIONS.md' = 'Architecture decision records: Controlled working baseline (\d+\.\d+)'
     'GDF_DOCUMENT_CONTROL.md' = 'Document control: Controlled working baseline (\d+\.\d+)'
 }
 foreach ($name in $readmeMap.Keys) {
@@ -159,9 +171,9 @@ foreach ($m in [regex]::Matches($specRaw, '(?m)^\|\s*(DEF-\d+)\s*\|(.*)$')) {
     if ($decision -notin @('Pending','Preserve','Fix','Retire')) { $errors += "$($m.Groups[1].Value) has an invalid decision '$decision' (Pending, Preserve, Fix, or Retire)" }
 }
 
-# ---- traceability section is present, generated, and current
-if ($controlRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') {
-    $errors += 'GDF_DOCUMENT_CONTROL.md lacks the generated traceability section'
+# ---- traceability artifact is present, generated, and current
+if ($traceabilityRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') {
+    $errors += 'GDF_REQUIREMENTS_TRACEABILITY.md lacks the generated traceability block'
     $traceIds = @()
 } else {
     $traceBlock = $Matches[1]
@@ -171,14 +183,14 @@ if ($controlRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- EN
     foreach ($duplicate in $traceIds | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate traceability ID: $($duplicate.Name)" }
     if ($traceBlock -match 'UNMAPPED PREFIX') { $errors += 'Traceability contains unmapped requirement prefixes; update Build-ControlledArtifacts.ps1' }
 
-    # Freshness: regenerate section 8 into a scratch copy of the project and require a byte-identical block.
+    # Freshness: regenerate the artifact in a scratch copy and require a byte-identical block.
     $scratch = Join-Path ([IO.Path]::GetTempPath()) ('gdf-trace-' + [guid]::NewGuid().ToString('N'))
     try {
         foreach ($sub in @('docs', 'baseline', 'tools')) { Copy-Item -LiteralPath (Join-Path $ProjectRoot $sub) -Destination (Join-Path $scratch $sub) -Recurse -Force }
         & (Join-Path $scratch 'tools\Build-ControlledArtifacts.ps1') -ProjectRoot $scratch -SkipBaseline 3>$null | Out-Null
-        $regenerated = (Get-Content -LiteralPath (Join-Path $scratch 'docs\GDF_DOCUMENT_CONTROL.md') -Raw) -replace "`r`n", "`n"
+        $regenerated = (Get-Content -LiteralPath (Join-Path $scratch 'docs\GDF_REQUIREMENTS_TRACEABILITY.md') -Raw) -replace "`r`n", "`n"
         $regeneratedBlock = if ($regenerated -match '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') { $Matches[1] } else { '' }
-        if (($traceBlock -replace "`r`n", "`n") -ne $regeneratedBlock) { $errors += 'GDF_DOCUMENT_CONTROL.md section 8 is stale; run tools/Build-ControlledArtifacts.ps1' }
+        if (($traceBlock -replace "`r`n", "`n") -ne $regeneratedBlock) { $errors += 'GDF_REQUIREMENTS_TRACEABILITY.md is stale; run tools/Build-ControlledArtifacts.ps1' }
     } finally {
         if (Test-Path -LiteralPath $scratch) {
             $scratchTarget = (Resolve-Path -LiteralPath $scratch).ProviderPath
@@ -219,7 +231,7 @@ $identityPath = Join-Path $ProjectRoot 'baseline\legacy-source-manifest.sha256'
 $expectedIdentity = ((Get-Content -LiteralPath $identityPath -Raw).Trim() -split '\s+')[0]
 $actualIdentity = (Get-FileHash -LiteralPath $checksumPath -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actualIdentity -ne $expectedIdentity) { $errors += "Checksum manifest identity mismatch: expected $expectedIdentity; actual $actualIdentity" }
-foreach ($doc in @($SpecPath, $DesignPath, $MasterPath, $ControlPath)) {
+foreach ($doc in @($SpecPath, $DesignPath, $MasterPath, $AdrPath, $ControlPath, $TraceabilityPath)) {
     $documentRaw = Get-Content -LiteralPath $doc -Raw
     $firstSection = [regex]::Match($documentRaw, '(?m)^##\s')
     $documentHeader = if ($firstSection.Success) { $documentRaw.Substring(0, $firstSection.Index) } else { $documentRaw }

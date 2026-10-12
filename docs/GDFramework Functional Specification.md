@@ -1,7 +1,7 @@
 # GD Framework Functional Specification
 
-Document status: Controlled working baseline 0.12 (framework scope covered from source; metadata schema reconstructed; no deployed configuration exists, so applications are authored in the rebuild)  
-Prepared: 1 August 2026; reviewed and controlled: 6 September 2026; consolidated: 9 September 2026; corrected: 4 October 2026; decisions recorded: 10 October 2026  
+Document status: Controlled working baseline 0.13 (framework scope covered from source; metadata schema reconstructed; no deployed configuration exists, so applications are authored in the rebuild)
+Prepared: 1 August 2026; reviewed and controlled: 6 September 2026; consolidated: 9 September 2026; corrected: 4 October 2026; decisions recorded: 10 October 2026; references updated: 12 October 2026
 System lineage reviewed: GD Framework 1.0–1.2, GFDGUI, GFDClient, GFDServer, GFDGUICtls  
 Primary purpose: technology-neutral behavioral reference for rebuilding the framework as a web platform
 
@@ -23,6 +23,7 @@ Change history: see GDF_DOCUMENT_CONTROL.md section 6
 | 0.10 | 2026-09-13 | Review reconciliation: coordinate reinterpretation registered as pending D-017; named-capability mapping clarified without importer scope; invariant gate and applicable custom-control acceptance corrected |
 | 0.11 | 2026-10-04 | Coherence review: preserve default caching, attach dual-source scope to pending D-021, replace impossible legacy runtime/deployment acquisition instructions with source-derived decisions and authoring, and exclude NFR-COMP-001 from active acceptance. Existing defect and desktop reinterpretation approvals remain pending |
 | 0.12 | 2026-10-10 | Owner decisions recorded: D-011 disposition policy approved and every DEF-001..DEF-038 row decided (32 Fix, 6 Retire, none Preserve); every section 32.1 row and the legacy control scope approved under D-017; D-020 decided out of scope. Affected rows carry the `decided` classification suffix; DEF-035 disposition reworded to drop a legacy-resource import; document file names updated to the `GDF_` prefix |
+| 0.13 | 2026-10-12 | Updated delivery-plan, ADR, and generated-traceability links after the governing documents were reduced and split by responsibility; no functional behavior or disposition changed |
 
 Relative source paths in this specification are intentionally preserved from
 the legacy review. Resolve paths such as `../AppControls` and
@@ -50,7 +51,7 @@ Nothing beyond the reviewed source tree and its documents exists. The legacy sys
 
 - application names, menus, screens, fields, DataClass operations, roles, value lists, reports, and business actions are not recoverable from any deployment; they are authored anew in the rebuilt platform using the section 28 grammar;
 - requirements marked `METADATA-DEPENDENT` describe schema-derived configuration behavior whose instances the rebuild defines through authoring;
-- requirements marked `RUNTIME-VERIFY` or `DOCUMENT CONFLICT` cannot be observed in a running build and are resolved by reading or by a recorded product decision (GDF_MIGRATION_MASTER.md section 17), which is then the tested behavior;
+- requirements marked `RUNTIME-VERIFY` or `DOCUMENT CONFLICT` cannot be observed in a running build and are resolved by reading or by a recorded product decision (GDF_MIGRATION_MASTER.md section 7), which is then the tested behavior;
 - requirements marked `NOT APPLICABLE` assumed a deployed instance or a coexisting legacy consumer and are retained only so their identifiers stay stable; and
 - the measurement profiles in section 44 are provisional acceptance profiles, not calibrations from production.
 
@@ -116,7 +117,7 @@ The legacy system is therefore a behavioral reference, not a system to be migrat
 | `HISTORICAL DEFECT` | Defect recorded by the original project documents; current-build behavior may require runtime confirmation. |
 | `REPLACEMENT REQUIREMENT` | Mandatory behavior or safeguard for the new platform even where the legacy implementation is absent or defective. |
 | `REPLACEMENT HARDENING` | Required modern reliability, security, or failure-handling improvement rather than a legacy parity behavior. |
-| `REPLATFORM DECISION` | Behavior whose modern representation requires an explicit product/architecture decision. The decision ID follows in parentheses; the suffix `decided` records that the decision has been taken in GDF_MIGRATION_MASTER.md section 17, and the decided behavior is then the requirement. |
+| `REPLATFORM DECISION` | Behavior whose modern representation requires an explicit product/architecture decision. The decision ID follows in parentheses; the suffix `decided` records that the decision has been taken in GDF_MIGRATION_MASTER.md section 7, and the decided behavior is then the requirement. |
 | `DOCUMENT CONFLICT` | Two evidence sources disagree; resolve through source/document reading or a recorded product decision under the section 2 evidence boundary. |
 | `DESIGN-TIME` | Development-tool behavior that is not part of end-user runtime behavior. |
 | `VERIFIED INTENT` | Executable control flow expresses the intended behavior, but a defect or unavailable dependency prevents it from being treated as reliably shipped. |
@@ -1414,7 +1415,7 @@ Personal-override datasets (user display-option, display-column, filter, format,
 
 These behaviors are evidence about the legacy system but are not automatically requirements for the replacement.
 
-Dispositions in this register are governed by decision D-011 (GDF_MIGRATION_MASTER.md section 17), which defines the approval authority and the criteria for each outcome. D-011 was approved on 10 October 2026 (ADR-001, GDF_MIGRATION_MASTER.md section 30.3), and every row below was decided under that policy on the same date. The "Approved disposition" column states what the replacement does and is binding; a later change to a row requires a new decision under the policy and a new document version. The `Decision` vocabulary is:
+Dispositions in this register are governed by decision D-011 (GDF_MIGRATION_MASTER.md section 7), which defines the approval authority and the criteria for each outcome. D-011 was approved on 10 October 2026 ([ADR-001](GDF_ARCHITECTURE_DECISIONS.md#adr-001--legacy-defect-disposition-policy)), and every row below was decided under that policy on the same date. The "Approved disposition" column states what the replacement does and is binding; a later change to a row requires a new decision under the policy and a new document version. The `Decision` vocabulary is:
 
 | Decision | Meaning |
 |---|---|
@@ -1487,7 +1488,7 @@ The replacement shall preserve the following independent of technology choice:
 
 ### 32.1 Desktop-bound behaviors requiring web reinterpretation
 
-The requirements below are verified legacy behavior whose literal form depends on a desktop process, the workstation, a local file system, an installed Office application, an operating-system window, or explicit element-coordinate placement requiring a responsive-layout decision. Their web treatment must be explicitly decided, and they are not defects, so section 31 does not apply to them. Decision D-017 (GDF_MIGRATION_MASTER.md section 17; ADR-002, section 30.4) approved the web reinterpretation in the cited design section for every row on 10 October 2026. The approved reinterpretation, not the legacy wording of the row, is now the requirement, and FR-ACC-004 is accepted against it. The rows keep their legacy wording and the `REPLATFORM DECISION (D-017 decided)` classification in their home sections as lineage.
+The requirements below are verified legacy behavior whose literal form depends on a desktop process, the workstation, a local file system, an installed Office application, an operating-system window, or explicit element-coordinate placement requiring a responsive-layout decision. Their web treatment must be explicitly decided, and they are not defects, so section 31 does not apply to them. Decision D-017 (GDF_MIGRATION_MASTER.md section 7; [ADR-002](GDF_ARCHITECTURE_DECISIONS.md#adr-002--desktop-bound-behavior-and-legacy-control-scope)) approved the web reinterpretation in the cited design section for every row on 10 October 2026. The approved reinterpretation, not the legacy wording of the row, is now the requirement, and FR-ACC-004 is accepted against it. The rows keep their legacy wording and the `REPLATFORM DECISION (D-017 decided)` classification in their home sections as lineage.
 
 | Desktop-bound legacy behavior | Requirements | Approved web equivalent | Decision |
 |---|---|---|---|
@@ -1512,7 +1513,7 @@ The same decision settles the legacy control and navigation scope rows that are 
 | Tooltip helper and template consumers | FR-CTL-USE-007 | Stay outside production scope |
 | Design-time property guards | FR-CTL-API-005 | Not reproduced; orientation, bounds, and similar properties are compiled view-model properties set through metadata, with no runtime setter that rejects changes (DEF-033) |
 
-Decision D-020 was decided on the same date (ADR-003, GDF_MIGRATION_MASTER.md section 30.5): aggregation, limit processing, and the historical PLM capabilities of sections 27 and 43 are out of scope for the rebuild. The requirements in those sections that begin "if D-020 admits" describe what a later decision to reopen that scope would have to author; they are not requirements of the first release.
+Decision D-020 was decided on the same date ([ADR-003](GDF_ARCHITECTURE_DECISIONS.md#adr-003--plm-aggregation-and-limit-processing-out-of-scope)): aggregation, limit processing, and the historical PLM capabilities of sections 27 and 43 are out of scope for the rebuild. The requirements in those sections that begin "if D-020 admits" describe what a later decision to reopen that scope would have to author; they are not requirements of the first release.
 
 ## 33. Minimum replacement acceptance suite
 
@@ -1540,17 +1541,17 @@ The future implementation shall not be considered functionally equivalent until 
 | FR-ACC-018 | Missing/invalid metadata, missing value list, missing icon, missing helper, unavailable database, timeout/reconnect, transaction rollback, and affected-row fail-safe. | FR-SCREEN-010, FR-CONN-003..005, FR-DML-006, FR-INV-008; NFR-REL-001, NFR-REL-003, NFR-OBS-002 | REPLACEMENT REQUIREMENT |
 | FR-ACC-019 | The applicable measurable accessibility, localization, keyboard, high-DPI, reliability, availability, recovery, security, and performance targets defined in section 44 of this document (NFR-AVAIL-001 and NFR-DR-001 through the operational evidence named above); exclude NOT APPLICABLE requirements. | NFR-PERF-001..004, NFR-SCALE-001, NFR-REL-001..003, NFR-AVAIL-001, NFR-DR-001, NFR-SEC-001..003, NFR-OBS-001..002, NFR-ACC-001, NFR-UI-001, NFR-I18N-001, NFR-BUILD-001 | REPLACEMENT REQUIREMENT |
 
-Test-implementation rules are governed by CONTRIBUTING.md and GDF_MIGRATION_MASTER.md section 11.
+Test-implementation rules are governed by CONTRIBUTING.md and GDF_MIGRATION_MASTER.md section 3.4.
 
 ## 34. Configuration to be authored
 
 ### 34.1 Why no further evidence is expected
 
-No deployed metadata rows, physical DDL, application database objects, helper binaries, role matrices, runtime recordings, volume measurements, or business interviews exist, and none will be obtained (section 2; GDF_MIGRATION_MASTER.md section 24). Every gap those sources would have closed is closed instead by authoring or by a recorded decision.
+No deployed metadata rows, physical DDL, application database objects, helper binaries, role matrices, runtime recordings, volume measurements, or business interviews exist, and none will be obtained (section 2; GDF_MIGRATION_MASTER.md section 1.2). Every gap those sources would have closed is closed instead by authoring or by a recorded decision.
 
 | Priority | Gap | How the rebuild closes it |
 |---:|---|---|
-| 1 | Configured applications, screens, fields, DataClasses, permissions, reports, and options | Authored in the rebuilt platform's metadata tool (D-015) using the section 28 grammar, starting with the reference application embedded in the runtime prototype (GDF_MIGRATION_MASTER.md section 3.5) |
+| 1 | Configured applications, screens, fields, DataClasses, permissions, reports, and options | Authored in the rebuilt platform's metadata tool (D-015) using the section 28 grammar, starting with the reference application embedded in the runtime prototype (GDF_MIGRATION_MASTER.md section 2.3) |
 | 2 | Physical metadata storage and referenced application-database objects | Designed with the metadata store (D-013) and with each authored application (D-004, D-010) |
 | 3 | Exact runtime behavior where the source is ambiguous | Resolved by reading, or by a recorded product decision under D-011 or D-017; the decided behavior is the tested behavior |
 | 4 | Extension contracts | Decided under D-019 |
@@ -1573,7 +1574,7 @@ For each application authored in the rebuild, the following shall be produced an
 - the system-message and administrative workflow catalog;
 - field-level validation, default, formatting, lookup, and editability rules;
 - acceptance scenarios and test IDs; and
-- updates to the generated [requirements-to-test traceability matrix](GDF_DOCUMENT_CONTROL.md#8-requirement-traceability-matrix) as executable fixtures are added.
+- updates to the generated [requirements-to-test traceability matrix](GDF_REQUIREMENTS_TRACEABILITY.md) as executable fixtures are added.
 
 ## 35. Current coverage statement
 
@@ -1582,7 +1583,7 @@ This baseline covers the framework feature surface visible in every supplied pro
 ## 36. Source traceability index
 
 Line numbers refer to the immutable snapshot identified by
-[GDF_MIGRATION_MASTER.md section 23 (legacy baseline)](GDF_MIGRATION_MASTER.md#23-legacy-baseline) and its checksum manifest. Resolve every
+[GDF_MIGRATION_MASTER.md section 9 (reference baseline)](GDF_MIGRATION_MASTER.md#9-reference-baseline) and its checksum manifest. Resolve every
 relative evidence path from `${LEGACY_SOURCE_ROOT}/Docs`. If the live legacy
 tree changes, regenerate the checksum manifest and issue a new functional
 baseline version before accepting updated line references.
@@ -2016,7 +2017,7 @@ until a recorded decision changes them.
 
 No production calibration evidence exists or will arrive. The targets above
 are acceptance floors for the rebuilt platform; load tests at the section 44.1
-profiles (GDF_MIGRATION_MASTER.md section 18, Gate E) are the verification, and a
+profiles (GDF_MIGRATION_MASTER.md section 5, Gate E) are the verification, and a
 recorded decision is the only way to change a value.
 
 ## 45. Glossary

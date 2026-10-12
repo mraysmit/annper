@@ -1,15 +1,15 @@
 # GDFramework Modern Web System Design
 
-**Status:** Controlled working design baseline 0.11  
-**Date:** 11 October 2026  
+**Status:** Controlled working design baseline 0.12
+**Date:** 12 October 2026
 **Owner:** Migration technical lead  
 **Legacy checksum-manifest SHA-256:** `fc29779b9588a41cb9da10c486f1f0b35ca2108baf50fb8892086587ee320027`  
 **Target:** Modern web-based equivalent of the GDFramework application platform  
-**Functional authority:** [GD Framework Functional Specification 0.12](GDFramework%20Functional%20Specification.md)  
-**Delivery authority:** [GDFramework Rebuild Master Plan and Design 0.14](GDF_MIGRATION_MASTER.md)  
-**Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 17)
+**Functional authority:** [GD Framework Functional Specification 0.13](GDFramework%20Functional%20Specification.md)
+**Delivery authority:** [GDFramework Rebuild Delivery and Governance Plan 0.15](GDF_MIGRATION_MASTER.md)
+**Technology status:** The logical architecture is technology-neutral by decision. Web direction is selected (D-001), sign-in is OpenID Connect with a server-side session (D-005), and the platform store and application providers are engine-agnostic and selected by configuration (D-013, D-004). The client framework, service runtime, transport, hosting, and the first qualified engines remain Gate C selections (GDF_MIGRATION_MASTER.md section 7)
 
-**Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 3.5). They are non-normative for behavior: where they and this document differ, this document governs.
+**Reference implementations of the target layouts:** [Runtime web mockup](../prototype/gdframework-web-mockup.html) and [GD Studio administration mockup](../prototype/gdframework-admin-mockup.html). They show every screen family and the authoring workflow with sample data and are the visual reference for sections 7–9 and 11.4 (GDF_MIGRATION_MASTER.md section 2.3). They are non-normative for behavior: where they and this document differ, this document governs.
 
 ## Change history
 
@@ -26,6 +26,7 @@
 | 0.9 | 2026-10-10 | Administrative roles decided. D-023: a fixed set of platform administrative roles governs the authoring tool itself, separate from application roles and business access, granted inside the tool with a second-person approval, immediate revocation, no self-changes, and bootstrap platform administrators from deployment configuration (new section 15.7). WDES-028 added |
 | 0.10 | 2026-10-10 | Access model corrected to the owner's direction. An application configuration is self-contained and is the unit of drafts, validation, approval, publication, digest, and rollback (new section 11.7). Each application owns its roles and users, which are versioned and published with it; the live, platform-wide user list of 0.8 and identity-provider group mappings are withdrawn (section 15.6 rewritten; D-022 revised, ADR-008 supersedes ADR-006). Section 15.7 restated as Studio access, unrelated to any application, with the security administrator maintaining roles and users in application drafts. Sections 5, 7.6, 11.1, 12.9, 13.2, 14.7, 15.2, and Appendix C aligned; WDES-027 and WDES-028 restated |
 | 0.11 | 2026-10-11 | Deployment of application access made explicit. Section 15.6 states that rolling an application back restores the roles and users of the reactivated version. Section 27.1 states that this design defines publication within one environment and registers open decision D-024 for promotion between environments, including whether the application user list is environment-specific |
+| 0.12 | 2026-10-12 | Updated delivery-plan, ADR, and generated-traceability links after the governing documents were reduced and split by responsibility; no architecture or design-verification requirement changed |
 
 ## 1. Purpose and authority
 
@@ -414,7 +415,7 @@ literal form depends on a desktop process, the workstation, a local file
 system, an installed Office application, an operating-system window, or explicit
 element-coordinate placement requiring a responsive-layout decision. Decision
 D-017 approved the web equivalents below on 10 October 2026
-(GDF_MIGRATION_MASTER.md section 17; ADR-002, section 30.4). They are
+(GDF_MIGRATION_MASTER.md section 7; [ADR-002](GDF_ARCHITECTURE_DECISIONS.md#adr-002--desktop-bound-behavior-and-legacy-control-scope)). They are
 requirements of this design and replace the literal legacy behavior of the
 cited rows; FR-INV-012 is satisfied by this table.
 
@@ -722,7 +723,7 @@ equivalent.
 ### 10.3 Browser support
 
 The product shall support the browser set defined in the browser support
-matrix, which the D-001 framework ADR (GDF_MIGRATION_MASTER.md section 17) owns
+matrix, which the D-001 framework ADR (GDF_MIGRATION_MASTER.md section 7) owns
 and publishes with the framework selection; every supported combination shall
 meet NFR-UI-001 and NFR-ACC-001. The support matrix must define minimum versions, operating systems, assistive
 technology combinations, cookie/storage constraints, download behavior, and
@@ -846,7 +847,7 @@ bound values.
 Governed web authoring is a first-release capability (D-015 adopted), because
 no legacy metadata rows exist to import. The minimum authoring path needed for
 the first vertical slice is delivered in Phase 3 and completed in Phase 4
-(GDF_MIGRATION_MASTER.md section 13). Authoring shall use the same APIs and
+(GDF_MIGRATION_MASTER.md section 4). Authoring shall use the same APIs and
 validation pipeline as programmatic submission or promotion of newly authored configuration and support:
 
 - search and dependency navigation;
@@ -931,7 +932,7 @@ audit pointers) is held in a transactional relational store reached only
 through a *platform store adapter*. Which engine a deployment uses is
 configuration: a logical store ID mapped to a qualified engine, endpoint,
 secret reference, and pool, in the same way section 14.3 maps application
-connections (ADR-005, GDF_MIGRATION_MASTER.md section 30.7).
+connections ([ADR-005](GDF_ARCHITECTURE_DECISIONS.md#adr-005--engine-agnostic-platform-store-and-configurable-providers)).
 
 - Platform services depend on the store contract (typed operations and
   transaction scopes), never on an engine's SQL dialect, driver types, or
@@ -1084,7 +1085,7 @@ access and is never enabled by a client-side flag.
 
 > **Candidate contract.** The transport, encoding, live-update channel, and
 > dataset wire shape in this section are the recommended candidate pending
-> decisions D-002 and D-007 in GDF_MIGRATION_MASTER.md section 17; they do not
+> decisions D-002 and D-007 in GDF_MIGRATION_MASTER.md section 7; they do not
 > pre-empt those decisions and become binding only through an approved ADR.
 
 ### 13.1 Protocol baseline
@@ -1269,7 +1270,7 @@ tested against real supported provider versions for null, decimal, Unicode,
 date/time, Boolean, binary, identity, affected rows, concurrency, transaction,
 timeout, cancellation, and connection-loss behavior.
 
-The reference implementation (GDF_MIGRATION_MASTER.md sections 23 and 29)
+The reference implementation (GDF_MIGRATION_MASTER.md sections 9 and 10)
 supported SQL Server, Sybase, Oracle, Access, XML datasets, and registered
 service/helper adapters; that is lineage, not a target provider list. Under
 D-004 the platform is provider-agnostic: no engine is privileged or assumed,
@@ -1488,7 +1489,7 @@ approved organization identity provider at the host. Session, application,
 role, and data-scope authority are derived server-side. Client capability flags
 exist only to improve presentation.
 
-**Sign-in and session (D-005; ADR-004, GDF_MIGRATION_MASTER.md section 30.6).**
+**Sign-in and session (D-005; [ADR-004](GDF_ARCHITECTURE_DECISIONS.md#adr-004--openid-connect-sign-in-with-a-server-side-session)).**
 Interactive users sign in through OpenID Connect, using the authorization code
 flow with PKCE against the organization's identity provider. Any
 standards-compliant provider is admissible and none is named here. The host is
@@ -1560,7 +1561,7 @@ The selected implementation shall provide:
 - download content-disposition/type hardening and malware policy where needed;
 - administrative network/access restrictions; and
 - independent penetration testing before the first production release
-  (GDF_MIGRATION_MASTER.md section 13, Phase 5).
+  (GDF_MIGRATION_MASTER.md section 4, Phase 5).
 
 ### 15.4 Secrets and connections
 
@@ -1581,8 +1582,8 @@ to policy.
 ### 15.6 Application roles and users
 
 Access to a business application is defined inside that application's
-configuration and nowhere else (decision D-022 as revised; ADR-008,
-GDF_MIGRATION_MASTER.md section 30.10). Each application configuration owns
+configuration and nowhere else (decision D-022 as revised;
+[ADR-008](GDF_ARCHITECTURE_DECISIONS.md#adr-008--roles-and-users-belong-to-each-application-configuration)). Each application configuration owns
 its own roles and its own users (section 11.7). Nothing is shared: a person
 who uses two applications has a user entry in each, and each entry names only
 roles of its own application.
@@ -1637,8 +1638,8 @@ application's user list then follows through publication.
 ### 15.7 Studio access: Studio roles and Studio users
 
 Who may do what in the authoring tool (GD Studio) is governed separately and
-has nothing to do with any application (decision D-023; ADR-007,
-GDF_MIGRATION_MASTER.md section 30.9). A Studio role grants nothing in a
+has nothing to do with any application (decision D-023;
+[ADR-007](GDF_ARCHITECTURE_DECISIONS.md#adr-007--administrative-roles-granted-in-the-authoring-tool)). A Studio role grants nothing in a
 business application, and being a user of an application grants nothing in
 Studio; a Studio user needs no application user entry.
 
@@ -2038,7 +2039,7 @@ This design defines publication of an application configuration within one
 environment. How a version moves from one environment to another, and whether
 the application user list (section 15.6) is specific to each environment or
 moves with the rest of the configuration, is open decision D-024
-(GDF_MIGRATION_MASTER.md section 17).
+(GDF_MIGRATION_MASTER.md section 7).
 
 ### 27.2 Build and release
 
@@ -2070,7 +2071,7 @@ approved web edge are all admissible. Whatever D-003 selects must support the
 NFR-SCALE-001 concurrency profile, NFR-AVAIL-001, NFR-REL-003 restart
 recovery, health checks, zero/low-downtime rollout, secret injection, network
 policy, telemetry, controlled egress, backups, and rollback. The selection is
-recorded by ADR (GDF_MIGRATION_MASTER.md section 30) without changing the logical
+recorded by ADR in `GDF_ARCHITECTURE_DECISIONS.md` without changing the logical
 boundaries here.
 
 ## 28. Delivery sequencing
@@ -2079,7 +2080,7 @@ boundaries here.
 
 No legacy instance exists, so nothing is migrated, routed side by side, cut
 over, or retired. The platform and its first application are delivered in the
-phases of GDF_MIGRATION_MASTER.md section 13.
+phases of GDF_MIGRATION_MASTER.md section 4.
 
 ### 28.1 Delivery units
 
@@ -2119,7 +2120,7 @@ fixtures, lightweight purpose-built fakes at protocol boundaries, and real
 provider/integration environments appropriate to the boundary. Mocking
 frameworks that substitute generated doubles for real boundaries are
 prohibited. This rule is normative here and in GDF_MIGRATION_MASTER.md section
-11; CONTRIBUTING.md restates it for contributors.
+3.4; CONTRIBUTING.md restates it for contributors.
 
 | Test layer | Required coverage |
 |---|---|
@@ -2136,14 +2137,14 @@ prohibited. This rule is normative here and in GDF_MIGRATION_MASTER.md section
 | Reliability | Multi-row fail-safe rollback, allocator restart/rollback gaps and idempotent retry; lost acceptance/commit replies and status recovery, expired-key rejection, crash after commit before event delivery, duplicate events, invalidation backlog, withdrawal with open/queued/in-flight work; failure at each transaction boundary, unknown outcome, process restart, queue lease, cache loss, dependency outage, publication rollback, and the NFR-REL-002 repeated cancellation/timeout/failure soak |
 | Deployment | Clean build, package promotion, configuration validation, migration, health, rolling update, rollback, backup/restore |
 
-The master section 11 and this table describe one strategy: Characterization
+The master section 3.4 and this table describe one strategy: Characterization
 feeds Conformance; UI/control behavior maps to Component and Screen renderer;
 Operational maps to Workflow, Reliability, and Deployment. Shared contract,
 provider, security, accessibility, and performance evidence is reused.
 
 Every applicable functional requirement, NFR, and approved defect disposition maps to one
-or more acceptance tests in the traceability matrix generated into
-[GDF_DOCUMENT_CONTROL.md section 8](GDF_DOCUMENT_CONTROL.md#8-requirement-traceability-matrix)
+or more acceptance tests in the generated
+[requirements traceability matrix](GDF_REQUIREMENTS_TRACEABILITY.md)
 from the FR-*/NFR-*/DEF-* rows of the functional specification and the
 `WDES-*` rows of section 33 of this document.
 
@@ -2253,7 +2254,7 @@ security, and data boundaries is not sufficient evidence.
 The logical architecture is technology-neutral by decision: it fixes
 protocols, boundaries, and behavior and leaves every product replaceable. The
 table separates what is decided from the selections that remain for Gate C or
-later (GDF_MIGRATION_MASTER.md sections 17 and 30). Nothing here is a hidden
+later (GDF_MIGRATION_MASTER.md section 7 and `GDF_ARCHITECTURE_DECISIONS.md`). Nothing here is a hidden
 assumption.
 
 | Decision | Register ID and status | Evidence required or recorded |
@@ -2295,7 +2296,7 @@ Implementation may begin with a vertical slice when:
 3. Gate C is passed: D-001, D-005, and D-008 are decided, and the first
    qualified provider (D-004) and platform-store engine (D-013) are selected; D-002, D-003, D-007, D-014, D-015 (approval model), and D-016
    are decided or explicitly deferred with a documented safe default, each
-   recorded by ADR as required by master section 18;
+   recorded by ADR as required by master section 5;
 4. API, metadata, policy, provider, component, and telemetry contracts are
    versioned;
 5. security and operations boundaries are approved, and the Phase 3 slice plan
@@ -2304,7 +2305,7 @@ Implementation may begin with a vertical slice when:
    with a least-privilege identity exist; slice deployment, monitoring, and
    rollback evidence is delivered in Phase 3, and production backup and
    operational readiness are completed before the Phase 5 release gate;
-7. the traceability matrix generated into GDF_DOCUMENT_CONTROL.md section 8
+7. the generated `GDF_REQUIREMENTS_TRACEABILITY.md` matrix
    includes the slice's functional IDs and `WDES-*` design requirements; and
 8. product, security, database, UI/workflow, operations, and test owners accept
    the slice plan.
