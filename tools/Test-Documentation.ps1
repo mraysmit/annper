@@ -28,6 +28,15 @@ foreach ($name in $expectedDocs) {
 foreach ($name in $actualDocs) {
     if ($name -notin $allowedDocs) { $errors += "docs folder contains an unclassified document: $name" }
 }
+$missingRequired = @($expectedDocs | Where-Object { $_ -notin $actualDocs }).Count
+foreach ($path in @($TraceabilityPath, (Join-Path $ProjectRoot 'README.md'), (Join-Path $ProjectRoot 'baseline\legacy-source.sha256'), (Join-Path $ProjectRoot 'baseline\legacy-source-manifest.sha256'))) {
+    if (-not (Test-Path -LiteralPath $path)) { $errors += "required file is missing: $([IO.Path]::GetRelativePath($ProjectRoot, $path))"; $missingRequired++ }
+}
+# The remaining checks read these files; report what is missing instead of failing on a path.
+if ($missingRequired -gt 0) {
+    $errors | ForEach-Object { Write-Output "ERROR: $_" }
+    exit 1
+}
 
 # ---- tables, links, machine paths
 $markdownFiles = Get-ChildItem -LiteralPath $ProjectRoot -Recurse -File -Filter '*.md' | Where-Object { $_.FullName -notlike '*\.git\*' -and $_.FullName -notlike '*\.history\*' }
@@ -183,6 +192,9 @@ if ($traceabilityRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!
     foreach ($id in ($traceIds | Where-Object { $_ -notin $allIds })) { $errors += "Traceability ID absent from its source document: $id" }
     foreach ($duplicate in $traceIds | Group-Object | Where-Object Count -gt 1) { $errors += "Duplicate traceability ID: $($duplicate.Name)" }
     if ($traceBlock -match 'UNMAPPED PREFIX') { $errors += 'Traceability contains unmapped requirement prefixes; update Build-ControlledArtifacts.ps1' }
+    foreach ($row in [regex]::Matches($traceBlock, '(?m)^\|\s*((?:FR|NFR|DEF|WDES)-[A-Z0-9-]+)\s*\|[^\r\n]*\bUnassigned\b')) {
+        $errors += "Traceability row $($row.Groups[1].Value) has no delivery phase; cite it in a governance-plan quality gate or map its prefix in Build-ControlledArtifacts.ps1"
+    }
 
     # Freshness: regenerate the artifact in a scratch copy and require a byte-identical block.
     $scratch = Join-Path ([IO.Path]::GetTempPath()) ('annper-trace-' + [guid]::NewGuid().ToString('N'))

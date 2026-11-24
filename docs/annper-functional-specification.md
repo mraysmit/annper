@@ -1,7 +1,7 @@
 # annper Functional Specification
 
-**Version:** 0.13\
-**Date:** 2026-10-12\
+**Version:** 0.14\
+**Date:** 2026-11-24\
 **Author:** Mark Ray-Smith — Cityline Ltd\
 **Status:** Controlled working baseline\
 **Scope:** Observable behavior, functional scope, compatibility, non-functional requirements, and legacy defects
@@ -19,6 +19,7 @@
 | 0.11 | 2026-10-04 | Coherence review: preserve default caching, attach dual-source scope to pending D-021, replace impossible legacy runtime/deployment acquisition instructions with source-derived decisions and authoring, and exclude NFR-COMP-001 from active acceptance. Existing defect and desktop reinterpretation approvals remain pending |
 | 0.12 | 2026-10-10 | Owner decisions recorded: D-011 disposition policy approved and every DEF-001..DEF-038 row decided (32 Fix, 6 Retire, none Preserve); every section 32.1 row and the legacy control scope approved under D-017; D-020 decided out of scope. Affected rows carry the `decided` classification suffix; DEF-035 disposition reworded to drop a legacy-resource import; document file names updated to the `GDF_` prefix |
 | 0.13 | 2026-10-12 | Updated delivery-plan, ADR, and generated-traceability links after the governing documents were reduced and split by responsibility; no functional behavior or disposition changed |
+| 0.14 | 2026-11-24 | Product renamed from GDFramework to annper and document links updated to the `annper-*.md` file names; the legacy GD Framework is named only as the reference source; no functional behavior or disposition changed |
 
 ## 1. Document purpose
 

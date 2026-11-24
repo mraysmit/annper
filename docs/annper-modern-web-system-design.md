@@ -1,7 +1,7 @@
 # annper Modern Web System Design
 
-**Version:** 0.12\
-**Date:** 2026-10-12\
+**Version:** 0.13\
+**Date:** 2026-11-24\
 **Author:** Mark Ray-Smith — Cityline Ltd\
 **Status:** Controlled working baseline\
 **Scope:** Target web architecture, component boundaries, interfaces, and verification
@@ -22,6 +22,7 @@
 | 0.10 | 2026-10-10 | Access model corrected to the owner's direction. An application configuration is self-contained and is the unit of drafts, validation, approval, publication, digest, and rollback (new section 11.7). Each application owns its roles and users, which are versioned and published with it; the live, platform-wide user list of 0.8 and identity-provider group mappings are withdrawn (section 15.6 rewritten; D-022 revised, ADR-008 supersedes ADR-006). Section 15.7 restated as Studio access, unrelated to any application, with the security administrator maintaining roles and users in application drafts. Sections 5, 7.6, 11.1, 12.9, 13.2, 14.7, 15.2, and Appendix C aligned; WDES-027 and WDES-028 restated |
 | 0.11 | 2026-10-11 | Deployment of application access made explicit. Section 15.6 states that rolling an application back restores the roles and users of the reactivated version. Section 27.1 states that this design defines publication within one environment and registers open decision D-024 for promotion between environments, including whether the application user list is environment-specific |
 | 0.12 | 2026-10-12 | Updated delivery-plan, ADR, and generated-traceability links after the governing documents were reduced and split by responsibility; no architecture or design-verification requirement changed |
+| 0.13 | 2026-11-24 | Product renamed from GDFramework to annper (annper Workspace and annper Studio) and document links updated to the `annper-*.md` file names; no architecture or design-verification requirement changed |
 
 ## 1. Purpose and authority
 

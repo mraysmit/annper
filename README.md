@@ -98,13 +98,13 @@ node tools/Test-Mockups.cjs                # contract regressions for both proto
 
 ## Current status
 
-- Functional specification: Controlled working baseline 0.13; framework and
+- Functional specification: Controlled working baseline 0.14; framework and
   metadata-schema scope reconstructed from source; applications are authored
-- Modern web system design: Controlled working baseline 0.12; complete,
+- Modern web system design: Controlled working baseline 0.13; complete,
   technology-neutral logical design
-- Migration master: Controlled working baseline 0.15
-- Architecture decision records: Controlled working baseline 0.1
-- Document control: Controlled working baseline 0.12
+- Migration master: Controlled working baseline 0.16
+- Architecture decision records: Controlled working baseline 0.2
+- Document control: Controlled working baseline 0.13
 - Phase 0: Started; source control and initial baseline artifacts established
 - Replacement code: Not started
 - Behavior decisions: all 38 legacy defect dispositions, the desktop-to-web

@@ -8,7 +8,8 @@ param(
 #   baseline/legacy-file-inventory.csv, baseline/legacy-source.sha256,
 #   baseline/legacy-source-manifest.sha256     (only when the legacy tree is reachable)
 #   docs/annper-requirements-traceability.md          (generated traceability matrix)
-# Output is deterministic for a given set of inputs: no timestamps are embedded.
+# Output is deterministic for a given set of inputs: the matrix header date is the
+# latest header date of its source documents, never the time of generation.
 
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
@@ -16,10 +17,11 @@ $BaselineRoot = Join-Path $ProjectRoot 'baseline'
 $DocsRoot = Join-Path $ProjectRoot 'docs'
 $SpecPath = Join-Path $DocsRoot 'annper-functional-specification.md'
 $DesignPath = Join-Path $DocsRoot 'annper-modern-web-system-design.md'
+$MasterPath = Join-Path $DocsRoot 'annper-migration-master.md'
 $ControlPath = Join-Path $DocsRoot 'annper-document-control.md'
 $TraceabilityPath = Join-Path $DocsRoot 'annper-requirements-traceability.md'
 
-foreach ($required in @($BaselineRoot, $DocsRoot, $SpecPath, $DesignPath, $ControlPath)) {
+foreach ($required in @($BaselineRoot, $DocsRoot, $SpecPath, $DesignPath, $MasterPath, $ControlPath)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Required path is missing: $required" }
 }
 
@@ -130,11 +132,45 @@ $phaseMap = @{
     'Phase 3 first slice; Phase 4 expansion' = @('CTL','TOOL','NAV','WIN','ELEM','FIELD','SHELL','SCREEN','GRID','CHART','PRINT','EXCEL','CUSTOM','LOOKUP','DIALOG','SPLASH','SHUT','MD','TREE','JUNCTION','ACTION','EXT','CONN','DC','PARAM','JOIN','DML','INSERT','UPDATE','DELETE','REFRESH','MSG','SYSMSG','LOG','SYSINFO','REPORT','FILTER','SEARCH','CRIT','SEC','APP','START','STATE')
     'Phase 2 foundation' = @('META','CMD')
     'All phases; verified at each gate' = @('INV','ARCH')
-    'Phase 4 expansion, only under D-020' = @('AGG','LIMIT','PLM')
-    'Phase 5 release readiness' = @('ACC')
+    'Out of scope under D-020 (ADR-003); no delivery phase unless D-020 is reopened' = @('AGG','LIMIT','PLM')
 }
+# Acceptance scenarios (FR-ACC-*) and NFRs take their phase from the quality gates
+# that cite them (governance plan section 5), so the matrix cannot drift from the gates.
+$gateCitedPrefixes = @('ACC')
 function Get-RequirementPrefix { param([string]$Id) if ($Id -match '^FR-([A-Z0-9]+)-') { return $Matches[1] }; return '' }
 function Get-TargetPhase { param([string]$Prefix) foreach ($k in $phaseMap.Keys) { if ($Prefix -in $phaseMap[$k]) { return $k } }; return 'Unassigned' }
+
+# ------------------------------------------------------ quality-gate citations
+$gatePhases = [ordered]@{
+    'A' = 'Phase 0 baseline (Gate A)'
+    'B' = 'Phase 1 behavior decided (Gate B)'
+    'C' = 'Phase 2 foundation (Gate C)'
+    'D' = 'Phase 3 vertical slice (Gate D)'
+    'E' = 'Phase 4 platform capability (Gate E)'
+    'F' = 'Phase 5 release readiness (Gate F)'
+}
+$masterRaw = Get-Content -LiteralPath $MasterPath -Raw
+if ($masterRaw -notmatch '(?s)## \d+\. Quality gates(.*?)(?:\r?\n## \d+\.|\z)') { throw "$MasterPath has no Quality gates section" }
+$gateSection = $Matches[1]
+$gateCitations = @{}
+foreach ($gate in [regex]::Matches($gateSection, '(?ms)^### Gate ([A-Z])\b(.*?)(?=^### Gate |\z)')) {
+    $letter = $gate.Groups[1].Value; $text = $gate.Groups[2].Value
+    $ids = @([regex]::Matches($text, '\b(?:FR|NFR|DEF|WDES)(?:-[A-Z0-9]+)+\b') | ForEach-Object { $_.Value })
+    # Expand ranges such as FR-ACC-001..FR-ACC-018 or DEF-001..DEF-038.
+    foreach ($range in [regex]::Matches($text, '\b((?:FR|NFR|DEF|WDES)(?:-[A-Z]+)*)-(\d+)\.\.\1-(\d+)\b')) {
+        $width = $range.Groups[2].Value.Length
+        foreach ($n in [int]$range.Groups[2].Value..[int]$range.Groups[3].Value) { $ids += '{0}-{1}' -f $range.Groups[1].Value, $n.ToString().PadLeft($width, '0') }
+    }
+    foreach ($id in $ids) {
+        if (-not $gateCitations.ContainsKey($id)) { $gateCitations[$id] = @() }
+        if ($letter -notin $gateCitations[$id]) { $gateCitations[$id] += $letter }
+    }
+}
+function Get-GatePhase {
+    param([string]$Id)
+    if (-not $gateCitations.ContainsKey($Id)) { return 'Unassigned: no quality gate cites this ID' }
+    return (@($gatePhases.Keys | Where-Object { $_ -in $gateCitations[$Id] } | ForEach-Object { $gatePhases[$_] }) -join '; ')
+}
 function Escape-MarkdownCell { param([string]$Value) if ($null -eq $Value) { return '' }; return $Value.Replace('|','\|').Replace("`r",' ').Replace("`n",' ') }
 
 # ------------------------------------------------------------ parse sources
@@ -165,10 +201,13 @@ foreach ($line in Get-Content -LiteralPath $SpecPath) {
                   elseif ($classification -match 'REPLATFORM DECISION') { if ($decisionRecorded) { "Decision $decisionRef recorded; test not implemented" } elseif ($decisionRef) { "Decision $decisionRef pending; test not implemented" } else { 'Replatform decision pending; test not implemented' } }
                   elseif ($classification -match 'METADATA-DEPENDENT|PHYSICAL-DDL-VERIFY|RUNTIME-VERIFY|BUILD-UNVERIFIED|DOCUMENT CONFLICT') { 'Resolution by decision pending; test not implemented' }
                   else { 'Source-specified; test not implemented' }
-        $rows += [pscustomobject]@{Id=$id;Spec=$location;Line=$lineNumber;Classification=$classification;Source=$evidence;Runtime=$runtime;Test="AT-$id";Phase=(Get-TargetPhase $prefix);Status=$status}
+        $phase = if ($prefix -in $gateCitedPrefixes) { Get-GatePhase $id } else { Get-TargetPhase $prefix }
+        $rows += [pscustomobject]@{Id=$id;Spec=$location;Line=$lineNumber;Classification=$classification;Source=$evidence;Runtime=$runtime;Test="AT-$id";Phase=$phase;Status=$status}
     }
     elseif ($line -match '^\|\s*(NFR-[A-Z0-9-]+)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*$') {
-        $rows += [pscustomobject]@{Id=$Matches[1];Spec=$location;Line=$lineNumber;Classification='Non-functional acceptance floor: ' + $Matches[2].Trim();Source='Functional specification §44; verification: ' + $Matches[4].Trim();Runtime='No production calibration exists; provisional floor stands until a recorded decision';Test="AT-$($Matches[1])";Phase='Phase 4 load tests; verified at Gate E';Status=$(if ($Matches[2] -like '*NOT APPLICABLE*') { 'Not applicable; no legacy consumer exists' } else { 'Provisional floor; test not implemented' })}
+        $notApplicable = $Matches[2] -like '*NOT APPLICABLE*'
+        $nfrPhase = if ($notApplicable) { 'None; not applicable' } else { Get-GatePhase $Matches[1] }
+        $rows += [pscustomobject]@{Id=$Matches[1];Spec=$location;Line=$lineNumber;Classification='Non-functional acceptance floor: ' + $Matches[2].Trim();Source='Functional specification §44; verification: ' + $Matches[4].Trim();Runtime='No production calibration exists; provisional floor stands until a recorded decision';Test="AT-$($Matches[1])";Phase=$nfrPhase;Status=$(if ($notApplicable) { 'Not applicable; no legacy consumer exists' } else { 'Provisional floor; test not implemented' })}
     }
     elseif ($line -match '^\|\s*(DEF-\d+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$') {
         $id = $Matches[1]; $decision = $Matches[4].Trim(); $approvers = $Matches[5].Trim(); $date = $Matches[6].Trim()
@@ -204,10 +243,14 @@ foreach ($row in $rows) {
 }
 $traceBlock += '<!-- END GENERATED TRACEABILITY -->'
 
+$sourceDates = foreach ($path in @($SpecPath, $DesignPath, $MasterPath)) {
+    if ((Get-Content -LiteralPath $path -Raw) -match '(?m)^\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})') { $Matches[1] }
+}
+if (-not $sourceDates) { throw 'No source document header states a date' }
 $traceDocument = @(
     '# annper Requirements Traceability',
     '',
-    ('**Date:** {0}\' -f (Get-Date -Format 'yyyy-MM-dd')),
+    ('**Date:** {0}\' -f ($sourceDates | Sort-Object | Select-Object -Last 1)),
     '**Author:** `tools/Build-ControlledArtifacts.ps1`\',
     '**Status:** Generated controlled artifact\',
     '**Scope:** Requirements-to-design traceability and acceptance-test coverage',

@@ -1,0 +1,30 @@
+name: Validate controlled documents
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      # The checksum baseline is hashed byte for byte; CRLF conversion would change its identity.
+      - name: Keep line endings as committed
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # LEGACY_SOURCE_ROOT is not available in CI, so legacy source-path checks report as skipped.
+      - name: Validate the controlled document set
+        shell: pwsh
+        run: ./tools/Test-Documentation.ps1
+
+      - name: Run the prototype contract regressions
+        run: node tools/Test-Mockups.cjs

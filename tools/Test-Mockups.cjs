@@ -3,6 +3,11 @@
  * UI dialogs/rendering are purpose-built protocol fixtures, not a browser or a
  * mocking framework. Browser interaction/reflow/focus checks remain separate.
  * UI-01..12: WDES-007/019/022, NFR-ACC-001, NFR-UI-001, design §§7,10,11.
+ *
+ * Layout contract: implementation() locates each top-level function in the
+ * prototypes by its four-space indentation ("    function name(" ... "    }").
+ * Reformatting the prototype scripts (for example with a code formatter) breaks
+ * extraction; keep that indentation or update implementation() with it.
  */
 'use strict';
 const assert = require('node:assert/strict');
@@ -70,7 +75,18 @@ function studio() {
   return { run: code => vm.runInContext(code, context), messages, dialogs };
 }
 let passed = 0;
-function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
+const failed = [];
+// A failing check is reported and the run continues, so one regression does not hide the others.
+function test(name, fn) {
+  try { fn(); passed++; console.log('PASS ' + name); }
+  catch (error) { failed.push(name); console.log('FAIL ' + name + '\n  ' + String((error && error.message) || error).split('\n').join('\n  ')); }
+}
+function summary() {
+  if (failed.length === 0) { console.log(`${passed} contract regressions passed; both HTML scripts and JSON parse.`); return; }
+  console.log(`${passed} contract regressions passed; ${failed.length} failed:`);
+  for (const name of failed) console.log('  FAIL ' + name);
+  process.exitCode = 1;
+}
 function validCandidate(s) {
   s.run(`state.validated=true;state.validation={serialized:canonical(configuration()),digest:digest()};
     state.acceptedWarnings=Object.fromEntries(validationIssues().filter(i=>i.severity==='warning'&&warningRule(i.code)).map(i=>[i.code,true]));`);
@@ -1723,4 +1739,4 @@ async function checkSessionBoundary() {
   assert.equal(vm.runInContext('Object.keys(db).length',context),0);
   passed++;console.log('PASS Pass 2: late save/delete cannot repopulate an ended session');
 }
-checkSessionBoundary().then(checkRuntimeService).then(()=>console.log(`${passed} contract regressions passed; both HTML scripts and JSON parse.`)).catch(error=>{console.error(error);process.exitCode=1;});
+checkSessionBoundary().then(checkRuntimeService).then(summary).catch(error=>{console.error(error);summary();process.exitCode=1;});

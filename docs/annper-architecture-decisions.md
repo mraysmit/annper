@@ -1,7 +1,7 @@
 # annper Architecture Decision Records
 
-**Version:** 0.1\
-**Date:** 2026-10-12\
+**Version:** 0.2\
+**Date:** 2026-11-24\
 **Author:** Mark Ray-Smith — Cityline Ltd\
 **Status:** Controlled working baseline\
 **Scope:** Architecture, security, and compatibility decisions

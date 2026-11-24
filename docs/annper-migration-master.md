@@ -1,7 +1,7 @@
 # annper Delivery and Governance Plan
 
-**Version:** 0.15\
-**Date:** 2026-10-12\
+**Version:** 0.16\
+**Date:** 2026-11-24\
 **Author:** Mark Ray-Smith — Cityline Ltd\
 **Status:** Controlled working baseline\
 **Scope:** Delivery sequence, ownership, decisions, risks, and quality gates

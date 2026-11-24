@@ -1,6 +1,6 @@
 # annper Deployment Guide
 
-**Date:** 2026-10-12\
+**Date:** 2026-11-24\
 **Author:** Mark Ray-Smith — Cityline Ltd\
 **Status:** Working guide\
 **Scope:** Authoring, approval, and publication of application configurations
