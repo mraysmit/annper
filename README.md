@@ -1,16 +1,12 @@
 # annper
 
 This repository is the planning and implementation workspace for annper,
-a modern web platform based on the legacy GDFramework. The legacy VB6 system
-is not deployed anywhere: its source tree and documents are the behavioral
-reference, and nothing is migrated, run side by side, or retired.
+a metadata-driven web platform.
 
 The end-user interface is annper Workspace; the metadata administration tool
-is annper Studio. Historical source names and legacy command identifiers are
-retained where they identify reference evidence or compatibility contracts.
+is annper Studio.
 
-The rebuild is documentation-first. No replacement implementation may be
-treated as conformant until the applicable functional requirements, decisions,
+annper is documentation-first. No implementation may be treated as conformant until the applicable functional requirements, decisions,
 and phase exit criteria have approved evidence.
 
 ## Controlled document set
@@ -19,12 +15,12 @@ The controlled set is five documents under `docs/`, in precedence order:
 
 1. [Functional specification](docs/annper-functional-specification.md)
    is normative for observable behavior, compatibility, and functional scope.
-   It also holds the non-functional requirements (section 44) and the legacy
-   defect disposition register (section 31).
+   It also holds the non-functional requirements (section 44) and the defect
+   disposition register (section 31).
 2. [Modern web system design](docs/annper-modern-web-system-design.md) is normative for
    the target web architecture, design-verification requirements, and
    implementation boundaries.
-3. [Rebuild delivery and governance plan](docs/annper-migration-master.md) is
+3. [Delivery and governance plan](docs/annper-migration-master.md) is
    normative for current status, sequencing, decisions, risks, quality gates,
    and the compact reference baseline. It links to authoritative functional and
    design detail instead of repeating it.
@@ -65,7 +61,7 @@ implementations of the target layouts and of the authoring workflow. The
 sample application inside the runtime mockup (Operations Hub and Risk &
 Controls) is the proposed first application, pending Gate B confirmation. They are
 non-normative for behavior: where they and the design differ, the design
-governs (migration master section 2.3).
+governs (delivery and governance plan, section 2.3).
 
 ## Guides
 
@@ -77,16 +73,15 @@ differ, the controlled document governs.
   configuration, with its application roles and application users, is
   published from annper Studio to annper Workspace, for the first time and afterwards.
 
-## Source system
+## Reference source
 
-Set `LEGACY_SOURCE_ROOT` to the root of the read-only legacy GDFramework source.
+Set `LEGACY_SOURCE_ROOT` to the root of the read-only reference source tree.
 The reviewed snapshot is identified by the checksum baseline under `baseline/`
-and described in the migration master, section 9. The tools embed no share or
-machine path; when the root is unreachable, the generator reuses the committed
-baseline and the validator reports source-path checks as skipped.
+and described in the delivery and governance plan, section 9. The tools embed
+no share or machine path; when the root is unreachable, the generator reuses
+the committed baseline and the validator reports source-path checks as skipped.
 
-The legacy source is the behavioral reference. It is never built, run, or
-modified.
+The reference source is never built, run, or modified.
 
 ## Tools
 
@@ -99,16 +94,16 @@ node tools/Test-Mockups.cjs                # contract regressions for both proto
 ## Current status
 
 - Functional specification: Controlled working baseline 0.14; framework and
-  metadata-schema scope reconstructed from source; applications are authored
+  metadata-schema scope defined; applications are authored
 - Modern web system design: Controlled working baseline 0.13; complete,
   technology-neutral logical design
 - Migration master: Controlled working baseline 0.16
 - Architecture decision records: Controlled working baseline 0.2
 - Document control: Controlled working baseline 0.13
 - Phase 0: Started; source control and initial baseline artifacts established
-- Replacement code: Not started
-- Behavior decisions: all 38 legacy defect dispositions, the desktop-to-web
-  reinterpretations (D-017), and specialist scope (D-020, out of scope) are
+- Implementation code: Not started
+- Behavior decisions: all 38 defect dispositions, the browser-behavior
+  decisions (D-017), and specialist scope (D-020, out of scope) are
   approved; see `docs/annper-architecture-decisions.md`
 - Target UI: Modern web application selected (D-001); framework left open
 - Sign-in: OpenID Connect with a server-side session (D-005)
@@ -116,4 +111,3 @@ node tools/Test-Mockups.cjs                # contract regressions for both proto
   qualified engines selected at Gate C
 - Stack, transport, and deployment topology: not decided, by design (D-001,
   D-002, D-003, D-007, D-008, D-014)
-- Legacy system: not deployed anywhere; no migration, coexistence, or retirement work

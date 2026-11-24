@@ -1,0 +1,6 @@
+# The checksum baseline is hashed byte for byte, and its recorded identity is of
+# the files exactly as generated (CRLF line endings). Git must never convert them,
+# or a checkout's bytes differ from what was hashed and the manifest check fails.
+baseline/legacy-source.sha256 -text
+baseline/legacy-source-manifest.sha256 -text
+baseline/legacy-file-inventory.csv -text
