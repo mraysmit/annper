@@ -1,4 +1,4 @@
-# GDFramework Modern Web System Design
+# annper Modern Web System Design
 
 **Version:** 0.12\
 **Date:** 2026-10-12\
@@ -25,7 +25,7 @@
 
 ## 1. Purpose and authority
 
-This document defines the complete target design for a modern web-based
+This document defines the complete target design for annper, a modern web-based
 equivalent of the legacy GDFramework. It translates the reverse-engineered
 functional specification into an implementable browser, service, data,
 security, integration, deployment, and operational architecture.
@@ -41,12 +41,12 @@ This document governs target-system structure. The functional specification
 remains normative for observable behavior and functional scope. If this design and
 a functional requirement conflict, the functional requirement prevails until
 an approved decision changes it. Legacy defects are not preserved: every row of
-the defect disposition table (DEF-001..DEF-038) in [functional specification section 31](GDFramework%20Functional%20Specification.md#31-legacy-defects-and-compatibility-decisions) was decided as Fix or Retire under policy decision D-011 on 10 October 2026, and those dispositions bind this design.
+the defect disposition table (DEF-001..DEF-038) in [functional specification section 31](annper-functional-specification.md#31-legacy-defects-and-compatibility-decisions) was decided as Fix or Retire under policy decision D-011 on 10 October 2026, and those dispositions bind this design.
 
 Delivery status and quality gates are maintained in the
-[rebuild delivery and governance plan](GDF_MIGRATION_MASTER.md). Approved
+[rebuild delivery and governance plan](annper-migration-master.md). Approved
 decision rationale is maintained in
-[the architecture decision records](GDF_ARCHITECTURE_DECISIONS.md).
+[the architecture decision records](annper-architecture-decisions.md).
 
 ## 2. Design scope
 
@@ -415,7 +415,7 @@ literal form depends on a desktop process, the workstation, a local file
 system, an installed Office application, an operating-system window, or explicit
 element-coordinate placement requiring a responsive-layout decision. Decision
 D-017 approved the web equivalents below on 10 October 2026
-(GDF_MIGRATION_MASTER.md section 7; [ADR-002](GDF_ARCHITECTURE_DECISIONS.md#adr-002--desktop-bound-behavior-and-legacy-control-scope)). They are
+(annper-migration-master.md section 7; [ADR-002](annper-architecture-decisions.md#adr-002--desktop-bound-behavior-and-legacy-control-scope)). They are
 requirements of this design and replace the literal legacy behavior of the
 cited rows; FR-INV-012 is satisfied by this table.
 
@@ -539,7 +539,7 @@ An indeterminate status remains blocked; it is not permission to use a new key.
 An unsupported or internally inconsistent type is rejected during metadata
 publication. The runtime shall not silently substitute a grid.
 
-The [runtime prototype](../prototype/gdframework-web-mockup.html) implements
+The [runtime prototype](../prototype/annper-web-mockup.html) implements
 each family with sample data and is the
 layout reference: Order register (grid), Customer records (field), Inventory
 by product (master-detail), Repricing action and Run limit check (action),
@@ -724,7 +724,7 @@ equivalent.
 ### 10.3 Browser support
 
 The product shall support the browser set defined in the browser support
-matrix, which the D-001 framework ADR (GDF_MIGRATION_MASTER.md section 7) owns
+matrix, which the D-001 framework ADR (annper-migration-master.md section 7) owns
 and publishes with the framework selection; every supported combination shall
 meet NFR-UI-001 and NFR-ACC-001. The support matrix must define minimum versions, operating systems, assistive
 technology combinations, cookie/storage constraints, download behavior, and
@@ -848,7 +848,7 @@ bound values.
 Governed web authoring is a first-release capability (D-015 adopted), because
 no legacy metadata rows exist to import. The minimum authoring path needed for
 the first vertical slice is delivered in Phase 3 and completed in Phase 4
-(GDF_MIGRATION_MASTER.md section 4). Authoring shall use the same APIs and
+(annper-migration-master.md section 4). Authoring shall use the same APIs and
 validation pipeline as programmatic submission or promotion of newly authored configuration and support:
 
 - search and dependency navigation;
@@ -862,7 +862,7 @@ validation pipeline as programmatic submission or promotion of newly authored co
 - scheduled publication and one-action rollback; and
 - complete audit history with reasons.
 
-The [GD Studio prototype](../prototype/gdframework-admin-mockup.html) is the
+The [annper Studio prototype](../prototype/annper-admin-mockup.html) is the
 reference implementation of this workflow:
 applications, navigation, screens, fields, commands, DataClasses, connections,
 value lists, reports, security, validation results, version history, draft
@@ -934,7 +934,7 @@ audit pointers) is held in a transactional relational store reached only
 through a *platform store adapter*. Which engine a deployment uses is
 configuration: a logical store ID mapped to a qualified engine, endpoint,
 secret reference, and pool, in the same way section 14.3 maps application
-connections ([ADR-005](GDF_ARCHITECTURE_DECISIONS.md#adr-005--engine-agnostic-platform-store-and-configurable-providers)).
+connections ([ADR-005](annper-architecture-decisions.md#adr-005--engine-agnostic-platform-store-and-configurable-providers)).
 
 - Platform services depend on the store contract (typed operations and
   transaction scopes), never on an engine's SQL dialect, driver types, or
@@ -1087,7 +1087,7 @@ access and is never enabled by a client-side flag.
 
 > **Candidate contract.** The transport, encoding, live-update channel, and
 > dataset wire shape in this section are the recommended candidate pending
-> decisions D-002 and D-007 in GDF_MIGRATION_MASTER.md section 7; they do not
+> decisions D-002 and D-007 in annper-migration-master.md section 7; they do not
 > pre-empt those decisions and become binding only through an approved ADR.
 
 ### 13.1 Protocol baseline
@@ -1272,7 +1272,7 @@ tested against real supported provider versions for null, decimal, Unicode,
 date/time, Boolean, binary, identity, affected rows, concurrency, transaction,
 timeout, cancellation, and connection-loss behavior.
 
-The reference implementation (GDF_MIGRATION_MASTER.md sections 9 and 10)
+The reference implementation (annper-migration-master.md sections 9 and 10)
 supported SQL Server, Sybase, Oracle, Access, XML datasets, and registered
 service/helper adapters; that is lineage, not a target provider list. Under
 D-004 the platform is provider-agnostic: no engine is privileged or assumed,
@@ -1491,7 +1491,7 @@ approved organization identity provider at the host. Session, application,
 role, and data-scope authority are derived server-side. Client capability flags
 exist only to improve presentation.
 
-**Sign-in and session (D-005; [ADR-004](GDF_ARCHITECTURE_DECISIONS.md#adr-004--openid-connect-sign-in-with-a-server-side-session)).**
+**Sign-in and session (D-005; [ADR-004](annper-architecture-decisions.md#adr-004--openid-connect-sign-in-with-a-server-side-session)).**
 Interactive users sign in through OpenID Connect, using the authorization code
 flow with PKCE against the organization's identity provider. Any
 standards-compliant provider is admissible and none is named here. The host is
@@ -1563,7 +1563,7 @@ The selected implementation shall provide:
 - download content-disposition/type hardening and malware policy where needed;
 - administrative network/access restrictions; and
 - independent penetration testing before the first production release
-  (GDF_MIGRATION_MASTER.md section 4, Phase 5).
+  (annper-migration-master.md section 4, Phase 5).
 
 ### 15.4 Secrets and connections
 
@@ -1585,7 +1585,7 @@ to policy.
 
 Access to a business application is defined inside that application's
 configuration and nowhere else (decision D-022 as revised;
-[ADR-008](GDF_ARCHITECTURE_DECISIONS.md#adr-008--roles-and-users-belong-to-each-application-configuration)). Each application configuration owns
+[ADR-008](annper-architecture-decisions.md#adr-008--roles-and-users-belong-to-each-application-configuration)). Each application configuration owns
 its own roles and its own users (section 11.7). Nothing is shared: a person
 who uses two applications has a user entry in each, and each entry names only
 roles of its own application.
@@ -1639,9 +1639,9 @@ application's user list then follows through publication.
 
 ### 15.7 Studio access: Studio roles and Studio users
 
-Who may do what in the authoring tool (GD Studio) is governed separately and
+Who may do what in the authoring tool (annper Studio) is governed separately and
 has nothing to do with any application (decision D-023;
-[ADR-007](GDF_ARCHITECTURE_DECISIONS.md#adr-007--administrative-roles-granted-in-the-authoring-tool)). A Studio role grants nothing in a
+[ADR-007](annper-architecture-decisions.md#adr-007--administrative-roles-granted-in-the-authoring-tool)). A Studio role grants nothing in a
 business application, and being a user of an application grants nothing in
 Studio; a Studio user needs no application user entry.
 
@@ -1951,7 +1951,7 @@ and cannot impersonate users without a separately audited approved mechanism.
 **Satisfies:** NFR-PERF-001, NFR-PERF-002, NFR-PERF-003, NFR-PERF-004, NFR-SCALE-001, NFR-REL-001, NFR-REL-002, NFR-REL-003 (spec §§33, 44).
 
 The measurable floors are defined in
-[functional specification section 44](GDFramework%20Functional%20Specification.md#44-non-functional-requirements)
+[functional specification section 44](annper-functional-specification.md#44-non-functional-requirements)
 and are not restated here: interactive read (NFR-PERF-001), first usable UI
 (NFR-PERF-002), interactive change (NFR-PERF-003), large export (NFR-PERF-004),
 concurrency profile (NFR-SCALE-001), atomicity (NFR-REL-001), resource cleanup
@@ -2041,7 +2041,7 @@ This design defines publication of an application configuration within one
 environment. How a version moves from one environment to another, and whether
 the application user list (section 15.6) is specific to each environment or
 moves with the rest of the configuration, is open decision D-024
-(GDF_MIGRATION_MASTER.md section 7).
+(annper-migration-master.md section 7).
 
 ### 27.2 Build and release
 
@@ -2073,7 +2073,7 @@ approved web edge are all admissible. Whatever D-003 selects must support the
 NFR-SCALE-001 concurrency profile, NFR-AVAIL-001, NFR-REL-003 restart
 recovery, health checks, zero/low-downtime rollout, secret injection, network
 policy, telemetry, controlled egress, backups, and rollback. The selection is
-recorded by ADR in `GDF_ARCHITECTURE_DECISIONS.md` without changing the logical
+recorded by ADR in `annper-architecture-decisions.md` without changing the logical
 boundaries here.
 
 ## 28. Delivery sequencing
@@ -2082,7 +2082,7 @@ boundaries here.
 
 No legacy instance exists, so nothing is migrated, routed side by side, cut
 over, or retired. The platform and its first application are delivered in the
-phases of GDF_MIGRATION_MASTER.md section 4.
+phases of annper-migration-master.md section 4.
 
 ### 28.1 Delivery units
 
@@ -2121,7 +2121,7 @@ Observable behavior shall be tested with real implementations, protocol
 fixtures, lightweight purpose-built fakes at protocol boundaries, and real
 provider/integration environments appropriate to the boundary. Mocking
 frameworks that substitute generated doubles for real boundaries are
-prohibited. This rule is normative here and in GDF_MIGRATION_MASTER.md section
+prohibited. This rule is normative here and in annper-migration-master.md section
 3.4; CONTRIBUTING.md restates it for contributors.
 
 | Test layer | Required coverage |
@@ -2146,7 +2146,7 @@ provider, security, accessibility, and performance evidence is reused.
 
 Every applicable functional requirement, NFR, and approved defect disposition maps to one
 or more acceptance tests in the generated
-[requirements traceability matrix](GDF_REQUIREMENTS_TRACEABILITY.md)
+[requirements traceability matrix](annper-requirements-traceability.md)
 from the FR-*/NFR-*/DEF-* rows of the functional specification and the
 `WDES-*` rows of section 33 of this document.
 
@@ -2256,7 +2256,7 @@ security, and data boundaries is not sufficient evidence.
 The logical architecture is technology-neutral by decision: it fixes
 protocols, boundaries, and behavior and leaves every product replaceable. The
 table separates what is decided from the selections that remain for Gate C or
-later (GDF_MIGRATION_MASTER.md section 7 and `GDF_ARCHITECTURE_DECISIONS.md`). Nothing here is a hidden
+later (annper-migration-master.md section 7 and `annper-architecture-decisions.md`). Nothing here is a hidden
 assumption.
 
 | Decision | Register ID and status | Evidence required or recorded |
@@ -2307,7 +2307,7 @@ Implementation may begin with a vertical slice when:
    with a least-privilege identity exist; slice deployment, monitoring, and
    rollback evidence is delivered in Phase 3, and production backup and
    operational readiness are completed before the Phase 5 release gate;
-7. the generated `GDF_REQUIREMENTS_TRACEABILITY.md` matrix
+7. the generated `annper-requirements-traceability.md` matrix
    includes the slice's functional IDs and `WDES-*` design requirements; and
 8. product, security, database, UI/workflow, operations, and test owners accept
    the slice plan.

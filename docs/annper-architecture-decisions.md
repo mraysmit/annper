@@ -1,4 +1,4 @@
-# GDFramework Architecture Decision Records
+# annper Architecture Decision Records
 
 **Version:** 0.1\
 **Date:** 2026-10-12\
@@ -10,10 +10,10 @@
 
 This document contains the durable rationale and approval evidence for
 architecture, security, and compatibility decisions. [Migration master
-section 7](GDF_MIGRATION_MASTER.md#7-decision-register) owns live status,
+section 7](annper-migration-master.md#7-decision-register) owns live status,
 delivery timing, and open decisions. An ADR cannot silently override the
 functional specification or modern system design. Document versions and
-approvals are governed by [document control](GDF_DOCUMENT_CONTROL.md).
+approvals are governed by [document control](annper-document-control.md).
 
 A new record must state its status, date, owner, decision-register ID, affected
 requirements, context, decision, consequences, validation or reversal path,
@@ -58,7 +58,7 @@ DEF-025, DEF-027, DEF-028, and DEF-034 are Retire; the other 32 are Fix.
 
 Every Fix is an intentional difference requiring an acceptance test.
 AT-DEF-001..AT-DEF-038 in
-[GDF_REQUIREMENTS_TRACEABILITY.md](GDF_REQUIREMENTS_TRACEABILITY.md) provide the mapping. A
+[annper-requirements-traceability.md](annper-requirements-traceability.md) provide the mapping. A
 later disposition change requires a new decision, specification version, and
 regenerated traceability.
 

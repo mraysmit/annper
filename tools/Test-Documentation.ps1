@@ -10,17 +10,17 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).ProviderPath
 $DocsRoot = Join-Path $ProjectRoot 'docs'
-$SpecPath = Join-Path $DocsRoot 'GDFramework Functional Specification.md'
-$DesignPath = Join-Path $DocsRoot 'GDF_MODERN_WEB_SYSTEM_DESIGN.md'
-$MasterPath = Join-Path $DocsRoot 'GDF_MIGRATION_MASTER.md'
-$AdrPath = Join-Path $DocsRoot 'GDF_ARCHITECTURE_DECISIONS.md'
-$ControlPath = Join-Path $DocsRoot 'GDF_DOCUMENT_CONTROL.md'
-$TraceabilityPath = Join-Path $DocsRoot 'GDF_REQUIREMENTS_TRACEABILITY.md'
+$SpecPath = Join-Path $DocsRoot 'annper-functional-specification.md'
+$DesignPath = Join-Path $DocsRoot 'annper-modern-web-system-design.md'
+$MasterPath = Join-Path $DocsRoot 'annper-migration-master.md'
+$AdrPath = Join-Path $DocsRoot 'annper-architecture-decisions.md'
+$ControlPath = Join-Path $DocsRoot 'annper-document-control.md'
+$TraceabilityPath = Join-Path $DocsRoot 'annper-requirements-traceability.md'
 $errors = @()
 
 # ---- required controlled documents and allowed working guides
-$expectedDocs = @('GDF_DOCUMENT_CONTROL.md', 'GDFramework Functional Specification.md', 'GDF_MIGRATION_MASTER.md', 'GDF_MODERN_WEB_SYSTEM_DESIGN.md', 'GDF_ARCHITECTURE_DECISIONS.md')
-$allowedDocs = @($expectedDocs) + @('GDF_DEPLOYMENT_GUIDE.md', 'GDF_REQUIREMENTS_TRACEABILITY.md')
+$expectedDocs = @('annper-document-control.md', 'annper-functional-specification.md', 'annper-migration-master.md', 'annper-modern-web-system-design.md', 'annper-architecture-decisions.md')
+$allowedDocs = @($expectedDocs) + @('annper-deployment-guide.md', 'annper-requirements-traceability.md')
 $actualDocs = Get-ChildItem -LiteralPath $DocsRoot -Recurse -File | ForEach-Object { $_.Name } | Sort-Object
 foreach ($name in $expectedDocs) {
     if ($name -notin $actualDocs) { $errors += "docs folder is missing controlled document: $name" }
@@ -71,14 +71,14 @@ foreach ($tool in $toolFiles) {
     }
 }
 # Documents may not carry share paths either. The one exemption is the reviewed-location
-# record in GDF_MIGRATION_MASTER.md section 9.1 (the ${LEGACY_SOURCE_ROOT} evidence-root row),
+# record in annper-migration-master.md section 9.1 (the ${LEGACY_SOURCE_ROOT} evidence-root row),
 # which CONTRIBUTING.md names explicitly.
 $uncExemptRow = '^\|\s*`\$\{LEGACY_SOURCE_ROOT\}`\s*\|'
 foreach ($file in $markdownFiles) {
     $docLines = Get-Content -LiteralPath $file.FullName
     for ($i = 0; $i -lt $docLines.Count; $i++) {
-        if ($file.Name -eq 'GDF_MIGRATION_MASTER.md' -and $docLines[$i] -match $uncExemptRow) { continue }
-        if ($uncPattern.IsMatch($docLines[$i])) { $errors += "$($file.Name):$($i + 1) embeds a share path; only GDF_MIGRATION_MASTER.md section 9.1 may record the reviewed location" }
+        if ($file.Name -eq 'annper-migration-master.md' -and $docLines[$i] -match $uncExemptRow) { continue }
+        if ($uncPattern.IsMatch($docLines[$i])) { $errors += "$($file.Name):$($i + 1) embeds a share path; only annper-migration-master.md section 9.1 may record the reviewed location" }
     }
 }
 
@@ -99,34 +99,34 @@ function Get-HeaderVersion {
     return $null
 }
 $headerVersions = @{
-    'GDFramework Functional Specification.md' = Get-HeaderVersion $specRaw
-    'GDF_MODERN_WEB_SYSTEM_DESIGN.md' = Get-HeaderVersion $designRaw
-    'GDF_MIGRATION_MASTER.md' = Get-HeaderVersion $masterRaw
-    'GDF_ARCHITECTURE_DECISIONS.md' = Get-HeaderVersion $adrRaw
-    'GDF_DOCUMENT_CONTROL.md' = Get-HeaderVersion $controlRaw
+    'annper-functional-specification.md' = Get-HeaderVersion $specRaw
+    'annper-modern-web-system-design.md' = Get-HeaderVersion $designRaw
+    'annper-migration-master.md' = Get-HeaderVersion $masterRaw
+    'annper-architecture-decisions.md' = Get-HeaderVersion $adrRaw
+    'annper-document-control.md' = Get-HeaderVersion $controlRaw
 }
 foreach ($name in $headerVersions.Keys) { if (-not $headerVersions[$name]) { $errors += "$name header does not state a version" } }
 $registerBlock = if ($controlRaw -match '(?s)## 3\. Document register(.*?)## 4\.') { $Matches[1] } else { '' }
 $registerMap = @{
-    'GDFramework Functional Specification.md' = '^\|\s*Functional specification'
-    'GDF_MODERN_WEB_SYSTEM_DESIGN.md' = '^\|\s*Modern web system design'
-    'GDF_MIGRATION_MASTER.md' = '^\|\s*Migration master'
-    'GDF_ARCHITECTURE_DECISIONS.md' = '^\|\s*Architecture decision records'
-    'GDF_DOCUMENT_CONTROL.md' = '^\|\s*Document control'
+    'annper-functional-specification.md' = '^\|\s*Functional specification'
+    'annper-modern-web-system-design.md' = '^\|\s*Modern web system design'
+    'annper-migration-master.md' = '^\|\s*Migration master'
+    'annper-architecture-decisions.md' = '^\|\s*Architecture decision records'
+    'annper-document-control.md' = '^\|\s*Document control'
 }
 foreach ($name in $registerMap.Keys) {
     $rowMatch = [regex]::Match($registerBlock, '(?m)' + $registerMap[$name] + '[^|]*\|\s*(\d+\.\d+)\s*/')
-    if (-not $rowMatch.Success) { $errors += "GDF_DOCUMENT_CONTROL.md section 3 has no register row for $name"; continue }
-    if ($headerVersions[$name] -and $rowMatch.Groups[1].Value -ne $headerVersions[$name]) { $errors += "GDF_DOCUMENT_CONTROL.md section 3 lists $name as $($rowMatch.Groups[1].Value) but its header says $($headerVersions[$name])" }
+    if (-not $rowMatch.Success) { $errors += "annper-document-control.md section 3 has no register row for $name"; continue }
+    if ($headerVersions[$name] -and $rowMatch.Groups[1].Value -ne $headerVersions[$name]) { $errors += "annper-document-control.md section 3 lists $name as $($rowMatch.Groups[1].Value) but its header says $($headerVersions[$name])" }
 }
 # README "Current status" must state the same versions as the document headers.
 $readmeRaw = Get-Content -LiteralPath (Join-Path $ProjectRoot 'README.md') -Raw
 $readmeMap = @{
-    'GDFramework Functional Specification.md' = 'Functional specification: Controlled working baseline (\d+\.\d+)'
-    'GDF_MODERN_WEB_SYSTEM_DESIGN.md' = 'Modern web system design: Controlled working baseline (\d+\.\d+)'
-    'GDF_MIGRATION_MASTER.md' = 'Migration master: Controlled working baseline (\d+\.\d+)'
-    'GDF_ARCHITECTURE_DECISIONS.md' = 'Architecture decision records: Controlled working baseline (\d+\.\d+)'
-    'GDF_DOCUMENT_CONTROL.md' = 'Document control: Controlled working baseline (\d+\.\d+)'
+    'annper-functional-specification.md' = 'Functional specification: Controlled working baseline (\d+\.\d+)'
+    'annper-modern-web-system-design.md' = 'Modern web system design: Controlled working baseline (\d+\.\d+)'
+    'annper-migration-master.md' = 'Migration master: Controlled working baseline (\d+\.\d+)'
+    'annper-architecture-decisions.md' = 'Architecture decision records: Controlled working baseline (\d+\.\d+)'
+    'annper-document-control.md' = 'Document control: Controlled working baseline (\d+\.\d+)'
 }
 foreach ($name in $readmeMap.Keys) {
     if ($readmeRaw -notmatch $readmeMap[$name]) { $errors += "README.md current status has no version line for $name"; continue }
@@ -174,7 +174,7 @@ foreach ($m in [regex]::Matches($specRaw, '(?m)^\|\s*(DEF-\d+)\s*\|(.*)$')) {
 
 # ---- traceability artifact is present, generated, and current
 if ($traceabilityRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') {
-    $errors += 'GDF_REQUIREMENTS_TRACEABILITY.md lacks the generated traceability block'
+    $errors += 'annper-requirements-traceability.md lacks the generated traceability block'
     $traceIds = @()
 } else {
     $traceBlock = $Matches[1]
@@ -185,19 +185,19 @@ if ($traceabilityRaw -notmatch '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!
     if ($traceBlock -match 'UNMAPPED PREFIX') { $errors += 'Traceability contains unmapped requirement prefixes; update Build-ControlledArtifacts.ps1' }
 
     # Freshness: regenerate the artifact in a scratch copy and require a byte-identical block.
-    $scratch = Join-Path ([IO.Path]::GetTempPath()) ('gdf-trace-' + [guid]::NewGuid().ToString('N'))
+    $scratch = Join-Path ([IO.Path]::GetTempPath()) ('annper-trace-' + [guid]::NewGuid().ToString('N'))
     try {
         foreach ($sub in @('docs', 'baseline', 'tools')) { Copy-Item -LiteralPath (Join-Path $ProjectRoot $sub) -Destination (Join-Path $scratch $sub) -Recurse -Force }
         & (Join-Path $scratch 'tools\Build-ControlledArtifacts.ps1') -ProjectRoot $scratch -SkipBaseline 3>$null | Out-Null
-        $regenerated = (Get-Content -LiteralPath (Join-Path $scratch 'docs\GDF_REQUIREMENTS_TRACEABILITY.md') -Raw) -replace "`r`n", "`n"
+        $regenerated = (Get-Content -LiteralPath (Join-Path $scratch 'docs\annper-requirements-traceability.md') -Raw) -replace "`r`n", "`n"
         $regeneratedBlock = if ($regenerated -match '(?s)<!-- BEGIN GENERATED TRACEABILITY -->(.*?)<!-- END GENERATED TRACEABILITY -->') { $Matches[1] } else { '' }
-        if (($traceBlock -replace "`r`n", "`n") -ne $regeneratedBlock) { $errors += 'GDF_REQUIREMENTS_TRACEABILITY.md is stale; run tools/Build-ControlledArtifacts.ps1' }
+        if (($traceBlock -replace "`r`n", "`n") -ne $regeneratedBlock) { $errors += 'annper-requirements-traceability.md is stale; run tools/Build-ControlledArtifacts.ps1' }
     } finally {
         if (Test-Path -LiteralPath $scratch) {
             $scratchTarget = (Resolve-Path -LiteralPath $scratch).ProviderPath
             $scratchTempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
             if (-not $scratchTarget.StartsWith($scratchTempRoot, [StringComparison]::OrdinalIgnoreCase) -or
-                [IO.Path]::GetFileName($scratchTarget) -notmatch '^gdf-trace-[a-f0-9]{32}$') {
+                [IO.Path]::GetFileName($scratchTarget) -notmatch '^annper-trace-[a-f0-9]{32}$') {
                 throw "Refusing to remove an unexpected traceability scratch path: $scratchTarget"
             }
             Remove-Item -LiteralPath $scratchTarget -Recurse -Force
@@ -233,8 +233,8 @@ $expectedIdentity = ((Get-Content -LiteralPath $identityPath -Raw).Trim() -split
 $actualIdentity = (Get-FileHash -LiteralPath $checksumPath -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actualIdentity -ne $expectedIdentity) { $errors += "Checksum manifest identity mismatch: expected $expectedIdentity; actual $actualIdentity" }
 foreach ($record in @(
-    @{ Name = 'GDF_DOCUMENT_CONTROL.md'; Raw = $controlRaw; Label = 'Reviewed source-manifest SHA-256' },
-    @{ Name = 'GDF_REQUIREMENTS_TRACEABILITY.md'; Raw = $traceabilityRaw; Label = 'Legacy manifest SHA-256' }
+    @{ Name = 'annper-document-control.md'; Raw = $controlRaw; Label = 'Reviewed source-manifest SHA-256' },
+    @{ Name = 'annper-requirements-traceability.md'; Raw = $traceabilityRaw; Label = 'Legacy manifest SHA-256' }
 )) {
     $manifestRecord = [regex]::Match($record.Raw, ('(?m)^\*\*{0}:\*\*\s*`([a-f0-9]{{64}})`' -f [regex]::Escape($record.Label)))
     if (-not $manifestRecord.Success -or $manifestRecord.Groups[1].Value -ne $actualIdentity) {

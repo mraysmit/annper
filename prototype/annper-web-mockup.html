@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GD Workspace</title>
+  <title>annper Workspace</title>
   <style>
     :root {
       color-scheme: light;
@@ -530,8 +530,8 @@
   <a class="skip-link" href="#screenHost">Skip to main content</a>
   <div class="splash" id="splash" role="status">
     <div class="splash-inner">
-      <div class="splash-logo" aria-hidden="true">GD</div>
-      <h1>GD Workspace</h1>
+      <div class="splash-logo" aria-hidden="true">a</div>
+      <h1>annper Workspace</h1>
       <p id="splashText">Starting your session…</p>
       <div class="splash-line" id="splashLine"></div>
       <div id="splashActions"></div>
@@ -541,9 +541,9 @@
   <div id="app">
     <header class="topbar" id="topbar">
       <button class="icon-button hidden" id="navToggle" type="button" data-command="ToggleNav" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
-      <button class="brand" id="homeButton" type="button" data-command="Home" aria-label="GD Workspace home" title="Workspace home">
-        <span class="brand-mark" aria-hidden="true">GD</span>
-        <span class="brand-copy"><strong>GD Workspace</strong><span id="brandSub"></span></span>
+      <button class="brand" id="homeButton" type="button" data-command="Home" aria-label="annper Workspace home" title="Workspace home">
+        <span class="brand-mark" aria-hidden="true">a</span>
+        <span class="brand-copy"><strong>annper Workspace</strong><span id="brandSub"></span></span>
       </button>
       <div class="app-picker"><label class="sr-only" for="appSelect">Switch application</label><select id="appSelect" title="Switch application"></select></div>
       <span class="detached-tag hidden" id="detachedTag">Separate window</span>
@@ -600,19 +600,19 @@
       var supported = typeof structuredClone === 'function' && 'inert' in document.documentElement && typeof Intl === 'object' &&
         window.CSS && CSS.supports && CSS.supports('selector(:focus-visible)');
       if (!supported) {
-        window.gdUnsupported = true;
-        fail('This browser is not supported. Use a current version of a supported browser to open GD Workspace.');
+        window.annperUnsupported = true;
+        fail('This browser is not supported. Use a current version of a supported browser to open annper Workspace.');
         return;
       }
       setTimeout(function () {
-        if (!window.gdStarted) { fail('GD Workspace could not start. Reload the page; if this continues, contact support.'); }
+        if (!window.annperStarted) { fail('annper Workspace could not start. Reload the page; if this continues, contact support.'); }
       }, 6000);
     })();
   </script>
 
   <script id="mock-datasources" type="application/json">
   {
-    "platform": {"product":"GD Workspace","clientBuild":"1.4.0+build.218","apiVersion":"v1","currency":"GBP","signIn":"Signed in through your organization's identity provider"},
+    "platform": {"product":"annper Workspace","clientBuild":"1.4.0+build.218","apiVersion":"v1","currency":"GBP","signIn":"Signed in through your organization's identity provider"},
     "session": {"subject":"alex.smith","displayName":"Alex Smith","initials":"AS","locale":"en-GB","timeZone":"Europe/London"},
     "applications": [
       {
@@ -986,7 +986,7 @@
   (() => {
     'use strict';
 
-    if (window.gdUnsupported) return;
+    if (window.annperUnsupported) return;
 
     const source = JSON.parse(document.getElementById('mock-datasources').textContent);
     const db = structuredClone(source.dataSources);
@@ -1381,7 +1381,7 @@
     // preference service keeps one record per subject so that a different subject starts from defaults.
     // ---------------------------------------------------------------------------------------------
     const prefs = (() => {
-      const KEY = 'gd-workspace-preference-service';
+      const KEY = 'annper-workspace-preference-service';
       let store = {};
       try { const raw = JSON.parse(localStorage.getItem(KEY) || '{}'); if (raw && typeof raw === 'object' && !Array.isArray(raw)) store = raw; } catch (error) { store = {}; }
       const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (error) { /* store unavailable: preferences last for this page only */ } };
@@ -1746,7 +1746,7 @@
       overlay.classList.toggle('hidden', !lost);
       hostEl.inert = lost;
       if (lost && !overlay.firstChild) {
-        overlay.innerHTML = `<div class="panel" role="alertdialog" aria-labelledby="unreachTitle" aria-describedby="unreachText"><div class="state-panel error" style="margin:0;padding:0"><div class="state-icon" aria-hidden="true">!</div><h2 id="unreachTitle">Connection lost</h2><p id="unreachText">GD Workspace cannot reach the service, so this screen is paused. Nothing has been lost: your unsaved changes are still held in this window. They are not sent until you are connected again and choose Save.</p><p class="ref" id="unreachNote"></p><div class="banner-actions"><button type="button" class="button primary" data-command="RetryConnection" data-scope="shell" id="retryConnection">Retry</button></div></div></div>`;
+        overlay.innerHTML = `<div class="panel" role="alertdialog" aria-labelledby="unreachTitle" aria-describedby="unreachText"><div class="state-panel error" style="margin:0;padding:0"><div class="state-icon" aria-hidden="true">!</div><h2 id="unreachTitle">Connection lost</h2><p id="unreachText">annper Workspace cannot reach the service, so this screen is paused. Nothing has been lost: your unsaved changes are still held in this window. They are not sent until you are connected again and choose Save.</p><p class="ref" id="unreachNote"></p><div class="banner-actions"><button type="button" class="button primary" data-command="RetryConnection" data-scope="shell" id="retryConnection">Retry</button></div></div></div>`;
       }
       if (!lost) overlay.innerHTML = '';
     }
@@ -1860,7 +1860,7 @@
         try { if (replace) history.replaceState(null, '', hash); else location.hash = hash; } catch (error) { try { location.hash = hash; } catch (inner) { /* the address could not be updated */ } }
       }
       const tab = activeTabObj(), a = app();
-      document.title = (tab ? tab.title + ' · ' : '') + (a ? a.name + ' · ' : '') + 'GD Workspace';
+      document.title = (tab ? tab.title + ' · ' : '') + (a ? a.name + ' · ' : '') + 'annper Workspace';
     }
     function parseRouteKey(hash) { const r = parseRoute(hash); return [r.appId, r.screenId, r.subkey].join('/'); }
     async function onRouteChange() {
@@ -2114,7 +2114,7 @@
       if (!a) return '';
       const groups = navModel();
       const card = (item, g) => `<button type="button" class="launch-card" data-command="OpenNav" data-arg="${item.id}" data-fk="card:${g.id}:${item.id}"><span class="nav-icon" aria-hidden="true">${iconMap[item.icon] || '•'}</span><span><strong>${escapeHtml(item.label)}${item.screenId === a.defaultScreen ? ' <span class="chip">Default</span>' : ''}</strong><span class="desc">${escapeHtml(metadata[item.screenId].description || '')}</span></span></button>`;
-      return `<section class="welcome" aria-labelledby="welcomeTitle"><div class="welcome-inner"><div class="welcome-mark" aria-hidden="true">GD</div><h1 id="welcomeTitle">${escapeHtml(a.name)}</h1><p>${escapeHtml(a.description)}. Choose a screen to begin.</p>${groups.filter(g => g.items.length).map(g => `<h2>${escapeHtml(g.label)}</h2><div class="launch-grid">${g.items.map(item => card(item, g)).join('')}</div>`).join('')}</div></section>`;
+      return `<section class="welcome" aria-labelledby="welcomeTitle"><div class="welcome-inner"><div class="welcome-mark" aria-hidden="true">a</div><h1 id="welcomeTitle">${escapeHtml(a.name)}</h1><p>${escapeHtml(a.description)}. Choose a screen to begin.</p>${groups.filter(g => g.items.length).map(g => `<h2>${escapeHtml(g.label)}</h2><div class="launch-grid">${g.items.map(item => card(item, g)).join('')}</div>`).join('')}</div></section>`;
     }
 
 
@@ -3212,7 +3212,7 @@
       const rows = [['Application', a ? `${a.name} (${a.id})` : ''], ['Client build', source.platform.clientBuild], ['API version', source.platform.apiVersion], ['Metadata version', a ? a.version : ''],
         ['Signed in as', `${session.displayName} (${session.subject})`], ['Roles in this application', roleNames().join(', ') || 'None'], ['Sign-in', source.platform.signIn], ['Locale', session.locale], ['Time zone', session.timeZone],
         ['Message check interval', state.pollingSeconds + ' seconds'], ['Correlation ID', state.sessionCorrelation || '']];
-      openDialog({ title: 'About GD Workspace', dismiss: 'close', defaultButton: 'close',
+      openDialog({ title: 'About annper Workspace', dismiss: 'close', defaultButton: 'close',
         body: `<dl class="kv">${rows.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd${k === 'Correlation ID' ? ' class="mono"' : ''}>${escapeHtml(v)}</dd>`).join('')}</dl><p class="field-help">Quote the correlation ID when you contact support.</p><div class="about-proto"><strong>About this prototype</strong><br>This page is an interactive reference for layout and behaviour. Nothing here is connected to a real service.${state.support ? ' The support view is switched on in the prototype tools.' : ''}<br><button type="button" class="button" data-command="PrototypeTools" data-fk="about:proto">Open prototype tools</button></div>`,
         buttons: [...(state.support ? [{ id: 'diag', label: 'Diagnostics', handler: () => { setTimeout(openDiagnostics, 0); return 'diag'; } }] : []), { id: 'close', label: 'Close', primary: true }] });
     }
@@ -3249,7 +3249,7 @@
       if (!(await resolveUnsaved([key], 'detaching this screen'))) return false;   // the other window starts from saved data
       const url = standaloneUrl(tab, s);
       let win = null;
-      try { win = window.open(url, 'gd-' + key.replace(/[^a-z0-9]/gi, '-'), 'popup=yes,width=1180,height=800'); } catch (error) { win = null; }
+      try { win = window.open(url, 'annper-' + key.replace(/[^a-z0-9]/gi, '-'), 'popup=yes,width=1180,height=800'); } catch (error) { win = null; }
       if (!win) {
         await messageBox({ title: 'The separate window was blocked', severity: 'warning', html: `<p>Your browser did not allow ${escapeHtml(tab.title)} to open in its own window. Allow pop-up windows for this page and choose Detach again, or open this address yourself:</p><p class="mono" style="overflow-wrap:anywhere">${escapeHtml(url)}</p>` });
         return false;
@@ -3274,7 +3274,7 @@
       const id = ++detachSeq;
       return new Promise(resolve => {
         detachWaiters.set(id, ok => { detachWaiters.delete(id); if (ok) { delete state.detached[key]; } resolve(ok); });
-        try { entry.win.postMessage({ gd: 'request', id, action }, '*'); entry.win.focus(); } catch (error) { detachWaiters.get(id)(true); }
+        try { entry.win.postMessage({ annper: 'request', id, action }, '*'); entry.win.focus(); } catch (error) { detachWaiters.get(id)(true); }
         const watch = setInterval(() => { if (!detachWaiters.has(id)) { clearInterval(watch); return; } if (entry.win.closed) { clearInterval(watch); detachWaiters.get(id)(true); } }, 400);
       });
     }
@@ -3283,7 +3283,7 @@
       if (!tab) return false;
       if (state.view === 'detached') {
         if (!(await resolveUnsaved([key], 'reattaching this screen'))) return false;
-        if (window.opener && !window.opener.closed) { try { window.opener.postMessage({ gd: 'dock', key }, '*'); } catch (error) { /* the workspace is gone; this window becomes the workspace */ } window.close(); setTimeout(becomeWorkspace, 300); return true; }
+        if (window.opener && !window.opener.closed) { try { window.opener.postMessage({ annper: 'dock', key }, '*'); } catch (error) { /* the workspace is gone; this window becomes the workspace */ } window.close(); setTimeout(becomeWorkspace, 300); return true; }
         becomeWorkspace();
         return true;
       }
@@ -3299,25 +3299,25 @@
     }
     function onWindowMessage(e) {
       const data = e.data;
-      if (!data || typeof data !== 'object' || typeof data.gd !== 'string') return;
+      if (!data || typeof data !== 'object' || typeof data.annper !== 'string') return;
       if (state.view === 'detached') {
         if (e.source !== window.opener) return;
-        if (data.gd === 'session-ended') { endSession(['terminated', 'expired'].includes(data.reason) ? data.reason : 'signed-out'); return; }
-        if (data.gd === 'request') resolveUnsaved(state.tabs.map(t => t.key), data.action === 'dock' ? 'reattaching this screen' : 'closing this screen').then(ok => { try { e.source.postMessage({ gd: 'reply', id: data.id, ok }, '*'); } catch (error) { /* opener gone */ } if (ok) window.close(); });
+        if (data.annper === 'session-ended') { endSession(['terminated', 'expired'].includes(data.reason) ? data.reason : 'signed-out'); return; }
+        if (data.annper === 'request') resolveUnsaved(state.tabs.map(t => t.key), data.action === 'dock' ? 'reattaching this screen' : 'closing this screen').then(ok => { try { e.source.postMessage({ annper: 'reply', id: data.id, ok }, '*'); } catch (error) { /* opener gone */ } if (ok) window.close(); });
         return;
       }
       const key = Object.keys(state.detached).find(k => state.detached[k].win === e.source);
       if (!key) return;
-      if (data.gd === 'reply' && detachWaiters.has(data.id)) detachWaiters.get(data.id)(!!data.ok);
-      else if (data.gd === 'dock') reattach(key, (tabByKey(key) || { title: 'Screen' }).title + ' reattached');
-      else if (data.gd === 'state') { state.detached[key].dirty = !!data.dirty; renderTabs(); }
-      else if (data.gd === 'session-ended') endSession(['terminated', 'expired'].includes(data.reason) ? data.reason : 'signed-out');
+      if (data.annper === 'reply' && detachWaiters.has(data.id)) detachWaiters.get(data.id)(!!data.ok);
+      else if (data.annper === 'dock') reattach(key, (tabByKey(key) || { title: 'Screen' }).title + ' reattached');
+      else if (data.annper === 'state') { state.detached[key].dirty = !!data.dirty; renderTabs(); }
+      else if (data.annper === 'session-ended') endSession(['terminated', 'expired'].includes(data.reason) ? data.reason : 'signed-out');
     }
     function watchDetached() {
       Object.keys(state.detached).forEach(key => { const d = state.detached[key]; if (d.win && d.win.closed && ![...detachWaiters.keys()].length) reattach(key, 'The separate window was closed'); });
       if (state.view === 'detached' && window.opener && !window.opener.closed) {
         const dirty = state.tabs.some(t => state.screens[t.key] && state.screens[t.key].dirty);
-        if (dirty !== state.reportedDirty) { state.reportedDirty = dirty; try { window.opener.postMessage({ gd: 'state', dirty }, '*'); } catch (error) { /* opener gone */ } }
+        if (dirty !== state.reportedDirty) { state.reportedDirty = dirty; try { window.opener.postMessage({ annper: 'state', dirty }, '*'); } catch (error) { /* opener gone */ } }
       }
     }
 
@@ -3331,8 +3331,8 @@
     }
     function endSession(reason) {
       if (state.signedOut) return;
-      Object.values(state.detached).forEach(d => { try { if (d.win && !d.win.closed) d.win.postMessage({ gd: 'session-ended', reason }, '*'); } catch (error) { /* window already gone */ } });
-      if (state.view === 'detached' && window.opener && !window.opener.closed) { try { window.opener.postMessage({ gd: 'session-ended', reason }, '*'); } catch (error) { /* workspace window gone */ } }   // one session: ending it here ends it there
+      Object.values(state.detached).forEach(d => { try { if (d.win && !d.win.closed) d.win.postMessage({ annper: 'session-ended', reason }, '*'); } catch (error) { /* window already gone */ } });
+      if (state.view === 'detached' && window.opener && !window.opener.closed) { try { window.opener.postMessage({ annper: 'session-ended', reason }, '*'); } catch (error) { /* workspace window gone */ } }   // one session: ending it here ends it there
       const reference = state.sessionCorrelation || '';
       state.signedOut = true; state.sessionEpoch++;
       state.jobs.forEach(j => { clearTimeout(j.timer); if (j.url) URL.revokeObjectURL(j.url); });
@@ -3346,7 +3346,7 @@
       appContainer.inert = false;
       appContainer.innerHTML = `<main class="signed-out"><h1 tabindex="-1" id="signedOutTitle">${reason === 'terminated' ? 'Your session was ended by an administrator' : reason === 'expired' ? 'Your session has expired' : 'You have signed out'}</h1><p>The session has ended. Everything this window was holding has been cleared, including any unsaved drafts.</p><p>Ending the session does not undo changes the service had already accepted. They finish on the service, and any whose outcome was still being confirmed will be listed for you when you next sign in.</p>${reference ? `<p class="mono">Support reference: ${escapeHtml(reference)}</p>` : ''}<button type="button" class="button primary" id="signInAgain">Sign in again</button></main>`;
       document.getElementById('signInAgain').addEventListener('click', () => { try { history.replaceState(null, '', location.href.split('#')[0]); } catch (error) { /* keep the address */ } location.reload(); });
-      document.title = 'Signed out · GD Workspace';
+      document.title = 'Signed out · annper Workspace';
       document.getElementById('signedOutTitle').focus();
     }
 
@@ -3633,7 +3633,7 @@
           if (row) { otherUserChange(row, metadata.orders.fields, {}, 'updatedAt'); body.querySelector('#protoOtherDone').textContent = row.id + ' changed to version ' + row.version + '.'; }
         }
         if (e.target.id === 'protoShowJson') { const pre = body.querySelector('#protoJson'); pre.hidden = !pre.hidden; if (!pre.hidden) pre.textContent = snapshot(); }
-        if (e.target.id === 'protoDownloadJson') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([snapshot()], { type: 'application/json' })); a.download = 'gd-workspace-sample-data.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+        if (e.target.id === 'protoDownloadJson') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([snapshot()], { type: 'application/json' })); a.download = 'annper-workspace-sample-data.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
         if (e.target.id === 'protoResetPrefs') { prefs.reset(); applyTheme(); applyNavPrefs(); renderAll(); body.querySelector('#protoPrefsDone').textContent = 'Cleared.'; }
       });
     }
@@ -3925,9 +3925,9 @@
       const text = document.getElementById('splashText'), actions = document.getElementById('splashActions');
       document.getElementById('splashLine').style.display = 'none';
       actions.innerHTML = '';
-      if (error && error.kind === 'forbidden') text.textContent = 'You cannot start GD Workspace because access was refused, so nothing has been loaded.' + (error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
+      if (error && error.kind === 'forbidden') text.textContent = 'You cannot start annper Workspace because access was refused, so nothing has been loaded.' + (error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
       else {
-        text.textContent = 'GD Workspace could not start because the service could not be reached. Nothing has been loaded.' + (error && error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
+        text.textContent = 'annper Workspace could not start because the service could not be reached. Nothing has been loaded.' + (error && error.correlationId ? ' Support reference: ' + error.correlationId + '.' : '');
         const retry = document.createElement('button');
         retry.type = 'button'; retry.className = 'button'; retry.textContent = 'Retry';
         retry.addEventListener('click', () => { actions.innerHTML = ''; document.getElementById('splashLine').style.display = ''; text.textContent = 'Starting your session…'; start(); });
@@ -3947,7 +3947,7 @@
         open.addEventListener('click', () => { location.hash = '#/' + other.id; location.reload(); });
         actions.appendChild(open);
       });
-      document.title = 'Cannot start ' + application.name + ' · GD Workspace';
+      document.title = 'Cannot start ' + application.name + ' · annper Workspace';
     }
     // Prototype tools only: changes this window's copy of one application's entry for the signed-in person.
     function simulateAccess(application, how) {
@@ -3957,7 +3957,7 @@
       else if (how === 'no-role' && entry) entry.roles = [];
     }
     async function start() {
-      window.gdStarted = true;
+      window.annperStarted = true;
       const route = parseRoute(location.hash), p = route.params;
       applyTheme();
       if (p.support === '1') state.support = true;
@@ -3989,7 +3989,7 @@
       if (route.screenId && known(route.appId)) await openScreen(route.screenId, { subkey: route.subkey, focus: false });
       else if (!known(route.appId) && app().defaultScreen) await openScreen(app().defaultScreen, { focus: false });   // no address: the application's default screen
       else syncRoute(true);
-      if (state.view === 'detached' && window.opener) { try { window.opener.postMessage({ gd: 'state', dirty: false }, '*'); } catch (error) { /* no workspace window */ } }
+      if (state.view === 'detached' && window.opener) { try { window.opener.postMessage({ annper: 'state', dirty: false }, '*'); } catch (error) { /* no workspace window */ } }
       if (p.sim && late) { sim.next = p.sim; renderProtoFlag(); }
       if (p.view === 'print' && state.activeTab) await openPrintDocument(state.activeTab);
       if (p.do) await protoAutoplay(p.do);

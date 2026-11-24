@@ -1,4 +1,4 @@
-# GDFramework Rebuild Delivery and Governance Plan
+# annper Delivery and Governance Plan
 
 **Version:** 0.15\
 **Date:** 2026-10-12\
@@ -8,12 +8,12 @@
 
 ## 1. Purpose, authority, and current position
 
-This document governs delivery of the GDFramework rebuild: sequencing,
+This document governs delivery of annper: sequencing,
 ownership, decisions, risks, and quality gates. It does not restate the
-[functional specification](GDFramework%20Functional%20Specification.md) or
-[target design](GDF_MODERN_WEB_SYSTEM_DESIGN.md). Where a summary here differs
+[functional specification](annper-functional-specification.md) or
+[target design](annper-modern-web-system-design.md). Where a summary here differs
 from either higher-precedence document, those documents govern. Versions and
-approvals are governed by [document control](GDF_DOCUMENT_CONTROL.md).
+approvals are governed by [document control](annper-document-control.md).
 
 The legacy VB6 system is not deployed. No production instance, populated
 metadata store, application database, user population, helper binary, or
@@ -24,7 +24,7 @@ side-by-side routing, cutover, or legacy-retirement work.
 An intentional behavioral difference requires an approved defect disposition
 or product decision. An architecture or compatibility decision requires an ADR
 linked from section 7 and governed by
-[GDF_ARCHITECTURE_DECISIONS.md](GDF_ARCHITECTURE_DECISIONS.md).
+[annper-architecture-decisions.md](annper-architecture-decisions.md).
 
 ### 1.1 Current position
 
@@ -92,8 +92,8 @@ production code:
 
 | Prototype | Purpose |
 |---|---|
-| `gdframework-web-mockup.html` | Runtime shell, all seven screen families, user workflows, messages, export, print, diagnostics, responsive layout, and failure states |
-| `gdframework-admin-mockup.html` | Application authoring, validation, approval, publication, rollback, security administration, and audit workflows |
+| `annper-web-mockup.html` | Runtime shell, all seven screen families, user workflows, messages, export, print, diagnostics, responsive layout, and failure states |
+| `annper-admin-mockup.html` | Application authoring, validation, approval, publication, rollback, security administration, and audit workflows |
 
 The runtime prototype's Operations Hub and Risk & Controls application is the
 proposed first application. Gate B confirms it and its initial Order register
@@ -299,26 +299,26 @@ safe default permits deferral only where Gate C explicitly allows it.
 | D-001 | Select the browser framework and design system after the accessibility/performance spike | UI/workflow owner | Gate C | Direction selected; framework open | Pending |
 | D-002 | Select the service transport | Migration technical lead | Gate C or safe deferral | Open | Pending |
 | D-003 | Select hosting and deployment topology | Operations owner | Gate C or safe deferral | Open | Pending |
-| D-004 | Select and qualify application providers; none is privileged | Database owner | First at Gate C; later per Phase 4 group | Direction approved; first provider open | [ADR-005](GDF_ARCHITECTURE_DECISIONS.md#adr-005--engine-agnostic-platform-store-and-configurable-providers) |
-| D-005 | Use OpenID Connect with a server-side session; automated-client identity remains open | Security owner | Gate C | Interactive sign-in approved | [ADR-004](GDF_ARCHITECTURE_DECISIONS.md#adr-004--openid-connect-sign-in-with-a-server-side-session) |
+| D-004 | Select and qualify application providers; none is privileged | Database owner | First at Gate C; later per Phase 4 group | Direction approved; first provider open | [ADR-005](annper-architecture-decisions.md#adr-005--engine-agnostic-platform-store-and-configurable-providers) |
+| D-005 | Use OpenID Connect with a server-side session; automated-client identity remains open | Security owner | Gate C | Interactive sign-in approved | [ADR-004](annper-architecture-decisions.md#adr-004--openid-connect-sign-in-with-a-server-side-session) |
 | D-006 | Compatibility duration | — | — | Closed: not applicable | — |
 | D-007 | Select the dataset wire contract using representative payloads | Migration technical lead | Gate C or safe deferral | Open | Pending |
 | D-008 | Select the supported implementation runtime and toolchain | Migration technical lead | Gate C | Open | Pending |
 | D-009 | Select canonical reference source per component | Legacy technical owner | Gate A | Open | Pending |
 | D-010 | Define each authored application's database schema or connection policy | Database owner | Before application database design | Open per application | Pending |
-| D-011 | Fix or Retire legacy defects by default; Preserve requires a reason | Product/domain owner | Gate B entry | Approved | [ADR-001](GDF_ARCHITECTURE_DECISIONS.md#adr-001--legacy-defect-disposition-policy) |
+| D-011 | Fix or Retire legacy defects by default; Preserve requires a reason | Product/domain owner | Gate B entry | Approved | [ADR-001](annper-architecture-decisions.md#adr-001--legacy-defect-disposition-policy) |
 | D-012 | Side-by-side routing unit | — | — | Closed: not applicable | — |
-| D-013 | Keep the platform store engine-agnostic and qualify engines through one conformance suite | Migration technical lead | First at Gate C; second by Gate E | Direction approved; first engine open | [ADR-005](GDF_ARCHITECTURE_DECISIONS.md#adr-005--engine-agnostic-platform-store-and-configurable-providers) |
+| D-013 | Keep the platform store engine-agnostic and qualify engines through one conformance suite | Migration technical lead | First at Gate C; second by Gate E | Direction approved; first engine open | [ADR-005](annper-architecture-decisions.md#adr-005--engine-agnostic-platform-store-and-configurable-providers) |
 | D-014 | Select queue, distributed cache, and object storage when needed | Operations owner | Before the dependent phase | Open | Pending |
 | D-015 | Deliver governed web authoring in the first release and decide its approval model | Product/domain owner | Approval model at Gate C | Authoring adopted; approval model open | Pending |
 | D-016 | Confirm online-only behavior or approve a secure offline design | UI/workflow owner | Gate C or safe deferral | Online-only default adopted | Pending if challenged |
-| D-017 | Apply the approved web equivalents for desktop-bound behavior and legacy controls | Product/domain and UI/workflow owners | Gate B | Approved | [ADR-002](GDF_ARCHITECTURE_DECISIONS.md#adr-002--desktop-bound-behavior-and-legacy-control-scope) |
+| D-017 | Apply the approved web equivalents for desktop-bound behavior and legacy controls | Product/domain and UI/workflow owners | Gate B | Approved | [ADR-002](annper-architecture-decisions.md#adr-002--desktop-bound-behavior-and-legacy-control-scope) |
 | D-018 | Define technology-neutral format tokens | Migration technical lead | Before Phase 4 formatting work | Open | Pending |
 | D-019 | Decide which legacy extension contracts survive as registered adapters | Migration technical lead | Before Phase 4 extension work | Open | Pending |
-| D-020 | Exclude PLM, aggregation, and limit processing | Product/domain owner | Gate B | Approved | [ADR-003](GDF_ARCHITECTURE_DECISIONS.md#adr-003--plm-aggregation-and-limit-processing-out-of-scope) |
+| D-020 | Exclude PLM, aggregation, and limit processing | Product/domain owner | Gate B | Approved | [ADR-003](annper-architecture-decisions.md#adr-003--plm-aggregation-and-limit-processing-out-of-scope) |
 | D-021 | Decide dual-source-write scope and qualify atomicity/recovery per provider pair | Product/domain, database, and migration owners | Scope at Gate B; strategy before use | Open | Pending |
-| D-022 | Keep each application's roles and users inside its published configuration | Product/domain and security owners | Gate C | Approved; ADR-006 superseded | [ADR-008](GDF_ARCHITECTURE_DECISIONS.md#adr-008--roles-and-users-belong-to-each-application-configuration) |
-| D-023 | Manage fixed Studio roles inside the authoring tool with second-person approval | Security and operations owners | Gate C | Approved | [ADR-007](GDF_ARCHITECTURE_DECISIONS.md#adr-007--administrative-roles-granted-in-the-authoring-tool) |
+| D-022 | Keep each application's roles and users inside its published configuration | Product/domain and security owners | Gate C | Approved; ADR-006 superseded | [ADR-008](annper-architecture-decisions.md#adr-008--roles-and-users-belong-to-each-application-configuration) |
+| D-023 | Manage fixed Studio roles inside the authoring tool with second-person approval | Security and operations owners | Gate C | Approved | [ADR-007](annper-architecture-decisions.md#adr-007--administrative-roles-granted-in-the-authoring-tool) |
 | D-024 | Decide promotion between environments and environment scope of application users | Operations, product, and security owners | Before production promotion | Open | Pending |
 
 ## 8. Immediate actions and blockers
@@ -442,7 +442,7 @@ Normative dependency evidence is in functional specification sections 38 and
 ## 11. Architecture decision record index
 
 Full decision context, consequences, validation, and approvals are maintained
-in [GDF_ARCHITECTURE_DECISIONS.md](GDF_ARCHITECTURE_DECISIONS.md). The live
+in [annper-architecture-decisions.md](annper-architecture-decisions.md). The live
 decision status and delivery deadline remain canonical in section 7.
 
 | Record | Decision | Status |

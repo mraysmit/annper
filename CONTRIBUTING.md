@@ -1,8 +1,8 @@
-# Contributing to the GDFramework Rebuild
+# Contributing to annper
 
 ## Documentation-first workflow
 
-1. Start from the controlled hierarchy in `docs/GDF_DOCUMENT_CONTROL.md`. The
+1. Start from the controlled hierarchy in `docs/annper-document-control.md`. The
    controlled set is the five documents named there. Working guides may
    summarize them but are non-normative.
 2. Link behavior changes to functional requirement IDs (`FR-*`, `NFR-*`) and
@@ -13,9 +13,9 @@
    Desktop-bound behaviors that cannot be carried into the browser go in
    section 32.1 under decision D-017.
 4. Record architecture/security/compatibility decisions in
-   `GDF_ARCHITECTURE_DECISIONS.md` and link them from the migration master
+   `annper-architecture-decisions.md` and link them from the migration master
    section 7 register.
-5. Regenerate `docs/GDF_REQUIREMENTS_TRACEABILITY.md` with
+5. Regenerate `docs/annper-requirements-traceability.md` with
    `tools/Build-ControlledArtifacts.ps1` after any change to `FR-*`, `NFR-*`,
    `DEF-*`, or `WDES-*` rows. Regenerate the checksum baseline only with
    `LEGACY_SOURCE_ROOT` set to the reviewed legacy tree.
@@ -28,12 +28,12 @@
   strings.
 - Do not introduce machine-specific or share-specific paths in documents or
   build logic; use `LEGACY_SOURCE_ROOT` for legacy evidence. The single
-  exception is the reviewed-location record in `GDF_MIGRATION_MASTER.md`
+  exception is the reviewed-location record in `annper-migration-master.md`
   section 9.1, which is evidence about the reviewed copy and is the only
   line the validator exempts.
 - Preserve stable requirement, risk, decision, evidence, component, dependency,
   NFR, and design-verification identifiers.
-- Update the current change history in `docs/GDF_DOCUMENT_CONTROL.md`
+- Update the current change history in `docs/annper-document-control.md`
   section 6 and the document's own header when normative behavior, scope,
   architecture, or gate logic changes.
 - Tests must exercise observable behavior with real implementations,

@@ -10,8 +10,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
-const runtime = fs.readFileSync(path.join(root, 'prototype/gdframework-web-mockup.html'), 'utf8');
-const admin = fs.readFileSync(path.join(root, 'prototype/gdframework-admin-mockup.html'), 'utf8');
+const runtime = fs.readFileSync(path.join(root, 'prototype/annper-web-mockup.html'), 'utf8');
+const admin = fs.readFileSync(path.join(root, 'prototype/annper-admin-mockup.html'), 'utf8');
 function json(html, id) {
   const match = html.match(new RegExp('<script id="' + id + '" type="application/json">([\\s\\S]*?)</script>'));
   assert.ok(match, id + ' exists');
@@ -383,12 +383,12 @@ test('Studio 11.4/11.6: provider comes from the registered catalogue; unknown or
 
 test('Studio 11.4/15.4: a secret reference must match a reference scheme; credentials are refused and never stored', () => {
   const s=studio();
-  for(const bad of ['Password=hunter2;User Id=sa','Server=db01;Database=ops','secret://gd/x y','user:pw@host','hunter2'])assert.notEqual(s.run(`secretRefIssue(${JSON.stringify(bad)})`),'',bad);
-  for(const good of ['secret://gd/connections/ops-db','identity://gd/workloads/risk-reader'])assert.equal(s.run(`secretRefIssue(${JSON.stringify(good)})`),'',good);
+  for(const bad of ['Password=hunter2;User Id=sa','Server=db01;Database=ops','secret://annper/x y','user:pw@host','hunter2'])assert.notEqual(s.run(`secretRefIssue(${JSON.stringify(bad)})`),'',bad);
+  for(const good of ['secret://annper/connections/ops-db','identity://annper/workloads/risk-reader'])assert.equal(s.run(`secretRefIssue(${JSON.stringify(good)})`),'',good);
   s.run("state.actor='Chris Doyle'");
   assert.equal(s.run("setProp('connections.ops-db','secretRef','Password=hunter2;User Id=sa','')"),false);
   assert.match(s.messages.at(-1)[0],/looks like a credential/);
-  assert.equal(s.run('model.connections[0].secretRef'),'secret://gd/connections/ops-db');
+  assert.equal(s.run('model.connections[0].secretRef'),'secret://annper/connections/ops-db');
   assert.equal(s.run('audit[0].outcome'),'Denied');assert.doesNotMatch(s.run('JSON.stringify(audit)'),/hunter2/);
   s.run("model.connections[0].secretRef='Password=hunter2'");assert.ok(hasIssue(s,'CREDENTIAL_REJECTED','connections.ops-db.secretRef'));
   s.run("model.connections[0].secretRef='vault-entry-7'");assert.ok(hasIssue(s,'INVALID_SECRET_REFERENCE','connections.ops-db.secretRef'));
@@ -937,7 +937,7 @@ test('Application users: a change is a draft change of its own application and i
   assert.deepEqual([...s.run('[audit[0].action,audit[0].target,audit[0].application,audit[0].actor,audit[0].version,audit[0].detail]')],['Updated application user','users.ken%2Eito','ops','Alex Morgan','ver-2026-09-2','roles: operations-reader added']);
   assert.equal(s.run('administration.policyRevision'),revision,'no live policy revision is involved');
   assert.equal(s.run("JSON.stringify(userStart(findUser('ken.ito')))"),'{"ok":true,"reason":""}','the draft would admit him');
-  assert.equal(start('ken.ito'),'{"ok":false,"reason":"No role"}','GD Workspace still applies the published version');
+  assert.equal(start('ken.ito'),'{"ok":false,"reason":"No role"}','annper Workspace still applies the published version');
   assert.equal(s.run('undo()'),true);assert.equal(s.run('digest()'),digest);assert.deepEqual([...s.run("[state.dirty,findUser('ken.ito').roles.length]")],[0,0],'Undo takes it back');
   assert.equal(s.run('redo()'),true);
   for(const change of ["setProp(userPath('maya.chen'),'email','maya.chen@example.org','')","setProp(userPath('maya.chen'),'active',false,'boolean')","setProp(userPath('jay.patel'),'default',true,'boolean')","setUserOverride('maya.chen','orders',{read:true},'Read-only while covering leave')",
@@ -1049,10 +1049,10 @@ test('Application users: the can-start rule and each refusal reason follow the p
   assert.equal(s.run("(()=>{const c=structuredClone(liveConfig());c.roles.find(r=>r.id==='operations-reader').active=false;return userStart(findUser('jay.patel',c),c).reason})()"),'No role','an inactive application role grants nothing');
   assert.equal(s.run("(()=>{const c=structuredClone(liveConfig());findUser('jay.patel',c).roles=['risk-reader'];return userStart(findUser('jay.patel',c),c).reason})()"),'No role','a role of another application does not count');
   s.run("setProp(userPath('daniel.weber'),'active',true,'boolean');setProp(userPath('alex.smith'),'active',false,'boolean');setMember(userPath('ken.ito'),'roles','operations-editor',true)");
-  assert.deepEqual(['daniel.weber','alex.smith','ken.ito'].map(x=>start(x)),[no('Inactive'),yes,no('No role')],'a draft changes nothing that GD Workspace applies');
+  assert.deepEqual(['daniel.weber','alex.smith','ken.ito'].map(x=>start(x)),[no('Inactive'),yes,no('No role')],'a draft changes nothing that annper Workspace applies');
   assert.deepEqual([...s.run("['daniel.weber','alex.smith','ken.ito'].map(x=>userStart(findUser(x)).reason||'ok')")],['ok','Inactive','ok'],'the selected version shows what publishing would do');
   s.run('renderApplicationUsers()');const html=s.run('host.innerHTML');
-  for(const text of ['<th scope="col">Can start in this version</th><th scope="col">Can start today \\(published\\)</th><th scope="col">Last sign-in</th>','<span class="status bad">No</span> Inactive','<span class="status bad">No</span> No role','<span class="status good">Yes</span>','aria-label="Search application users by name or subject"','Showing Draft 2026\\.09\\.2 · GD Workspace applies Published 2026\\.09\\.1','<caption class="sr-only">Application users of Operations Hub</caption>'])present(html,new RegExp(text));
+  for(const text of ['<th scope="col">Can start in this version</th><th scope="col">Can start today \\(published\\)</th><th scope="col">Last sign-in</th>','<span class="status bad">No</span> Inactive','<span class="status bad">No</span> No role','<span class="status good">Yes</span>','aria-label="Search application users by name or subject"','Showing Draft 2026\\.09\\.2 · annper Workspace applies Published 2026\\.09\\.1','<caption class="sr-only">Application users of Operations Hub</caption>'])present(html,new RegExp(text));
   absent(html,/Risk manager|Risk reader|policy revision/,'only this application\'s roles; no live policy revision');
   s.run("selectVersion('ver-2026-09-1');state.selectedUser='sara.evans';renderApplicationUsers()");
   assert.deepEqual([...s.run("[findUser('sara.evans').overrides.length,userAccess(findUser('sara.evans'),model.screens[1]).source,userStart(findUser('daniel.weber')).reason]")],[0,'application roles','Inactive'],'the page follows the selected version');
@@ -1060,7 +1060,7 @@ test('Application users: the can-start rule and each refusal reason follow the p
   assert.equal(s.run("setProp(userPath('sara.evans'),'region','EU','')"),false,'a published version is read-only, its application users included');
   s.run("selectVersion('draft');state.actor='Jordan Lee';performRetire('ver-2026-09-1','Application retired')");
   assert.deepEqual([start('alex.smith'),start('alex.smith','risk')],[no('Not a user of this application'),yes],'nobody can start an application with no published version; the other application is unaffected');
-  s.run('renderApplicationUsers()');present(s.run('host.innerHTML'),/GD Workspace applies no version, so nobody can start/);
+  s.run('renderApplicationUsers()');present(s.run('host.innerHTML'),/annper Workspace applies no version, so nobody can start/);
 });
 
 test('Application users: effective access combines the application roles held, with the override applied last, in the selected version', () => {
@@ -1110,7 +1110,7 @@ test('Application roles and application users: the pages are linked to each othe
   present(s.run('host.innerHTML'),/Risk register review cycle/);absent(s.run('host.innerHTML'),/users\.alex\.smith|screens\.orders/,'the audit history shows the selected application only');
   assert.deepEqual([...s.run("[findUser('alex.smith').region,findUser('alex.smith').roles.join(),findUser('alex.smith').default]")],['EU','risk-manager',false],'the entry of the same person in the other application is separate');
   s.run("state.selectedUser='jay.patel';renderApplicationUsers()");
-  for(const text of ['Application users of Risk &amp; Controls','Risk &amp; Controls opens first for this person','Jay Patel also has a separate entry in Operations Hub\\.','Showing Draft 2026\\.08\\.3 · GD Workspace applies Published 2026\\.08\\.2'])present(s.run('host.innerHTML'),new RegExp(text));
+  for(const text of ['Application users of Risk &amp; Controls','Risk &amp; Controls opens first for this person','Jay Patel also has a separate entry in Operations Hub\\.','Showing Draft 2026\\.08\\.3 · annper Workspace applies Published 2026\\.08\\.2'])present(s.run('host.innerHTML'),new RegExp(text));
   absent(s.run('host.innerHTML'),/Maya Chen|Operations editor/);
   s.run('renderOverview()');present(s.run('host.innerHTML'),/2 application roles · 2 application users, 2 of whom can start under Draft 2026\.08\.3/);present(s.run('host.innerHTML'),/Risk &amp; Controls only: its properties, navigation, screens, DataClasses, connections, value lists, reports, application roles and application users\./);
   s.run("state.actor='Jordan Lee';state.validated=true;state.validation={serialized:canonical(configuration()),digest:digest()};state.acceptedWarnings={COMMAND_NEVER_SHOWN:true};"+approveAll+"state.publicationNote='Risk export';publish()");
@@ -1133,9 +1133,9 @@ test('Menu: exactly the three groups and the entry names agreed; only the first 
   // Each access page opens with one sentence: what it defines, whom it affects and when a change takes effect.
   const opening=renderer=>{s.run(`${renderer}()`);return /^<p class="lead">([\s\S]*?)<\/p>/.exec(s.run('host.innerHTML'))?.[1].replace(/<[^>]+>/g,'')||'';};
   assert.equal(opening('renderApplicationRoles'),"Application roles define what their holders may do on the screens of Risk &amp; Controls, affect only the application users of Risk &amp; Controls who hold them, and change for those people only when this application's draft is validated, approved and published.");
-  assert.equal(opening('renderApplicationUsers'),"Application users are the people who may start Risk &amp; Controls in GD Workspace, each with the application roles they hold; they affect Risk &amp; Controls only, and a change takes effect when this application's draft is validated, approved and published.");
-  assert.equal(opening('renderStudioUsers'),'Studio users are the people who run GD Studio, each with the fixed Studio roles they hold; they affect GD Studio only and no application, and a change takes effect at once: a grant when a second platform administrator approves it, a revocation immediately.');
-  assert.equal(opening('renderStudioRoles'),'Studio roles are the fixed set that decides what a Studio user may do in GD Studio; they affect Studio users only and grant nothing in any application, and because the platform defines them nothing here is edited or published, while who holds one changes at once under Studio users.');
+  assert.equal(opening('renderApplicationUsers'),"Application users are the people who may start Risk &amp; Controls in annper Workspace, each with the application roles they hold; they affect Risk &amp; Controls only, and a change takes effect when this application's draft is validated, approved and published.");
+  assert.equal(opening('renderStudioUsers'),'Studio users are the people who run annper Studio, each with the fixed Studio roles they hold; they affect annper Studio only and no application, and a change takes effect at once: a grant when a second platform administrator approves it, a revocation immediately.');
+  assert.equal(opening('renderStudioRoles'),'Studio roles are the fixed set that decides what a Studio user may do in annper Studio; they affect Studio users only and grant nothing in any application, and because the platform defines them nothing here is edited or published, while who holds one changes at once under Studio users.');
   for(const renderer of ['renderApplicationRoles','renderApplicationUsers','renderStudioUsers','renderStudioRoles'])assert.equal((opening(renderer).match(/\. /g)||[]).length,0,renderer+' opens with one sentence');
   const before=s.run("(renderStudioUsers(),host.innerHTML)+(renderStudioRoles(),host.innerHTML)+(renderSystem(),host.innerHTML)");
   s.run("switchApplication('ops')");
@@ -1323,7 +1323,7 @@ test('Studio users: the page shows people, pending approvals and history, and st
   present(html,/This is your own record\. Nobody can propose, approve, reject or revoke a change to their own Studio roles/);present(html,/From deployment configuration<\/td><td class="row-actions"><span class="muted">Read-only here<\/span>/);
   as('Jordan Lee',s);s.run('renderStudioUsers()');
   present(s.run('host.innerHTML'),/<strong>Read-only\.<\/strong> Only a platform administrator \(Sam Okafor, Elena Ruiz\) can change Studio roles\. You are signed in as Jordan Lee \(configurator\)\./);
-  s.run('renderApplicationUsers()');present(s.run('host.innerHTML'),/Being an application user grants nothing in GD Studio, and a Studio user needs no entry here\./);
+  s.run('renderApplicationUsers()');present(s.run('host.innerHTML'),/Being an application user grants nothing in annper Studio, and a Studio user needs no entry here\./);
   present(admin,/\['studiousers','Studio users','◉'\],\['studioroles','Studio roles','▣'\]/);present(admin,/\['admin','selectedAdmin'\]/);present(admin,/parts\.push\(`admin=\$\{state\.selectedAdmin\}`\)/);
   as('Sam Okafor',s);s.run("revokeGrant('adm-07','database-owner','Moved');renderStudioUsers()");
   present(s.run('host.innerHTML'),/<tr data-filterable="studio-audit">[\s\S]*?Revoked Studio role[\s\S]*?data-action="open" data-path="administrators\.adm-07">administrators\.adm-07<\/button>/);
@@ -1362,7 +1362,7 @@ test('Owner flow: the security administrator changes an application user, three 
     ['2026.09.2 Published,2026.09.1 Superseded,2026.08.4 Superseded',0,'Nadia Hassan','Draft 2026.09.3',8]);
   assert.match(s.run("audit.find(a=>a.action==='Published version').detail"),/approved by Priya Raman, Nadia Hassan, Dana Whitlock/);
   s.run("selectVersion('draft');state.selectedUser='ken.ito';renderApplicationUsers()");
-  present(s.run('host.innerHTML'),/GD Workspace applies Published 2026\.09\.2/);present(s.run('host.innerHTML'),/In GD Workspace today \(Published 2026\.09\.2\) Ken Ito can start\./);
+  present(s.run('host.innerHTML'),/annper Workspace applies Published 2026\.09\.2/);present(s.run('host.innerHTML'),/In annper Workspace today \(Published 2026\.09\.2\) Ken Ito can start\./);
   // 6. The other application's version line is untouched, and so is everything it decides.
   assert.deepEqual(facts().risk,before.risk);assert.equal(records('risk'),riskRecords);
   assert.deepEqual([start('alex.smith','risk'),start('ken.ito','risk'),s.run("lines.risk.releases.map(v=>v.label+' '+v.status).join()")],['ok','Not a user of this application','2026.08.2 Published,2026.07.1 Superseded']);
@@ -1398,7 +1398,7 @@ test('Pass 2: zero stock commits and clears the in-memory dirty state', () => {
   assert.equal(s.run('db.stock[0].onHand'),s.run('db.stock[0].reserved'));assert.equal(s.run("screenState('inventory').dirty"),false);
 });
 
-// ---- runtime prototype (GD Workspace)
+// ---- runtime prototype (annper Workspace)
 const rt = json(runtime, 'mock-datasources');
 function rtContext(names, prelude = '', globals = {}) {
   const context = vm.createContext({ structuredClone, Date, Error, setTimeout, URLSearchParams, ...globals });
